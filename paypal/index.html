@@ -12,7 +12,7 @@
 <script>
     paypal.Buttons({
         createOrder: function(data, actions) {
-            return fetch('/path/to/createOrder.php', {
+            return fetch('createOrder.php', {
                 method: 'post'
             }).then(function(response) {
                 return response.json();
@@ -21,7 +21,7 @@
             });
         },
         onApprove: function(data, actions) {
-            return fetch('/path/to/captureOrder.php', {
+            return fetch('captureOrder.php', {
                 method: 'post',
                 headers: {
                     'content-type': 'application/json'
