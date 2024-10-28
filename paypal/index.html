@@ -33,6 +33,7 @@
                 return response.json();
             }).then(function(details) {
                 alert('Transaction completed by ' + details.payer.name.given_name);
+                console.log(details);
             });
         }
     }).render('#paypal-button-container');
