@@ -1,0 +1,140 @@
+{
+    "key": "group_5f5a0d57e1568",
+    "title": "Wishlist Fields",
+    "fields": [
+        {
+            "key": "field_5f5c72c5260fc",
+            "label": "My Wishlists",
+            "name": "my_wishlists",
+            "aria-label": "",
+            "type": "repeater",
+            "instructions": "Add a wishlist and then press UPDATE to save.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "layout": "block",
+            "pagination": 0,
+            "min": 0,
+            "max": 0,
+            "collapsed": "",
+            "button_label": "<i class=\"fas fa-heart\"><\/i> Add Wishlist",
+            "rows_per_page": 20,
+            "sub_fields": [
+                {
+                    "key": "field_5f5c7334260fe",
+                    "label": "Wishlist Description",
+                    "name": "wishlist_description",
+                    "aria-label": "",
+                    "type": "textarea",
+                    "instructions": "Describe your wishlist as detailed as possible",
+                    "required": 1,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "placeholder": "",
+                    "maxlength": "",
+                    "rows": "",
+                    "new_lines": "",
+                    "parent_repeater": "field_5f5c72c5260fc"
+                },
+                {
+                    "key": "field_5f5c73a926100",
+                    "label": "Reference Links",
+                    "name": "reference_links",
+                    "aria-label": "",
+                    "type": "repeater",
+                    "instructions": "Place your links for reference (e.g Image Link, Shop Link, etc.)",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "layout": "block",
+                    "min": 0,
+                    "max": 0,
+                    "collapsed": "",
+                    "button_label": "<i class=\"fas fa-link\"><\/i> Add Link",
+                    "rows_per_page": 20,
+                    "sub_fields": [
+                        {
+                            "key": "field_5f5c96bee3e00",
+                            "label": "Link URL",
+                            "name": "link_url",
+                            "aria-label": "",
+                            "type": "url",
+                            "instructions": "",
+                            "required": 0,
+                            "conditional_logic": 0,
+                            "wrapper": {
+                                "width": "",
+                                "class": "",
+                                "id": ""
+                            },
+                            "default_value": "",
+                            "placeholder": "",
+                            "parent_repeater": "field_5f5c73a926100"
+                        }
+                    ],
+                    "parent_repeater": "field_5f5c72c5260fc"
+                }
+            ]
+        },
+        {
+            "key": "field_617145f7ec732",
+            "label": "My Address and Contact Details",
+            "name": "my_address_and_contact_details",
+            "aria-label": "",
+            "type": "textarea",
+            "instructions": "Optional and will be shown only to your match. This is used for gifts that will be delivered online.",
+            "required": 0,
+            "conditional_logic": [
+                [
+                    {
+                        "field": "field_5f5c72c5260fc",
+                        "operator": "!=empty"
+                    }
+                ]
+            ],
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "placeholder": "",
+            "maxlength": "",
+            "rows": "",
+            "new_lines": "br"
+        }
+    ],
+    "location": [
+        [
+            {
+                "param": "post_type",
+                "operator": "==",
+                "value": "users"
+            }
+        ]
+    ],
+    "menu_order": 0,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "hide_on_screen": "",
+    "active": true,
+    "description": "",
+    "show_in_rest": 0,
+    "recaptcha": 0,
+    "modified": 1701221420
+}

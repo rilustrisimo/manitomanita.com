@@ -1,0 +1,87 @@
+.logo {
+    position: relative;
+    z-index: 1;
+
+    a {
+        display: block;
+        color: #fff;
+        font-family: @raleway;
+        font-size: 1.267em;
+        font-weight: 700;
+        font-size: 41px;
+        text-transform: uppercase;
+        text-align: center;
+        line-height: 50px;
+        margin-top: 36px;
+
+        span {
+            font-weight: 300;
+            color: @main-color2;
+        }
+    }
+}
+
+#logoLink {
+    img {
+        max-width: 76px;
+        margin: -33px 5px 0 0;
+    }
+}
+
+#retinaImageLogo {
+    display: none;
+}
+
+@media (-webkit-min-device-pixel-ratio: 2),
+(min--moz-device-pixel-ratio: 2),
+(-o-min-device-pixel-ratio: 2/1),
+(min-device-pixel-ratio: 2),
+(min-resolution: 192dpi),
+(min-resolution: 2dppx) {
+
+    #retinaImageLogo {
+        display: inline;
+        // max-width:50%;
+    }
+
+    #normalImageLogo {
+        display: none;
+    }
+}
+
+@media (max-width: 475px) {
+    header.header {
+        .top_layer {
+            border-bottom-left-radius: 50px;
+
+            .logo {
+                a {
+                    font-size: 32px;
+                }
+            }
+        }
+
+        .bottom_layer {
+            border-bottom-left-radius: 50px;
+
+            .main-nav {
+                display: block;
+
+                li {
+                    a {
+                        height: 45px;
+                        line-height: 45px;
+                        font-size: 16px;
+                        padding: 0 16px;
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: @responsive-breakpoint2) {
+    .logo {
+        float: none;
+    }
+}
