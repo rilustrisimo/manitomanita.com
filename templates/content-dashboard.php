@@ -13,6 +13,7 @@ $group = new Groups();
 $users = new Users();
 $fields = $group->getGroupDetails($group->getGroupId());
 $groupdate = strtotime($fields['gift_exchange_date']); 
+$pro = $fields['pro'];
 //$u = $users->getAllUsersPerGroup2($group->getGroupId());
 $u = array();
 echo '<div style="display:none;" id="userids">'.json_encode($u).'</div>';
@@ -127,9 +128,7 @@ echo '<div style="display:none;" id="groupid">'.$group->getGroupId().'</div>';
             </div>
         </div>
         <!-- ADS and PROMOTIONS -->
-        <?php
-        var_dump($fields['pro']);
-        ?>
+        <?php if(!$pro): ?>
         <div class="col-md-12 text-center" style="padding: 35px 15px;">
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
         <!-- Manito Manita Dashboard -->
@@ -142,6 +141,7 @@ echo '<div style="display:none;" id="groupid">'.$group->getGroupId().'</div>';
         <script>
             (adsbygoogle = window.adsbygoogle || []).push({});
         </script>
+        <?php endif; ?>
 <!--
             <style>
                 .show-mobile { display: none; }
