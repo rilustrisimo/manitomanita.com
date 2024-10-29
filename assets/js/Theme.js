@@ -45,7 +45,11 @@ var Theme = {
 
     proPurchaseButton: function($){
         if($('a#go-pro-btn').length > 0){
-            
+            $('a#go-pro-btn').click(function(e){
+                e.preventDefault();
+
+                $('#make-pro.pop-container').show();
+            });
         }
     },
 
