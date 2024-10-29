@@ -23,6 +23,7 @@ $groupid = $group->getGroupId();  // Replace with your actual group ID
         onApprove: function(data, actions) {
         // Show the loader overlay
         document.getElementById('loader-overlay-paypal').style.display = 'flex';
+        $('.pop-container').hide();
 
         return fetch(`${themeBaseUrl}/paypal/captureOrder.php`, {
             method: 'post',
