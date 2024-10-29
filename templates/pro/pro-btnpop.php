@@ -30,7 +30,7 @@ defined( 'ABSPATH' ) || die();
                 <script>
                     paypal.Buttons({
                         createOrder: function(data, actions) {
-                            return fetch('createOrder.php', {
+                            return fetch('../../paypal/createOrder.php', {
                                 method: 'post'
                             }).then(function(response) {
                                 return response.json();
@@ -39,7 +39,7 @@ defined( 'ABSPATH' ) || die();
                             });
                         },
                         onApprove: function(data, actions) {
-                            return fetch('captureOrder.php', {
+                            return fetch('../../paypal/captureOrder.php', {
                                 method: 'post',
                                 headers: {
                                     'content-type': 'application/json'
