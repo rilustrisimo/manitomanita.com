@@ -127,9 +127,9 @@ echo '<div style="display:none;" id="groupid">'.$group->getGroupId().'</div>';
                 </div>
             </div>
         </div>
+        <div class="col-md-12 text-center" style="padding: 35px 15px;">
         <!-- ADS and PROMOTIONS -->
         <?php if(!$pro): ?>
-        <div class="col-md-12 text-center" style="padding: 35px 15px;">
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
         <!-- Manito Manita Dashboard -->
         <ins class="adsbygoogle"
