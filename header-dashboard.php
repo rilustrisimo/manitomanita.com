@@ -18,6 +18,9 @@ if ( $is_sticky_header ) {
 
 $group = new Groups();
 $groupid = $group->getGroupId();  // Replace with your actual group ID
+$fields = $group->getGroupDetails($groupid);
+$pro = (isset($fields['pro']))?$fields['pro']:false;
+
 $meta_query = array(
 	array(
 		'key' => 'groups',
@@ -68,6 +71,10 @@ setcookie($cookiename, $post_count, $expirationTime, '/');
 									<li class="menu-item menu-item-type-custom menu-item-object-custom shuff-btn"><a href="javascript:;" <?php echo $print; ?>><?php echo (wp_is_mobile())?'Shuffle':'Shuffle Match'; ?></a></li>
 								<?php else: ?>
 									<li class="menu-item menu-item-type-custom menu-item-object-custom join-btn"><a href="javascript:;" id="who-joined" data-fancybox data-src="#who-joined-box"><?php echo (wp_is_mobile())?'Joined':'Who Joined'; ?></a></li>
+								<?php endif; ?>
+								
+								<?php if(!$pro): ?>
+									<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="#" id="go-pro-btn">Try Pro <span><i class="fa-solid fa-star"></i></span></a></li>
 								<?php endif; ?>
 								<!--<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="<?php echo get_permalink(77); ?>">Gift Ideas</a></li>-->
 							</ul>							

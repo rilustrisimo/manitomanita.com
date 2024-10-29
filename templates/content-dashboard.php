@@ -12,8 +12,9 @@
 $group = new Groups();
 $users = new Users();
 $fields = $group->getGroupDetails($group->getGroupId());
-$groupdate = strtotime($fields['gift_exchange_date']); 
 $pro = (isset($fields['pro']))?$fields['pro']:false;
+
+$groupdate = strtotime($fields['gift_exchange_date']); 
 //$u = $users->getAllUsersPerGroup2($group->getGroupId());
 $u = array();
 echo '<div style="display:none;" id="userids">'.json_encode($u).'</div>';
