@@ -13,4 +13,11 @@
  */
 defined( 'ABSPATH' ) || die();
 
-echo 'testing pop';
+?>
+
+<div class="pop-container">
+    <div class="pop-container__inner">
+        <div class="pop-container__header">Make Your Group a <span>PRO</span></div>
+        <div class="pop-container__content"></div>
+    </div>
+</div>
