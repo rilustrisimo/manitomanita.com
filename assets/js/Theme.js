@@ -50,7 +50,23 @@ var Theme = {
 
                 $('#make-pro.pop-container').show();
             });
+
+            Theme.popClose($);
         }
+    },
+
+    popClose: function($){
+        $('.pop-container').on('click', function(event) {
+            // Check if the click target is the .pop-container itself
+            if ($(event.target).is('.pop-container')) {
+                $(this).hide(); // Hide the pop-container
+            }
+        });
+    
+        $('.pop-container__close').on('click', function(event) {
+            event.preventDefault(); // Prevent the default action of the link
+            $(this).closest('.pop-container').hide(); // Hide the pop-container when close button is clicked
+        });
     },
 
     initPromos: function($){
