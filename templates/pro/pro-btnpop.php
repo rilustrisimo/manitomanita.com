@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || die();
         <div class="pop-container__content">
             <a href="#" id="make-pro-btn">Make it PRO</a>
             <div class="paypal-pay" style="display:none;">
-                <?php get_template_part( '../../paypal/index', 'paypal' ); ?>
+                <?php get_template_part( 'paypal/index', 'paypal' ); ?>
             </div>
         </div>
     </div>
