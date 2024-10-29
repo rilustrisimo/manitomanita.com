@@ -90,6 +90,7 @@ class Theme {
          */
 
         add_action( 'init', array($this, 'createPostTypes')); 
+        add_action('rest_api_init', array($this, 'paypalWebhookAPI'));
         
     }
 
@@ -101,6 +102,51 @@ class Theme {
          add_filter('acf/validate_value/name=your_email', array($this, 'validateEmail'), 10, 4);
          add_filter('acf/validate_value/name=email', array($this, 'validateEmail'), 10, 4);
     }
+
+    // Register REST API endpoint for webhook callback
+    public function paypalWebhookAPI() {
+        register_rest_route('custom-api/v1', '/webhook/', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'handle_webhook_callback'),
+            'args' => array(
+                'gid' => array(
+                    'required' => true,
+                    'validate_callback' => function($param) {
+                        return is_numeric($param); // or other validation logic for `gid`
+                    }
+                ),
+                'order_id' => array(
+                    'required' => true,
+                    'validate_callback' => function($param) {
+                        return !empty($param); // Basic check that order_id is not empty
+                    }
+                )
+            ),
+            'permission_callback' => '__return_true'
+        ));
+    }
+
+    public function handle_webhook_callback($request) {
+        // Retrieve the parameters
+        $gid = sanitize_text_field($request->get_param('gid'));
+        $order_id = sanitize_text_field($request->get_param('order_id'));
+    
+        // Perform any desired actions with gid and order_id
+        // For example, logging or updating a database entry
+        $log_entry = "Received webhook with GID: $gid and Order ID: $order_id";
+        error_log($log_entry); // Logs to WordPress debug log
+    
+        // Example: Updating a custom field in the database or triggering another action
+        // update_post_meta( $post_id, '_your_custom_field', $value ); // Uncomment and customize as needed
+    
+        // Return a response to confirm the webhook was received
+        return new WP_REST_Response(array(
+            'status' => 'success',
+            'message' => 'Webhook received successfully',
+            'gid' => $gid,
+            'order_id' => $order_id
+        ), 200);
+    }    
 
     public function validateEmail($valid, $value, $field, $input) {
         // Correct email syntax
