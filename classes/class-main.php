@@ -139,6 +139,7 @@ class Theme {
         if (get_post_type($gid) === 'groups') {
             // Update the 'pro' custom field to true
             update_field('pro', true, $gid);
+            update_field('order_id', $order_id, $gid);
     
             // Confirm the update in the response
             return new WP_REST_Response(array(

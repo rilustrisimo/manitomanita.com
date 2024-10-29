@@ -191,7 +191,7 @@
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "",
-                    "class": "",
+                    "class": "hide",
                     "id": ""
                 },
                 "message": "",
@@ -199,6 +199,26 @@
                 "ui_on_text": "",
                 "ui_off_text": "",
                 "ui": 1
+            },
+            {
+                "key": "field_6720f0ccaba26",
+                "label": "Order ID",
+                "name": "order_id",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "hide",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
             }
         ],
         "location": [
