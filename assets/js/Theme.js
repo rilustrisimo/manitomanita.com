@@ -46,7 +46,10 @@ var Theme = {
 
     makeProBtn: function($){
         if($('#make-pro-btn').length > 0){
-            $('.paypal-pay').show();
+            $('#make-pro-btn').click(function(e){
+                e.preventDefault();
+                $('.paypal-pay').show();
+            }); 
         }
     },
 
