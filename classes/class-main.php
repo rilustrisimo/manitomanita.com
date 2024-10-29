@@ -115,11 +115,11 @@ class Theme {
         }
 
         // Check if email is from a disposable domain using Disify API
-        $apiUrl = "https://www.disify.com/api/email/" . urlencode($value);
+        $apiUrl = "https://www.disify.com/api/email/" . $value;
 
         // Perform the API request
         $response = wp_remote_get($apiUrl);
-        return __($apiUrl, 'acf');
+        
         if (is_wp_error($response)) {
             return __('There was an issue validating your email. Please try again.', 'acf');
         }
