@@ -37,6 +37,9 @@ $activepromos = $promo->getActivePromos();
 <?php endif; ?>
 <div class="loader-overlay" style="background:#1b1b1b;display:none;"><img src="<?php echo 
 get_template_directory_uri().'/assets/images/loader.gif'; ?>"></div>
-
+<!-- Loader Overlay -->
+<div id="loader-overlay-paypal" style="display: none;">
+    <div class="loader"></div>
+</div>
 <?php get_template_part( 'templates/pro/pro', 'btnpop' ); ?>
 <div class="layout-content">
