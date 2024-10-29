@@ -41,6 +41,13 @@ var Theme = {
 
     proScripts: function($){
         Theme.proPurchaseButton($);
+        Theme.makeProBtn($);
+    },
+
+    makeProBtn: function($){
+        if($('#make-pro-btn').length > 0){
+            $('.paypal-pay').show();
+        }
     },
 
     proPurchaseButton: function($){

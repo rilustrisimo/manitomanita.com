@@ -22,41 +22,7 @@ defined( 'ABSPATH' ) || die();
         <div class="pop-container__content">
             <a href="#" id="make-pro-btn">Make it PRO</a>
             <div class="paypal-pay" style="display:none;">
-
-                <div id="paypal-button-container"></div>
-
-                <script src="https://www.paypal.com/sdk/js?client-id=Aev7owXcA7gNoB_lLSy9u2iikYz6Kt4YLFvtVnC-hjX7Z2DqjVpLB7Nxx-7l1ueYyDPeNQKt9_YtVcR0&currency=PHP"></script>
-
-                <script>
-                    paypal.Buttons({
-                        createOrder: function(data, actions) {
-                            return fetch('../../paypal/createOrder.php', {
-                                method: 'post'
-                            }).then(function(response) {
-                                return response.json();
-                            }).then(function(orderData) {
-                                return orderData.id;
-                            });
-                        },
-                        onApprove: function(data, actions) {
-                            return fetch('../../paypal/captureOrder.php', {
-                                method: 'post',
-                                headers: {
-                                    'content-type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    orderID: data.orderID
-                                })
-                            }).then(function(response) {
-                                return response.json();
-                            }).then(function(details) {
-                                alert('Transaction completed by ' + details.payer.name.given_name);
-                                console.log(details);
-                            });
-                        }
-                    }).render('#paypal-button-container');
-                </script>
-
+                <?php get_template_part( '../../paypal/index', 'paypal' ); ?>
             </div>
         </div>
     </div>
