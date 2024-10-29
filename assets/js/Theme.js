@@ -48,7 +48,7 @@ var Theme = {
             $('a#go-pro-btn').click(function(e){
                 e.preventDefault();
 
-                $('#make-pro.pop-container').show();
+                $('#make-pro.pop-container').css('display', 'flex');
             });
 
             Theme.popClose($);
@@ -56,14 +56,16 @@ var Theme = {
     },
 
     popClose: function($){
+        // Hide the pop-container when clicking outside the inner content
         $('.pop-container').on('click', function(event) {
             // Check if the click target is the .pop-container itself
-            if ($(event.target).is('.pop-container')) {
+            if ($(event.target).is(this)) {
                 $(this).hide(); // Hide the pop-container
             }
         });
-    
-        $('.pop-container__close').on('click', function(event) {
+
+        // Use event delegation for the close button
+        $('.pop-container').on('click', '.pop-container__close a', function(event) {
             event.preventDefault(); // Prevent the default action of the link
             $(this).closest('.pop-container').hide(); // Hide the pop-container when close button is clicked
         });
