@@ -1,193 +1,224 @@
-{
-    "key": "group_5f55be45d59c8",
-    "title": "Group Fields",
-    "fields": [
-        {
-            "key": "field_5f55be68de4c7",
-            "label": "Group Name",
-            "name": "group_name",
-            "type": "text",
-            "instructions": "",
-            "required": 1,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "default_value": "",
-            "placeholder": "",
-            "prepend": "",
-            "append": "",
-            "maxlength": ""
-        },
-        {
-            "key": "field_5f55be76de4c8",
-            "label": "Gift Exchange Date",
-            "name": "gift_exchange_date",
-            "type": "date_picker",
-            "instructions": "",
-            "required": 1,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "display_format": "F j, Y",
-            "return_format": "m\/d\/Y",
-            "first_day": 0
-        },
-        {
-            "key": "field_5f55bf05de4ca",
-            "label": "Spending Minimum",
-            "name": "spending_minimum",
-            "type": "number",
-            "instructions": "",
-            "required": 1,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "default_value": "",
-            "placeholder": "",
-            "prepend": "",
-            "append": "",
-            "min": "",
-            "max": "",
-            "step": ""
-        },
-        {
-            "key": "field_5f55bf19de4cb",
-            "label": "Your Name",
-            "name": "your_name",
-            "type": "text",
-            "instructions": "",
-            "required": 1,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "default_value": "",
-            "placeholder": "",
-            "prepend": "",
-            "append": "",
-            "maxlength": ""
-        },
-        {
-            "key": "field_5f55bf2fde4cc",
-            "label": "Your Email",
-            "name": "your_email",
-            "type": "email",
-            "instructions": "",
-            "required": 1,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "default_value": "",
-            "placeholder": "",
-            "prepend": "",
-            "append": ""
-        },
-        {
-            "key": "field_5f55bf45de4cd",
-            "label": "Your Password",
-            "name": "password",
-            "type": "password",
-            "instructions": "",
-            "required": 1,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "hide-dash",
-                "id": ""
-            },
-            "placeholder": "",
-            "prepend": "",
-            "append": ""
-        },
-        {
-            "key": "field_5f55bf53de4ce",
-            "label": "Captcha",
-            "name": "captcha",
-            "type": "recaptcha",
-            "instructions": "",
-            "required": 1,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "site_key": "6LfV5iMUAAAAAKt1NU6cqlBLjjSVE3gsEYvyM2Ny",
-            "secret_key": "6LfV5iMUAAAAAKugV-K9Ss0VRsnodlpPzzkvGDek",
-            "re_theme": "light",
-            "re_type": "image",
-            "re_size": "normal"
-        },
-        {
-            "key": "field_5f55c6cc698b1",
-            "label": "Group Password",
-            "name": "group_password",
-            "type": "text",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "hide",
-                "id": ""
-            },
-            "default_value": "",
-            "placeholder": "",
-            "prepend": "",
-            "append": "",
-            "maxlength": ""
-        },
-        {
-            "key": "field_5f5cc15d79b68",
-            "label": "Matched",
-            "name": "matched",
-            "type": "true_false",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "hide",
-                "id": ""
-            },
-            "message": "",
-            "default_value": 0,
-            "ui": 0,
-            "ui_on_text": "",
-            "ui_off_text": ""
-        }
-    ],
-    "location": [
-        [
+[
+    {
+        "key": "group_5f55be45d59c8",
+        "title": "Group Fields",
+        "fields": [
             {
-                "param": "post_type",
-                "operator": "==",
-                "value": "groups"
+                "key": "field_5f55be68de4c7",
+                "label": "Group Name",
+                "name": "group_name",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": "",
+                "maxlength": ""
+            },
+            {
+                "key": "field_5f55be76de4c8",
+                "label": "Gift Exchange Date",
+                "name": "gift_exchange_date",
+                "aria-label": "",
+                "type": "date_picker",
+                "instructions": "",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "display_format": "F j, Y",
+                "return_format": "m\/d\/Y",
+                "first_day": 0
+            },
+            {
+                "key": "field_5f55bf05de4ca",
+                "label": "Spending Minimum",
+                "name": "spending_minimum",
+                "aria-label": "",
+                "type": "number",
+                "instructions": "",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": "",
+                "min": "",
+                "max": "",
+                "step": ""
+            },
+            {
+                "key": "field_5f55bf19de4cb",
+                "label": "Your Name",
+                "name": "your_name",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": "",
+                "maxlength": ""
+            },
+            {
+                "key": "field_5f55bf2fde4cc",
+                "label": "Your Email",
+                "name": "your_email",
+                "aria-label": "",
+                "type": "email",
+                "instructions": "",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_5f55bf45de4cd",
+                "label": "Your Password",
+                "name": "password",
+                "aria-label": "",
+                "type": "password",
+                "instructions": "",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "hide-dash",
+                    "id": ""
+                },
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_5f55bf53de4ce",
+                "label": "Captcha",
+                "name": "captcha",
+                "aria-label": "",
+                "type": "recaptcha",
+                "instructions": "",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "site_key": "6LfV5iMUAAAAAKt1NU6cqlBLjjSVE3gsEYvyM2Ny",
+                "secret_key": "6LfV5iMUAAAAAKugV-K9Ss0VRsnodlpPzzkvGDek",
+                "re_theme": "light",
+                "re_type": "image",
+                "re_size": "normal"
+            },
+            {
+                "key": "field_5f55c6cc698b1",
+                "label": "Group Password",
+                "name": "group_password",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "hide",
+                    "id": ""
+                },
+                "default_value": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": "",
+                "maxlength": ""
+            },
+            {
+                "key": "field_5f5cc15d79b68",
+                "label": "Matched",
+                "name": "matched",
+                "aria-label": "",
+                "type": "true_false",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "hide",
+                    "id": ""
+                },
+                "message": "",
+                "default_value": 0,
+                "ui": 0,
+                "ui_on_text": "",
+                "ui_off_text": ""
+            },
+            {
+                "key": "field_672035cd1110f",
+                "label": "Pro",
+                "name": "pro",
+                "aria-label": "",
+                "type": "true_false",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "message": "",
+                "default_value": 0,
+                "ui_on_text": "",
+                "ui_off_text": "",
+                "ui": 1
             }
-        ]
-    ],
-    "menu_order": 0,
-    "position": "normal",
-    "style": "default",
-    "label_placement": "top",
-    "instruction_placement": "label",
-    "hide_on_screen": "",
-    "active": true,
-    "description": "",
-    "recaptcha": 0,
-    "modified": 1697888198
-}
+        ],
+        "location": [
+            [
+                {
+                    "param": "post_type",
+                    "operator": "==",
+                    "value": "groups"
+                }
+            ]
+        ],
+        "menu_order": 0,
+        "position": "normal",
+        "style": "default",
+        "label_placement": "top",
+        "instruction_placement": "label",
+        "hide_on_screen": "",
+        "active": true,
+        "description": "",
+        "show_in_rest": 0,
+        "recaptcha": 0
+    }
+]
