@@ -5,6 +5,7 @@
 </script>
 <script>
     paypal.Buttons({
+        locale: 'en_PH', // Sets the locale to English, Philippines
         createOrder: function(data, actions) {
             return fetch(`${themeBaseUrl}/paypal/createOrder.php`, {
                 method: 'post'
