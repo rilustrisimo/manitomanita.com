@@ -111,7 +111,7 @@ class Theme {
         // Check domain's MX records
         $domain = substr(strrchr($value, "@"), 1);
         if (!checkdnsrr($domain, 'MX')) {
-            return __('The email domain does not have valid MX records.', 'acf');
+            return __('The email domain does not have valid MX records and is not valid.', 'acf');
         }
 
         // Check if email is from a disposable domain using Disify API
