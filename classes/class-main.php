@@ -119,7 +119,7 @@ class Theme {
 
         // Perform the API request
         $response = wp_remote_get($apiUrl);
-        return __($response, 'acf');
+        return __($apiUrl, 'acf');
         if (is_wp_error($response)) {
             return __('There was an issue validating your email. Please try again.', 'acf');
         }
