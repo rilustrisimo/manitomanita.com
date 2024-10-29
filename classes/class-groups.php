@@ -84,7 +84,7 @@ class Groups extends Theme {
     }
 
     public function getGroupDetails($groupid){
-        $this->groupid = $_SESSION['groupid'];
+        $this->groupid = (isset($_SESSION['groupid']))?$_SESSION['groupid']:$groupid;
 
         return get_fields($groupid);
     }
