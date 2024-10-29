@@ -98,7 +98,7 @@ class Theme {
          * Place filters here
          */
 
-         add_filter('acf/validate_value/key=your_email', array($this, 'validateEmail'), 10, 4);
+         add_filter('acf/validate_value/name=your_email', array($this, 'validateEmail'), 10, 4);
 
     }
 
@@ -130,7 +130,6 @@ class Theme {
             return __('Please use a non-disposable email address.', 'acf');
         }
 
-        return __('Please use a non-disposable email address.', 'acf');
 
         return $valid;
     }
