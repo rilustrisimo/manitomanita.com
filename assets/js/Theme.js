@@ -23,6 +23,7 @@ var Theme = {
         this.initTours($);
         this.initPromos($);
         this.initCardsUsers($);
+        this.proScripts($);
 
         $( '[data-toggle="tooltip"]' ).tooltip();
 
@@ -38,8 +39,14 @@ var Theme = {
         });
     },
 
-    processUserBatch: function($){
-        
+    proScripts: function($){
+        Theme.proPurchaseButton($);
+    },
+
+    proPurchaseButton: function($){
+        if($('a#go-pro-btn').length > 0){
+            
+        }
     },
 
     initPromos: function($){
