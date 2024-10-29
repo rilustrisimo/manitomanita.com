@@ -29,17 +29,17 @@ function createOrder()
                 ]
             ]
         ],
+        "payer" => [ // Moved to the root level to set default country
+            "address" => [
+                "country_code" => "PH" // Set default country code to PH
+            ]
+        ],
         "application_context" => [ // Set the context for the transaction
             "return_url" => "https://manitomanita.com", // Redirect URL after payment
             "cancel_url" => "https://manitomanita.com", // Redirect URL if payment is canceled
             "locale" => "en-PH", // Localized experience
             "shipping_preference" => "NO_SHIPPING", // No shipping for digital products
-            "user_action" => "PAY_NOW", // Prompt user for immediate payment
-            "payer" => [
-                "address" => [
-                    "country_code" => "PH" // Set default country code to PH
-                ]
-            ]
+            "user_action" => "PAY_NOW" // Prompt user for immediate payment
         ]
     ];
 
