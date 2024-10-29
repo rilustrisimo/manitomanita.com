@@ -69,7 +69,7 @@ setcookie($cookiename, $post_count, $expirationTime, '/');
 								<?php else: ?>
 									<li class="menu-item menu-item-type-custom menu-item-object-custom join-btn"><a href="javascript:;" id="who-joined" data-fancybox data-src="#who-joined-box"><?php echo (wp_is_mobile())?'Joined':'Who Joined'; ?></a></li>
 								<?php endif; ?>
-								<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="<?php echo get_permalink(77); ?>">Gift Ideas</a></li>
+								<!--<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="<?php echo get_permalink(77); ?>">Gift Ideas</a></li>-->
 							</ul>							
 						</nav>
 						<div class="clearfix"></div>
