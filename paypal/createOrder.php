@@ -19,11 +19,11 @@ function createOrder()
             [
                 "amount" => [
                     "currency_code" => "PHP", // Philippine Peso
-                    "value" => "500.00", // Set this to the actual amount
+                    "value" => "199.00", // Set this to the actual amount
                     "breakdown" => [ // Optional: provides more detail on the pricing
                         "item_total" => [
                             "currency_code" => "PHP",
-                            "value" => "500.00"
+                            "value" => "199.00"
                         ]
                     ]
                 ]

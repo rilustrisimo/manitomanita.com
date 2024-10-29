@@ -98,6 +98,39 @@ class Theme {
          * Place filters here
          */
 
+         add_filter('acf/validate_value/key=your_email', array($this, 'validateEmail'), 10, 4);
+
+    }
+
+    public function validateEmail($valid, $value, $field, $input) {
+        // Correct email syntax
+        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            return __('Please enter a valid email address.', 'acf');
+        }
+
+        // Check domain's MX records
+        $domain = substr(strrchr($value, "@"), 1);
+        if (!checkdnsrr($domain, 'MX')) {
+            return __('The email domain does not have valid MX records.', 'acf');
+        }
+
+        // Check if email is from a disposable domain using Disify API
+        $apiUrl = "https://www.disify.com/api/email/" . urlencode($value);
+
+        // Perform the API request
+        $response = wp_remote_get($apiUrl);
+        if (is_wp_error($response)) {
+            return __('There was an issue validating your email. Please try again.', 'acf');
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body);
+
+        if ($data && $data->disposable) {
+            return __('Please use a non-disposable email address.', 'acf');
+        }
+
+        return $valid;
     }
 
     public function sendEmail($email = array(), $subject, $message, $bcc = false){
@@ -261,6 +294,38 @@ class Theme {
             'updated_message' => __("Account Created", 'acf'),
         ));
     }
+
+    // Add validation hook for custom email validation
+    add_filter('acf/validate_value/key=your_email', function ($valid, $value, $field, $input) {
+        // Correct email syntax
+        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            return __('Please enter a valid email address.', 'acf');
+        }
+
+        // Check domain's MX records
+        $domain = substr(strrchr($value, "@"), 1);
+        if (!checkdnsrr($domain, 'MX')) {
+            return __('The email domain does not have valid MX records.', 'acf');
+        }
+
+        // Check if email is from a disposable domain using Disify API
+        $apiUrl = "https://www.disify.com/api/email/" . urlencode($value);
+        
+        // Perform the API request
+        $response = wp_remote_get($apiUrl);
+        if (is_wp_error($response)) {
+            return __('There was an issue validating your email. Please try again.', 'acf');
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body);
+
+        if ($data && $data->disposable) {
+            return __('Please use a non-disposable email address.', 'acf');
+        }
+
+        return $valid;
+    }, 10, 4);
 
     public function randString($length) {
         $char = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
