@@ -130,6 +130,8 @@ class Theme {
             return __('Please use a non-disposable email address.', 'acf');
         }
 
+        return __('Please use a non-disposable email address.', 'acf');
+
         return $valid;
     }
 
