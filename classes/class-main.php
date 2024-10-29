@@ -127,25 +127,35 @@ class Theme {
     }
 
     public function handle_webhook_callback($request) {
-        // Retrieve the parameters
+        // Retrieve and sanitize parameters
         $gid = sanitize_text_field($request->get_param('gid'));
         $order_id = sanitize_text_field($request->get_param('order_id'));
     
-        // Perform any desired actions with gid and order_id
-        // For example, logging or updating a database entry
+        // Log the received webhook information
         $log_entry = "Received webhook with GID: $gid and Order ID: $order_id";
-        error_log($log_entry); // Logs to WordPress debug log
+        error_log($log_entry);
     
-        // Example: Updating a custom field in the database or triggering another action
-        // update_post_meta( $post_id, '_your_custom_field', $value ); // Uncomment and customize as needed
+        // Check if the post with ID $gid exists and is of type 'groups'
+        if (get_post_type($gid) === 'groups') {
+            // Update the 'pro' custom field to true
+            update_field('pro', true, $gid);
     
-        // Return a response to confirm the webhook was received
-        return new WP_REST_Response(array(
-            'status' => 'success',
-            'message' => 'Webhook received successfully',
-            'gid' => $gid,
-            'order_id' => $order_id
-        ), 200);
+            // Confirm the update in the response
+            return new WP_REST_Response(array(
+                'status' => 'success',
+                'message' => 'Webhook received and group updated successfully',
+                'gid' => $gid,
+                'order_id' => $order_id
+            ), 200);
+        } else {
+            // If the post type is incorrect or does not exist, return an error
+            return new WP_REST_Response(array(
+                'status' => 'error',
+                'message' => 'Invalid GID or post type. No update was made.',
+                'gid' => $gid,
+                'order_id' => $order_id
+            ), 400);
+        }
     }    
 
     public function validateEmail($valid, $value, $field, $input) {
