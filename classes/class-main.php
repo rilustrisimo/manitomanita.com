@@ -99,7 +99,7 @@ class Theme {
          */
 
          add_filter('acf/validate_value/name=your_email', array($this, 'validateEmail'), 10, 4);
-
+         add_filter('acf/validate_value/name=email', array($this, 'validateEmail'), 10, 4);
     }
 
     public function validateEmail($valid, $value, $field, $input) {
