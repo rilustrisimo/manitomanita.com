@@ -516,7 +516,7 @@ class Groups extends Theme {
         }
     
         // Send success response if all operations succeeded
-        wp_send_json_success(array($result, $message));
+        wp_send_json_success(array('result' => $result, 'message' => $message));
     }    
     
     public function setEmailForMembers($gid){
