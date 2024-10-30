@@ -77,8 +77,9 @@ class Groups extends Theme {
     
         // Query 'users' posts where 'groups' field (post object) matches the specified group_id
         $args = array(
-            'post_type'  => 'users',
-            'meta_query' => array(
+            'post_type'      => 'users',
+            'posts_per_page' => -1, // Retrieve all matching posts
+            'meta_query'     => array(
                 array(
                     'key'     => 'groups',   // The ACF field name that links to 'groups' post ID
                     'value'   => $group_id,  // The group ID to match
@@ -131,8 +132,9 @@ class Groups extends Theme {
     
         // Query 'users' posts where 'groups' field (post object) matches the specified group_id
         $args = array(
-            'post_type'  => 'users',
-            'meta_query' => array(
+            'post_type'      => 'users',
+            'posts_per_page' => -1, // Retrieve all matching posts
+            'meta_query'     => array(
                 array(
                     'key'     => 'groups',   // The ACF field name that links to 'groups' post ID
                     'value'   => $group_id,  // The group ID to match
@@ -162,7 +164,7 @@ class Groups extends Theme {
             'message' => 'Users retrieved successfully',
             'users' => $users_data
         ), 200);
-    }    
+    }     
 
     public function unshuffle_group() {
         register_rest_route('custom-webhook/v1', '/unshuffle-group', array(
