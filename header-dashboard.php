@@ -67,14 +67,22 @@ setcookie($cookiename, $post_count, $expirationTime, '/');
 						<nav class="main-nav-header" role="navigation">
 							<ul id="navigation-dashboard" class="main-nav">
 								<li class="menu-item menu-item-type-custom menu-item-object-custom"><a href="javascript:;" <?php echo (get_field('matched', $group->getGroupId()))?'disabled':'data-fancybox="" data-src="#join-group"'; ?>>Join Group</a></li>
-								<?php if(!get_field('matched', $group->getGroupId())): ?>
-									<li class="menu-item menu-item-type-custom menu-item-object-custom shuff-btn"><a href="javascript:;" <?php echo $print; ?>><?php echo (wp_is_mobile())?'Shuffle':'Shuffle Match'; ?></a></li>
-								<?php else: ?>
-									<li class="menu-item menu-item-type-custom menu-item-object-custom join-btn"><a href="javascript:;" id="who-joined" data-fancybox data-src="#who-joined-box"><?php echo (wp_is_mobile())?'Joined':'Who Joined'; ?></a></li>
-								<?php endif; ?>
+								
 								
 								<?php if(!$pro): ?>
+									<?php if(!get_field('matched', $group->getGroupId())): ?>
+										<li class="menu-item menu-item-type-custom menu-item-object-custom shuff-btn"><a href="javascript:;" <?php echo $print; ?>><?php echo (wp_is_mobile())?'Shuffle':'Shuffle Match'; ?></a></li>
+									<?php else: ?>
+										<li class="menu-item menu-item-type-custom menu-item-object-custom join-btn"><a href="javascript:;" id="who-joined" data-fancybox data-src="#who-joined-box"><?php echo (wp_is_mobile())?'Joined':'Who Joined'; ?></a></li>
+									<?php endif; ?>
+
 									<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="#" id="go-pro-btn">Try Pro <span><i class="fa-solid fa-star"></i></span></a></li>
+								<?php else:?>
+									<?php if(get_field('matched', $group->getGroupId())): ?>
+										<li class="menu-item menu-item-type-custom menu-item-object-custom join-btn"><a href="javascript:;" id="who-joined" data-fancybox data-src="#who-joined-box"><?php echo (wp_is_mobile())?'Joined':'Who Joined'; ?></a></li>
+									<?php endif; ?>
+
+									<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="#" id="pro-actions-btn">PRO Actions <i class="fa-solid fa-bars"></i></a></li>
 								<?php endif; ?>
 								<!--<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="<?php echo get_permalink(77); ?>">Gift Ideas</a></li>-->
 							</ul>							
