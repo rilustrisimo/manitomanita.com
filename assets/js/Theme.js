@@ -187,7 +187,7 @@ var Theme = {
     },
 
     initProButtons: function($){
-        const groupid = $('input#groupid-val');
+        const groupid = $('input#groupid-val').val();
 
         $('.pro-list-btn').click(function(e){
             e.preventDefault();
