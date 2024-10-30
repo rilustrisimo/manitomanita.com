@@ -119,14 +119,12 @@ var Theme = {
                         if(resp.data[0]){
                             $.fancybox.close();
                             Theme.userid = userid.val(); //set global user id
-                            /*
-                            if(Theme.action == "shuffle-group"){
-                                Theme.initMatching($, Theme.userid);
-                            }else{
-                                Theme.initCustomPopup($);
-                                Theme.removeOverlay($);
-                            }
-                            */
+
+                            $('#pro-actions.pop-container').css('display', 'flex');
+                            
+                            Theme.getProListActions($);
+
+                            Theme.removeOverlay($);
                         }else{
                             notice.html('Incorrect Password for '+resp.data[1]+'. Reset and Generate New Password <a href="javascript:;" id="reset-pass">Here</a>.');
                             notice.show();
@@ -149,6 +147,38 @@ var Theme = {
             });
 
 
+        });
+    },
+
+    getProListActions: function($){
+        const groupid = $('input#groupid-val');
+
+        $.ajax ({
+            url: $('#ajax-url').val(),
+            type: 'POST',
+            dataType: 'JSON',
+            data: {
+                // the value of data.action is the part AFTER 'wp_ajax_' in
+                // the add_action ('wp_ajax_xxx', 'yyy') in the PHP above
+                action: 'get_pro_list',
+                // ANY other properties of data are passed to your_function()
+                // in the PHP global $_REQUEST (or $_POST in this case)
+                gid : groupid.val()
+                },
+            beforeSend : function()    {           
+
+            },
+            success: function (resp) {
+                if(resp.success){
+                    console.log(resp);
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                // this error case means that the ajax call, itself, failed, e.g., a syntax error
+                // in your_function()
+                console.log('Request failed: ' + thrownError.message) ;
+                Theme.removeOverlay($);
+                },
         });
     },
 

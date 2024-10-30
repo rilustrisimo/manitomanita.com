@@ -39,6 +39,9 @@ class Groups extends Theme {
         add_action('acf/save_post', array($this, 'my_save_post'));
         add_action( 'wp_ajax_execute_matching', array($this, 'execute_matching') );
         add_action( 'wp_ajax_nopriv_execute_matching', array($this, 'execute_matching') ); 
+        
+        add_action( 'wp_ajax_get_pro_list', array($this, 'get_pro_list') );
+        add_action( 'wp_ajax_nopriv_get_pro_list', array($this, 'get_pro_list') ); 
     }
 
     protected function initFilters() {
@@ -47,6 +50,12 @@ class Groups extends Theme {
          */
 
         add_filter('pre_get_document_title', array($this, 'replace_group_title'), 50);
+    }
+
+    public function get_pro_list(){
+        $gid = $_POST['gid'];
+
+        wp_send_json_success($gid);
     }
 
     
