@@ -210,6 +210,8 @@ var Theme = {
                 .then(data => {
                     Theme.removeOverlay($);
 
+                    console.log(data);
+
                     if (data.success) {
                         location.reload();  // Refresh the page on success
                     } else {

@@ -59,7 +59,7 @@ class Groups extends Theme {
     public function unshuffle_group() {
         register_rest_route('custom-webhook/v1', '/unshuffle-group', array(
             'methods' => 'POST',
-            'callback' => 'handle_unshuffle_group',
+            'callback' => array($this, 'handle_unshuffle_group'),
             'permission_callback' => '__return_true', // Note: Customize for secure access if needed
         ));
     }
