@@ -58,7 +58,6 @@ class Groups extends Theme {
         
 
         $list = "";
-        $list .= $fields['matched'];
         $list .= "<ul>";
         $list .= "<li><a href='#' class='pro-list-btn' data-btn='shuffle'>Shuffle Group</a></li>";
         $list .= "<li><a href='#' class='pro-list-btn' data-btn='un-shuffle'>Unshuffle </a></li>";
@@ -69,7 +68,7 @@ class Groups extends Theme {
         $list .= "<li><a href='#' class='pro-list-btn' data-btn='export'>Export Data</a></li>";
         $list .= "</ul>";
 
-        wp_send_json_success($list);
+        wp_send_json_success($fields);
     }
 
     
