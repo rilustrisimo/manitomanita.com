@@ -222,28 +222,52 @@ var Theme = {
             }
 
             if(databtn == "un-shuffle"){
-                Theme.initShowOverlay($);
-                
-                fetch('/wp-json/custom-webhook/v1/unshuffle-group', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
-                })
-                .then(response => response.json())
-                .then(data => {
-                    Theme.removeOverlay($);
+                $.fancybox.open({
+                    src: `
+                        <div style="width: 300px; padding: 20px; text-align: center;">
+                            <p>Kindly make sure that all members have not purchased or secured a gift for the current match. Unshuffling the group will give each member a new match when you shuffle again.</p>
+                            <button id="proceedButton" style="margin: 10px; padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Proceed</button>
+                            <button id="cancelButton" style="padding: 8px 16px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+                        </div>
+                    `,
+                    type: 'html',
+                    smallBtn: false,
+                    touch: false,
+                    trapFocus: false,
+                    afterShow: function(instance, current) {
+                        // "Proceed" button functionality
+                        $('#proceedButton').on('click', function() {
+                            $.fancybox.close(); // Close the modal
+                            
+                            Theme.initShowOverlay($);
+                            
+                            fetch('/wp-json/custom-webhook/v1/unshuffle-group', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                Theme.removeOverlay($);
 
-                    console.log(data);
+                                console.log(data);
 
-                    if (data.success) {
-                        location.reload();  // Refresh the page on success
-                    } else {
-                        alert(`Error: ${data.message}`);  // Show error message
+                                if (data.success) {
+                                    location.reload();  // Refresh the page on success
+                                } else {
+                                    alert(`Error: ${data.message}`);  // Show error message
+                                }
+                            })
+                            .catch(error => {
+                                alert('An unexpected error occurred: ' + error.message);
+                                Theme.removeOverlay($);
+                            });
+                        });
+                        // "Cancel" button functionality
+                        $('#cancelButton').on('click', function() {
+                            $.fancybox.close(); // Simply close the modal
+                        });
                     }
-                })
-                .catch(error => {
-                    alert('An unexpected error occurred: ' + error.message);
-                    Theme.removeOverlay($);
                 });
             }
         });
