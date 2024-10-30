@@ -50,15 +50,36 @@ var Theme = {
             $('#pro-actions-btn').click(function(e){
                 e.preventDefault();
 
-                Theme.ProInitPasswordScripts($);
+                Theme.openPasswordField($);
             });
         }
+    },
+
+    openPasswordField: function($) {
+        $.fancybox.open({
+            src: box,
+            type: 'inline',
+            animationDuration : 600,
+            animationEffect   : 'slide-in-out',
+            btnTpl : {
+                smallBtn:
+                '<button data-fancybox-close class="fancybox-button fancybox-button--close" title="{{CLOSE}}">' +
+                '<i class="fas fa-times"></i>' +
+                "</button>",
+            },
+            afterShow : function( instance, current ) {
+                $('.popup').find('.fancybox-button').appendTo('.popup__title');
+                $('input[name="user-data"]').val($('input#groupid-val').val());
+
+                Theme.ProInitPasswordScripts($);
+            }
+        });
     },
 
     ProInitPasswordScripts: function($){
         var submitbtn = $('#input-pw input[type="submit"]');
         var pw = $('#input-pw input[type="password"]');
-        var userid = $('#input-pw input[name="user-data"]');
+        var userid = $('input#groupid-val');
         var notice = $('#input-pw .notices');
 
         submitbtn.unbind(); // clear binds
