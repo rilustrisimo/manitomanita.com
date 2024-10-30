@@ -174,6 +174,7 @@ var Theme = {
                     console.log(resp);
 
                     $('#pro-actions .pop-container__content').html(resp.data);
+                    Theme.initProButtons($)
                 }
             },
             error: function (xhr, ajaxOptions, thrownError) {
@@ -182,6 +183,20 @@ var Theme = {
                 console.log('Request failed: ' + thrownError.message) ;
                 Theme.removeOverlay($);
                 },
+        });
+    },
+
+    initProButtons: function($){
+        const groupid = $('input#groupid-val');
+
+        $('.pro-list-btn').click(function(e){
+            e.preventDefault();
+            
+            const databtn = $(this).attr('data-btn');
+
+            if(databtn == "shuffle"){
+                Theme.initMatching($, groupid);
+            }
         });
     },
 
