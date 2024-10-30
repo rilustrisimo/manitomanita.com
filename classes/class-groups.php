@@ -42,6 +42,10 @@ class Groups extends Theme {
         
         add_action( 'wp_ajax_get_pro_list', array($this, 'get_pro_list') );
         add_action( 'wp_ajax_nopriv_get_pro_list', array($this, 'get_pro_list') ); 
+
+        // Register REST API route
+        add_action('rest_api_init', array($this, 'unshuffle_group'));
+
     }
 
     protected function initFilters() {
@@ -51,6 +55,38 @@ class Groups extends Theme {
 
         add_filter('pre_get_document_title', array($this, 'replace_group_title'), 50);
     }
+
+    public function unshuffle_group() {
+        register_rest_route('custom-webhook/v1', '/unshuffle-group', array(
+            'methods' => 'POST',
+            'callback' => 'handle_unshuffle_group',
+            'permission_callback' => '__return_true', // Note: Customize for secure access if needed
+        ));
+    }
+
+    public function handle_unshuffle_group($request) {
+        // Get the group_id from the request
+        $group_id = $request->get_param('group_id');
+        
+        // Check if the post exists and is of the 'groups' custom post type
+        if (get_post_type($group_id) === 'groups') {
+            // Update the 'matched' custom field to false
+            $updated = update_post_meta($group_id, 'matched', false);
+            
+            // Check if the update was successful
+            if ($updated) {
+                // Respond with success
+                return new WP_REST_Response(array('success' => true, 'message' => 'Group updated'), 200);
+            } else {
+                // Respond with failure if update failed
+                return new WP_REST_Response(array('success' => false, 'message' => 'Failed to update group'), 500);
+            }
+        } else {
+            // Respond with failure if post does not exist or is not of 'groups' type
+            return new WP_REST_Response(array('success' => false, 'message' => 'Invalid group ID'), 400);
+        }
+    }
+    
 
     public function get_pro_list(){
         $gid = (int)$_POST['gid'];

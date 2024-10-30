@@ -197,6 +197,30 @@ var Theme = {
             if(databtn == "shuffle"){
                 Theme.initMatching($, groupid);
             }
+
+            if(databtn == "un-shuffle"){
+                Theme.initShowOverlay($);
+                
+                fetch('/wp-json/custom-webhook/v1/unshuffle-group', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ group_id: yourGroupId })  // Replace with dynamic group ID if needed
+                })
+                .then(response => response.json())
+                .then(data => {
+                    Theme.removeOverlay($);
+
+                    if (data.success) {
+                        location.reload();  // Refresh the page on success
+                    } else {
+                        alert(`Error: ${data.message}`);  // Show error message
+                    }
+                })
+                .catch(error => {
+                    alert('An unexpected error occurred: ' + error.message);
+                    Theme.removeOverlay($);
+                });
+            }
         });
     },
 
