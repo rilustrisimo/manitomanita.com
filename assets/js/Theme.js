@@ -274,6 +274,60 @@ var Theme = {
             if(databtn == "joined"){
                 Theme.joinedFunction($, groupid);
             }
+
+            if(databtn == "matches"){
+                Theme.matchesFunction($, groupid);
+            }
+        });
+    },
+
+    matchesFunction: function($, groupid){
+        Theme.initShowOverlay($);
+                    
+        fetch('/wp-json/custom-webhook/v1/matches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
+        })
+        .then(response => response.json())
+        .then(data => {
+            Theme.removeOverlay($);
+            
+            // Check if the response is successful
+            if (data.success) {
+                // Build HTML for the table
+                let tableHTML = '<table style="width: 100%; border-collapse: collapse;">';
+                tableHTML += '<thead><tr><th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Member Name</th>';
+                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Match Name</th></tr></thead><tbody>';
+    
+                // Populate table rows with user data, alternating background colors
+                data.users.forEach((user, index) => {
+                    let rowColor = index % 2 === 0 ? '#ffffff' : '#f9f9f9';
+                    tableHTML += `<tr style="background-color: ${rowColor};">`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.name} (${user.screen})</td>`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.pair_name} ${user.pair_screen}</td>`;
+                    tableHTML += '</tr>';
+                });
+    
+                tableHTML += '</tbody></table>';
+    
+                // Display the table in a FancyBox modal
+                $.fancybox.open({
+                    src: `<div style="padding: 20px; max-width: 600px;">${tableHTML}</div>`,
+                    type: 'html',
+                    opts: {
+                        afterShow: function() {
+                            console.log('Modal with user table displayed');
+                        }
+                    }
+                });
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('An unexpected error occurred: ' + error.message);
+            Theme.removeOverlay($);
         });
     },
 
