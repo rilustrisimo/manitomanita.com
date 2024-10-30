@@ -188,6 +188,7 @@ var Theme = {
 
     initProButtons: function($){
         const groupid = $('input#groupid-val').val();
+        const burl = $('#base-url').val();
 
         $('.pro-list-btn').click(function(e){
             e.preventDefault();
@@ -201,7 +202,7 @@ var Theme = {
             if(databtn == "un-shuffle"){
                 Theme.initShowOverlay($);
                 
-                fetch('/wp-json/custom-webhook/v1/unshuffle-group', {
+                fetch(burl + '/wp-json/custom-webhook/v1/unshuffle-group', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
