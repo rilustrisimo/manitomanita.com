@@ -272,12 +272,12 @@ var Theme = {
             }
 
             if(databtn == "joined"){
-                Theme.joinedFunction($);
+                Theme.joinedFunction($, groupid);
             }
         });
     },
 
-    joinedFunction: function($){
+    joinedFunction: function($, groupid){
         Theme.initShowOverlay($);
                     
         fetch('/wp-json/custom-webhook/v1/joined', {
