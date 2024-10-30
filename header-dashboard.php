@@ -27,14 +27,29 @@ $meta_query = array(
 		'value' => $groupid,
 	),
 );
-
+/*
 $post_count = $group->get_users_count_with_meta($meta_query);
 $print = ($post_count > 2)?"class='user-action shuffle-btn' group-data='".$group->getGroupId()."' data-action='shuffle-group'":'disabled';
 
 $cookiename = 'users_group_count_' . $groupid;
 $expirationTime = time() + (30 * 24 * 60 * 60); // 30 days * 24 hours * 60 minutes * 60 seconds
 setcookie($cookiename, $post_count, $expirationTime, '/');
+*/
 
+$post_count = $group->get_users_count_with_meta($meta_query);
+$cookiename = 'users_group_count_' . $groupid;
+$expirationTime = time() + (30 * 24 * 60 * 60); // 30 days
+
+// Check if cookie exists and compare it with current post_count
+if (isset($_COOKIE[$cookiename]) && $_COOKIE[$cookiename] == $post_count) {
+    // If the post count has not changed, disable the button
+    $print = 'disabled';
+} else {
+    // If the post count has changed, enable the shuffle button
+    $print = ($post_count > 2) ? "class='user-action shuffle-btn' group-data='" . $group->getGroupId() . "' data-action='shuffle-group'" : 'disabled';
+    // Update the cookie with the new post count
+    setcookie($cookiename, $post_count, $expirationTime, '/');
+}
 
 ?>
 <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
