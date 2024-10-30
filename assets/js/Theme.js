@@ -253,7 +253,7 @@ var Theme = {
                                 console.log(data);
 
                                 if (data.success) {
-                                    location.reload();  // Refresh the page on success
+                                    $('#reload').submit(); // Refresh the page if matching succeeded
                                 } else {
                                     alert(`Error: ${data.message}`);  // Show error message
                                 }
