@@ -56,6 +56,8 @@ var Theme = {
     },
 
     openPasswordField: function($) {
+        var box = '#input-password';
+
         $.fancybox.open({
             src: box,
             type: 'inline',
