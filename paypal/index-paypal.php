@@ -38,8 +38,7 @@ $groupid = $group->getGroupId();  // Replace with your actual group ID
         }).then(function(details) {
 
             // Fire additional GET request to the specified URL after a successful purchase
-            fetch(`https://dev.manitomanita.com/wp-json/custom-api/v1/webhook/?gid=${gid}&order_id=${data.orderID}`, { //staging
-            //fetch(`https://manitomanita.com/wp-json/custom-api/v1/webhook/?gid=${gid}&order_id=${data.orderID}`, { //live
+            fetch(`/wp-json/custom-api/v1/webhook/?gid=${gid}&order_id=${data.orderID}`, { //staging
                 method: 'GET'
             })
             .then(function(response) {
