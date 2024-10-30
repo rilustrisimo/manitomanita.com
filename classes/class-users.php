@@ -112,6 +112,10 @@ class Users extends Theme {
 
     public function generateSeeMatchElements($uid) {
         $pair = get_field('pair', $uid);
+        $group = new Groups();
+        $groupid = $group->getGroupId();  // Replace with your actual group ID
+        $fields = $group->getGroupDetails($groupid);
+        $pro = (isset($fields['pro']))?$fields['pro']:false;
 
         echo '<div class="header-image"><img src="'.get_template_directory_uri().'/assets/images/gift.png"></div>';
         echo '<div class="inner-contents">';
@@ -152,18 +156,20 @@ class Users extends Theme {
         echo '                <h2><i class="fas fa-gifts"></i> ADDRESS <span>AND</span> CONTACTS</h2>';
         echo                  '<div style="padding: 32px;">'.get_field('my_address_and_contact_details', $pair).'</div>';
 
-        /** VALUE DEALS */
-        echo '<h2>GREAT VALUE <span>DEALS</span></h2><div class="row product-list"><div class="col-md-12 col-sm-12 col-12 product-item text-center"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-        <!-- Manito Manita Match Page -->
-        <ins class="adsbygoogle"
-             style="display:inline-block;width:300px;height:250px"
-             data-ad-client="ca-pub-8648985139343614"
-             data-ad-slot="3964563495"></ins>
-        <script>
-             (adsbygoogle = window.adsbygoogle || []).push({});
-        </script></div></div>';
-        //get_template_part('lazada/assets/offers', 'content');// offers template
-        /** VALUE DEALS END */
+        if(!$pro):
+            /** VALUE DEALS */
+            echo '<h2>GREAT VALUE <span>DEALS</span></h2><div class="row product-list"><div class="col-md-12 col-sm-12 col-12 product-item text-center"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+            <!-- Manito Manita Match Page -->
+            <ins class="adsbygoogle"
+                style="display:inline-block;width:300px;height:250px"
+                data-ad-client="ca-pub-8648985139343614"
+                data-ad-slot="3964563495"></ins>
+            <script>
+                (adsbygoogle = window.adsbygoogle || []).push({});
+            </script></div></div>';
+            //get_template_part('lazada/assets/offers', 'content');// offers template
+            /** VALUE DEALS END */
+        endif;
 
         echo '            </div>';
         echo '            <div class="col-md-12">';
