@@ -204,7 +204,7 @@ var Theme = {
                 fetch('/wp-json/custom-webhook/v1/unshuffle-group', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ group_id: yourGroupId })  // Replace with dynamic group ID if needed
+                    body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
                 })
                 .then(response => response.json())
                 .then(data => {
