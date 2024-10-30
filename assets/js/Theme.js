@@ -121,6 +121,7 @@ var Theme = {
                             Theme.userid = userid.val(); //set global user id
 
                             $('#pro-actions.pop-container').css('display', 'flex');
+                            Theme.popClose($);
                             
                             Theme.getProListActions($);
 
