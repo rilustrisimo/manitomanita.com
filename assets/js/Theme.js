@@ -195,7 +195,30 @@ var Theme = {
             const databtn = $(this).attr('data-btn');
 
             if(databtn == "shuffle"){
-                Theme.initMatching($, groupid);
+                $.fancybox.open({
+                    src: `
+                        <div style="width: 300px; padding: 20px; text-align: center;">
+                            <p>Kindly make sure that all members have already joined the group before proceeding in shuffling.</p>
+                            <button id="proceedButton" style="margin: 10px; padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Proceed</button>
+                            <button id="cancelButton" style="padding: 8px 16px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+                        </div>
+                    `,
+                    type: 'html',
+                    smallBtn: false,
+                    touch: false,
+                    trapFocus: false,
+                    afterShow: function(instance, current) {
+                        // "Proceed" button functionality
+                        $('#proceedButton').on('click', function() {
+                            Theme.initMatching($, groupid); // Run the function
+                            $.fancybox.close(); // Close the modal
+                        });
+                        // "Cancel" button functionality
+                        $('#cancelButton').on('click', function() {
+                            $.fancybox.close(); // Simply close the modal
+                        });
+                    }
+                });
             }
 
             if(databtn == "un-shuffle"){
