@@ -451,6 +451,7 @@ class Groups extends Theme {
 
     public function execute_matching() {
         $result = true; // Default result to true
+        $message = 'success';
     
         try {
             $gid = $_POST['gid'];
@@ -493,7 +494,11 @@ class Groups extends Theme {
             // Update field for each matched pair
             foreach($match1 as $k => $userId) {
                 $update = update_field('pair', $match2[$k], $userId);
-                if(!$update) $result = false; // If update fails, set result to false
+
+                if(!$update){
+                    $result = false; // If update fails, set result to false
+                    $message = 'Pair Update Failed';
+                }
             }
     
             // If all went well, proceed to send email notifications
@@ -505,12 +510,13 @@ class Groups extends Theme {
         } catch (Exception $e) {
             // On any exception, set result to false and return the error message
             $result = false;
+            $message = 'Matching Failed. Check Errors.';
             wp_send_json_error(['error' => $e->getMessage()]);
             return; // Stop execution after sending error response
         }
     
         // Send success response if all operations succeeded
-        wp_send_json_success($result);
+        wp_send_json_success(array($result, $message));
     }    
     
     public function setEmailForMembers($gid){
