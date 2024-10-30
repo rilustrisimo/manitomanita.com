@@ -304,8 +304,8 @@ var Theme = {
                 data.users.forEach((user, index) => {
                     let rowColor = index % 2 === 0 ? '#ffffff' : '#f9f9f9';
                     tableHTML += `<tr style="background-color: ${rowColor};">`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.name} (${user.screen})</td>`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.pair_name} ${user.pair_screen}</td>`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.name} (<b>${user.screen}</b>)</td>`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.pair_name} (<b>${user.pair_screen}</b>)</td>`;
                     tableHTML += '</tr>';
                 });
     
