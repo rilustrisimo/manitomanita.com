@@ -502,7 +502,7 @@ var Theme = {
                         $('#reload').submit(); // Refresh the page if matching succeeded
                     } else {
                         // Display failure message if matching result is false
-                        $('.loader-overlay').html('<div>Matching failed. Please contact administrator <a href="mailto:ilustrisimo.rouie@gmail.com">here</a>.</div>');
+                        alert(`An error occurred: ${resp.data.message}. Please contact the administrator.`);
                     }
                 } else {
                     // Use alert to display error message from server response if error encountered
