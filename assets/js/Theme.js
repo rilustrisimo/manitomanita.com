@@ -494,7 +494,7 @@ var Theme = {
 
             },
             success: function (resp) {
-                //console.log(resp);
+                console.log(resp);
 
                 if(resp.success){
 
