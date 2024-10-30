@@ -172,6 +172,8 @@ var Theme = {
             success: function (resp) {
                 if(resp.success){
                     console.log(resp);
+
+                    $('#pro-actions .pop-container__content').html(resp.data);
                 }
             },
             error: function (xhr, ajaxOptions, thrownError) {

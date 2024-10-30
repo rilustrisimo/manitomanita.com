@@ -54,8 +54,19 @@ class Groups extends Theme {
 
     public function get_pro_list(){
         $gid = $_POST['gid'];
+        $list = "";
 
-        wp_send_json_success($gid);
+        $list .= "<ul>";
+        $list .= "<li><a href='#' class='pro-list-btn' data-btn='shuffle'>Shuffle Group</a></li>";
+        $list .= "<li><a href='#' class='pro-list-btn' data-btn='un-shuffle'>Unshuffle </a></li>";
+        $list .= "<li><a href='#' class='pro-list-btn' data-btn='joined'>Joined Names</a></li>";
+        $list .= "<li><a href='#' class='pro-list-btn' data-btn='matches'>See Matches</a></li>";
+        $list .= "<li><a href='#' class='pro-list-btn' data-btn='kick'>Kick Members</a></li>";
+        $list .= "<li><a href='#' class='pro-list-btn' data-btn='edit'>Edit Member Details</a></li>";
+        $list .= "<li><a href='#' class='pro-list-btn' data-btn='export'>Export Data</a></li>";
+        $list .= "</ul>";
+
+        wp_send_json_success($list);
     }
 
     
