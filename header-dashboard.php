@@ -45,6 +45,7 @@ $print = ($post_count > 2) ? "class='user-action shuffle-btn' group-data='" . $g
 if (!(isset($_COOKIE[$cookiename]) && $_COOKIE[$cookiename] == $post_count)) {
     // Update the cookie with the new post count
     setcookie($cookiename, $post_count, $expirationTime, '/');
+	var_dump('test here');
 }
 
 ?>
