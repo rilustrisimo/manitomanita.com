@@ -495,18 +495,24 @@ var Theme = {
             },
             success: function (resp) {
                 console.log(resp);
-
-                if(resp.success){
-
-                    if(resp.data){
-                        $('#reload').submit();
-                    }else{
+            
+                if (resp.success) {
+                    // Check if matching succeeded or failed
+                    if (resp.data) {
+                        $('#reload').submit(); // Refresh the page if matching succeeded
+                    } else {
+                        // Display failure message if matching result is false
                         $('.loader-overlay').html('<div>Matching failed. Please contact administrator <a href="mailto:ilustrisimo.rouie@gmail.com">here</a>.</div>');
                     }
+                } else {
+                    // Use alert to display error message from server response if error encountered
+                    alert(`An error occurred: ${resp.data.error}. Please contact the administrator.`);
                 }
-
+            
+                // Remove overlay in either case
                 Theme.removeOverlay($);
             },
+            
             error: function (xhr, ajaxOptions, thrownError) {
                 // this error case means that the ajax call, itself, failed, e.g., a syntax error
                 // in your_function()

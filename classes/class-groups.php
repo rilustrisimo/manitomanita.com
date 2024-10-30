@@ -449,73 +449,69 @@ class Groups extends Theme {
         return $emails;
     }
 
-    public function execute_matching(){
-
-        $gid = $_POST['gid'];
-
-        $matched = get_field('matched', $gid);
-        
-        $result = true;
-
-		if(!$matched)
-		{
+    public function execute_matching() {
+        $result = true; // Default result to true
+    
+        try {
+            $gid = $_POST['gid'];
+            $matched = get_field('matched', $gid);
+    
             $args = array(
                 'key' => 'groups',
                 'value' => $gid
             );
-
+    
             $q = parent::createQuery('users', $args);
-
             $users = $q->posts;
             
-			$dontStop = true;
-	
-			$match1 = array();
-			$match2 = array();
-			$emails = array();
-	
-			foreach($users as $user)
-			{
-				$match1[] = $user->ID;
-				$match2[] = $user->ID;
-				$emails[] = get_field('email', $user->ID);
-			}		
-	
-			while($dontStop)
-			{
-				shuffle($match2);
-                $i=0;
+            $dontStop = true;
+            $match1 = array();
+            $match2 = array();
+            $emails = array();
+    
+            // Collect users for matching
+            foreach($users as $user) {
+                $match1[] = $user->ID;
+                $match2[] = $user->ID;
+                $emails[] = get_field('email', $user->ID);
+            }
+    
+            // Ensure no users match with themselves
+            while($dontStop) {
+                shuffle($match2);
+                $i = 0;
                 
-				foreach($match1 as $k => $u)
-				{
-					if($u == $match2[$k])
-					{
-						$i++;
-					}
-				}
-	
-				if($i == 0) $dontStop=false;
+                foreach($match1 as $k => $u) {
+                    if($u == $match2[$k]) {
+                        $i++;
+                    }
+                }
+    
+                if($i == 0) $dontStop = false; // Stop if no matches are the same
             }
-            
-			foreach($match1 as $k => $userId)
-			{
+    
+            // Update field for each matched pair
+            foreach($match1 as $k => $userId) {
                 $update = update_field('pair', $match2[$k], $userId);
-				
-				if(!$update) $result = false;
+                if(!$update) $result = false; // If update fails, set result to false
             }
-            
-            if($result){
+    
+            // If all went well, proceed to send email notifications
+            if($result) {
                 $this->setEmailForMembers($gid);
-            
                 update_field('matched', true, $gid);
             }
-			
-		}else{
+            
+        } catch (Exception $e) {
+            // On any exception, set result to false and return the error message
             $result = false;
+            wp_send_json_error(['error' => $e->getMessage()]);
+            return; // Stop execution after sending error response
         }
-
+    
+        // Send success response if all operations succeeded
         wp_send_json_success($result);
-    }
+    }    
     
     public function setEmailForMembers($gid){
         $tag = "group-matched";
