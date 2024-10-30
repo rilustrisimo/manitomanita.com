@@ -58,7 +58,7 @@ class Groups extends Theme {
         
 
         $list = "";
-        $list .= "<ul>";
+        $list .= "<ul class='pro-btns-list'>";
         $list .= (!$fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='shuffle'>Shuffle Group</a></li>":"<li><a href='javascript:;' disabled>Shuffle Group</a></li>";
         $list .= ($fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='un-shuffle'>Unshuffle</a></li>":"<li><a href='javascript:;' disabled>Unshuffle</a></li>";
         $list .= "<li><a href='#' class='pro-list-btn' data-btn='joined'>Joined Names</a></li>";

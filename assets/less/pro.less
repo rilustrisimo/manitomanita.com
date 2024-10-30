@@ -21,6 +21,27 @@
     }
 }
 
+.pro-btns-list {
+    list-style: none;
+
+    li {
+        a {
+            height: 45px;
+            line-height: 45px;
+            padding: 0 20px;
+            font-size: 18px;
+            background-color: #1b1b1b;
+            color: #fff;
+
+            &[disabled] {
+                background: rgba(0, 0, 0, 0.5);
+                cursor: not-allowed;
+                border: none;
+            }
+        }
+    }
+}
+
 /* Style for the overlay */
 #loader-overlay-paypal {
     position: fixed;
