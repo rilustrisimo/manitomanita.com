@@ -54,8 +54,11 @@ class Groups extends Theme {
 
     public function get_pro_list(){
         $gid = $_POST['gid'];
-        $list = "";
+        $fields = $group->getGroupDetails($gid);
+        
 
+        $list = "";
+        $list .= print_r($fields);
         $list .= "<ul>";
         $list .= "<li><a href='#' class='pro-list-btn' data-btn='shuffle'>Shuffle Group</a></li>";
         $list .= "<li><a href='#' class='pro-list-btn' data-btn='un-shuffle'>Unshuffle </a></li>";
