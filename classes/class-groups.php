@@ -452,6 +452,7 @@ class Groups extends Theme {
     public function execute_matching() {
         $result = true; // Default result to true
         $message = 'success';
+        $maxRetries = 3; // Maximum number of retries for each update
     
         try {
             $gid = $_POST['gid'];
@@ -471,38 +472,51 @@ class Groups extends Theme {
             $emails = array();
     
             // Collect users for matching
-            foreach($users as $user) {
+            foreach ($users as $user) {
                 $match1[] = $user->ID;
                 $match2[] = $user->ID;
                 $emails[] = get_field('email', $user->ID);
             }
     
             // Ensure no users match with themselves
-            while($dontStop) {
+            while ($dontStop) {
                 shuffle($match2);
                 $i = 0;
                 
-                foreach($match1 as $k => $u) {
-                    if($u == $match2[$k]) {
+                foreach ($match1 as $k => $u) {
+                    if ($u == $match2[$k]) {
                         $i++;
                     }
                 }
     
-                if($i == 0) $dontStop = false; // Stop if no matches are the same
+                if ($i == 0) $dontStop = false; // Stop if no matches are the same
             }
     
-            // Update field for each matched pair
-            foreach($match1 as $k => $userId) {
-                $update = update_field('pair', $match2[$k], $userId);
-
-                if(!$update){
-                    $result = false; // If update fails, set result to false
-                    $message = 'Pair Update Failed';
+            // Update field for each matched pair with retry logic
+            foreach ($match1 as $k => $userId) {
+                $attempts = 3;
+                $updated = false;
+    
+                while ($attempts < $maxRetries && !$updated) {
+                    $update = update_field('pair', $match2[$k], $userId);
+    
+                    if ($update) {
+                        $updated = true; // Successfully updated
+                    } else {
+                        $attempts++; // Increment the attempt counter
+                        sleep(1); // Optional: wait before retrying (1 second)
+                    }
+                }
+    
+                if (!$updated) {
+                    $result = false; // If all attempts fail, set result to false
+                    $message = 'Pair Update Failed for User ID: ' . $userId;
+                    break; // Exit the loop on failure
                 }
             }
     
             // If all went well, proceed to send email notifications
-            if($result) {
+            if ($result) {
                 $this->setEmailForMembers($gid);
                 update_field('matched', true, $gid);
             }
