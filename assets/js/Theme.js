@@ -498,8 +498,8 @@ var Theme = {
             
                 if (resp.success) {
                     // Check if matching succeeded or failed
-                    if (resp.data) {
-                        //$('#reload').submit(); // Refresh the page if matching succeeded
+                    if (resp.data.result) {
+                        $('#reload').submit(); // Refresh the page if matching succeeded
                     } else {
                         // Display failure message if matching result is false
                         $('.loader-overlay').html('<div>Matching failed. Please contact administrator <a href="mailto:ilustrisimo.rouie@gmail.com">here</a>.</div>');
