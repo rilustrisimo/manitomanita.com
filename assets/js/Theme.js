@@ -272,30 +272,58 @@ var Theme = {
             }
 
             if(databtn == "joined"){
-                Theme.initShowOverlay($);
-                            
-                fetch('/wp-json/custom-webhook/v1/joined', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
-                })
-                .then(response => response.json())
-                .then(data => {
-                    Theme.removeOverlay($);
-
-                    console.log(data);
-/*
-                    if (data.success) {
-                        $('#reload').submit(); // Refresh the page if matching succeeded
-                    } else {
-                        alert(`Error: ${data.message}`);  // Show error message
-                    }*/
-                })
-                .catch(error => {
-                    alert('An unexpected error occurred: ' + error.message);
-                    Theme.removeOverlay($);
-                });
+                Theme.joinedFunction($);
             }
+        });
+    },
+
+    joinedFunction: function($){
+        Theme.initShowOverlay($);
+                    
+        fetch('/wp-json/custom-webhook/v1/joined', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
+        })
+        .then(response => response.json())
+        .then(data => {
+            Theme.removeOverlay($);
+            
+            // Check if the response is successful
+            if (data.success) {
+                // Build HTML for the table
+                let tableHTML = '<table style="width: 100%; border-collapse: collapse;">';
+                tableHTML += '<thead><tr><th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Name</th>';
+                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Screenname</th></tr></thead><tbody>';
+    
+                // Populate table rows with user data, alternating background colors
+                data.users.forEach((user, index) => {
+                    let rowColor = index % 2 === 0 ? '#ffffff' : '#f9f9f9';
+                    tableHTML += `<tr style="background-color: ${rowColor};">`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.name}</td>`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.screen}</td>`;
+                    tableHTML += '</tr>';
+                });
+    
+                tableHTML += '</tbody></table>';
+    
+                // Display the table in a FancyBox modal
+                $.fancybox.open({
+                    src: `<div style="padding: 20px; max-width: 600px;">${tableHTML}</div>`,
+                    type: 'html',
+                    opts: {
+                        afterShow: function() {
+                            console.log('Modal with user table displayed');
+                        }
+                    }
+                });
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('An unexpected error occurred: ' + error.message);
+            Theme.removeOverlay($);
         });
     },
 
