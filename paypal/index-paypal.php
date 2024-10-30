@@ -38,7 +38,7 @@ $groupid = $group->getGroupId();  // Replace with your actual group ID
         }).then(function(details) {
 
             // Fire additional GET request to the specified URL after a successful purchase
-            fetch(`/wp-json/custom-api/v1/webhook/?gid=${gid}&order_id=${data.orderID}`, { //staging
+            fetch(`/wp-json/custom-api/v1/webhook/?gid=${gid}&order_id=${data.orderID}`, { 
                 method: 'GET'
             })
             .then(function(response) {
