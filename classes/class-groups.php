@@ -449,20 +449,47 @@ class Groups extends Theme {
         return $emails;
     }
 
+    // Custom function to reliably update a field with retries using ACF
+    private function reliable_update_field($field_name, $value, $post_id, $max_retries = 3) {
+        $attempts = 0;
+        $updated = false;
+
+        while ($attempts < $max_retries && !$updated) {
+            // Check the current value
+            $current_value = get_field($field_name, $post_id);
+
+            // Only update if the current value is different from the desired value
+            if ($current_value !== $value) {
+                $update = update_field($field_name, $value, $post_id);
+
+                if ($update) {
+                    $updated = true; // Successfully updated
+                } else {
+                    $attempts++; // Increment the attempt counter
+                    sleep(1); // Optional: wait before retrying
+                }
+            } else {
+                $updated = true; // No update needed
+            }
+        }
+
+        return $updated; // Return whether the update was successful
+    }
+
     public function execute_matching() {
         $result = true; // Default result to true
         $message = 'success';
         $maxRetries = 3; // Maximum number of retries for each update
-    
+
         try {
             $gid = $_POST['gid'];
             $matched = get_field('matched', $gid);
-    
+
             $args = array(
                 'key' => 'groups',
                 'value' => $gid
             );
-    
+
             $q = parent::createQuery('users', $args);
             $users = $q->posts;
             
@@ -470,14 +497,14 @@ class Groups extends Theme {
             $match1 = array();
             $match2 = array();
             $emails = array();
-    
+
             // Collect users for matching
             foreach ($users as $user) {
                 $match1[] = $user->ID;
                 $match2[] = $user->ID;
                 $emails[] = get_field('email', $user->ID);
             }
-    
+
             // Ensure no users match with themselves
             while ($dontStop) {
                 shuffle($match2);
@@ -488,37 +515,25 @@ class Groups extends Theme {
                         $i++;
                     }
                 }
-    
+
                 if ($i == 0) $dontStop = false; // Stop if no matches are the same
             }
-    
-            // Update field for each matched pair with retry logic
+
+            // Update field for each matched pair using reliable_update_field
             foreach ($match1 as $k => $userId) {
-                $attempts = 3;
-                $updated = false;
-    
-                while ($attempts < $maxRetries && !$updated) {
-                    $update = update_field('pair', $match2[$k], $userId);
-    
-                    if ($update) {
-                        $updated = true; // Successfully updated
-                    } else {
-                        $attempts++; // Increment the attempt counter
-                        sleep(1); // Optional: wait before retrying (1 second)
-                    }
-                }
-    
+                $updated = $this->reliable_update_field('pair', $match2[$k], $userId, $maxRetries);
+
                 if (!$updated) {
-                    $result = false; // If all attempts fail, set result to false
+                    $result = false; // If update fails, set result to false
                     $message = 'Pair Update Failed for User ID: ' . $userId;
                     break; // Exit the loop on failure
                 }
             }
-    
+
             // If all went well, proceed to send email notifications
             if ($result) {
                 $this->setEmailForMembers($gid);
-                update_field('matched', true, $gid);
+                $this->reliable_update_field('matched', true, $gid, $maxRetries);
             }
             
         } catch (Exception $e) {
@@ -528,10 +543,11 @@ class Groups extends Theme {
             wp_send_json_error(['error' => $e->getMessage()]);
             return; // Stop execution after sending error response
         }
-    
+
         // Send success response if all operations succeeded
         wp_send_json_success(array('result' => $result, 'message' => $message));
-    }    
+    }
+
     
     public function setEmailForMembers($gid){
         $tag = "group-matched";
