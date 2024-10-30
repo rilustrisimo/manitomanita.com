@@ -270,6 +270,32 @@ var Theme = {
                     }
                 });
             }
+
+            if(databtn == "joined"){
+                Theme.initShowOverlay($);
+                            
+                fetch('/wp-json/custom-webhook/v1/joined', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
+                })
+                .then(response => response.json())
+                .then(data => {
+                    Theme.removeOverlay($);
+
+                    console.log(data);
+/*
+                    if (data.success) {
+                        $('#reload').submit(); // Refresh the page if matching succeeded
+                    } else {
+                        alert(`Error: ${data.message}`);  // Show error message
+                    }*/
+                })
+                .catch(error => {
+                    alert('An unexpected error occurred: ' + error.message);
+                    Theme.removeOverlay($);
+                });
+            }
         });
     },
 
