@@ -53,7 +53,7 @@ class Groups extends Theme {
     }
 
     public function get_pro_list(){
-        $gid = $_POST['gid'];
+        $gid = (int)$_POST['gid'];
         $fields = $group->getGroupDetails($gid);
         
 
