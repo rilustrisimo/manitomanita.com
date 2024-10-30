@@ -8,6 +8,12 @@
 
 $promo = new Theme();
 $activepromos = $promo->getActivePromos();
+
+$group = new Groups();
+$groupid = $group->getGroupId();  // Replace with your actual group ID
+$fields = $group->getGroupDetails($groupid);
+$pro = (isset($fields['pro']))?$fields['pro']:false;
+
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -41,5 +47,9 @@ get_template_directory_uri().'/assets/images/loader.gif'; ?>"></div>
 <div id="loader-overlay-paypal" style="display: none;">
     <div class="loader"></div>
 </div>
-<?php get_template_part( 'templates/pro/pro', 'btnpop' ); ?>
+<?php if(!$pro): ?>
+	<?php get_template_part( 'templates/pro/pro', 'btnpop' ); ?>
+<?php else: ?>
+	<?php get_template_part( 'templates/pro/pro', 'actions' ); ?>
+<?php endif; ?>
 <div class="layout-content">
