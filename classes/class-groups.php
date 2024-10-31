@@ -70,25 +70,26 @@ class Groups extends Theme {
         ));
     }
 
-    public function handle_trash_user($request) {
+    function handle_trash_user($request) {
         $user_id = $request->get_param('user_id'); // User post ID to trash
     
-        // Check if the user ID is valid
+        // Validate user ID and post type
         if (!$user_id || get_post_type($user_id) !== 'users') {
             return new WP_REST_Response(array('success' => false, 'message' => 'Invalid user ID'), 400);
         }
     
-        // Temporarily grant the delete_post capability to the current user
-        add_filter('user_has_cap', function($allcaps, $caps, $args) use ($user_id) {
-            if ($args[0] === 'delete_post' && isset($args[2]) && $args[2] == $user_id) {
-                $allcaps[$caps[0]] = true;
-            }
-            return $allcaps;
-        }, 10, 3);
+        // Temporarily switch to a user with full permissions, e.g., an admin (User ID 1 in many cases)
+        $admin_user_id = 1; // Update this to the ID of an administrator or a superuser
+        $original_user = get_current_user_id();
+        wp_set_current_user($admin_user_id);
     
-        // Attempt to move the post to the trash
+        // Attempt to trash the post
         $trashed = wp_trash_post($user_id);
     
+        // Revert back to the original user
+        wp_set_current_user($original_user);
+    
+        // Return the response based on whether the trashing was successful
         if ($trashed) {
             return new WP_REST_Response(array('success' => true, 'message' => 'User trashed successfully'), 200);
         } else {
