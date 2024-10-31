@@ -349,6 +349,7 @@ var Theme = {
                 let tableHTML = '<table style="width: 100%; border-collapse: collapse;">';
                 tableHTML += '<thead><tr><th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Name</th>';
                 tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Screenname</th></tr></thead><tbody>';
+                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Email</th></tr></thead><tbody>';
     
                 // Populate table rows with user data, alternating background colors
                 data.users.forEach((user, index) => {
@@ -356,6 +357,7 @@ var Theme = {
                     tableHTML += `<tr style="background-color: ${rowColor};">`;
                     tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.name}</td>`;
                     tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.screen}</td>`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.email}</td>`;
                     tableHTML += '</tr>';
                 });
     

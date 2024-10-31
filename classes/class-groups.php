@@ -154,6 +154,7 @@ class Groups extends Theme {
                 'ID' => $user->ID,
                 'name' => get_field('name', $user->ID),
                 'screen' => get_field('screen_name', $user->ID),
+                'email' => get_field('screen_name', $user->ID),
                 // Include other fields as needed
             );
         }
