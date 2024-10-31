@@ -78,24 +78,25 @@ class Groups extends Theme {
             return new WP_REST_Response(array('success' => false, 'message' => 'Invalid user ID'), 400);
         }
     
-        // Temporarily switch to a user with full permissions, e.g., an admin (User ID 1 in many cases)
-        $admin_user_id = 1; // Update this to the ID of an administrator or a superuser
-        $original_user = get_current_user_id();
-        wp_set_current_user($admin_user_id);
+        // Directly update the post status to 'trash' without using wp_trash_post
+        $update_result = wp_update_post(array(
+            'ID'          => $user_id,
+            'post_status' => 'trash'
+        ), true); // The second parameter true returns WP_Error on failure
     
-        // Attempt to trash the post
-        $trashed = wp_trash_post($user_id);
-    
-        // Revert back to the original user
-        wp_set_current_user($original_user);
-    
-        // Return the response based on whether the trashing was successful
-        if ($trashed) {
-            return new WP_REST_Response(array('success' => true, 'message' => 'User trashed successfully'), 200);
+        // Check for errors during update
+        if (is_wp_error($update_result)) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'message' => 'Failed to trash the user: ' . $update_result->get_error_message()
+            ), 500);
         } else {
-            return new WP_REST_Response(array('success' => false, 'message' => 'Failed to trash the user'), 500);
+            return new WP_REST_Response(array(
+                'success' => true,
+                'message' => 'User trashed successfully'
+            ), 200);
         }
-    }    
+    }       
 
     public function kick_group() {
         register_rest_route('custom-webhook/v1', '/kick', array(
