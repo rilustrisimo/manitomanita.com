@@ -278,8 +278,106 @@ var Theme = {
             if(databtn == "matches"){
                 Theme.matchesFunction($, groupid);
             }
+
+            if(databtn == "kick"){
+                Theme.kickFunction($, groupid);
+            }
         });
     },
+
+    kickFunction: function($, groupid){
+        Theme.initShowOverlay($);
+    
+        fetch('/wp-json/custom-webhook/v1/kick', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
+        })
+        .then(response => response.json())
+        .then(data => {
+            Theme.removeOverlay($);
+    
+            if (data.success) {
+                let tableHTML = '<table style="width: 100%; border-collapse: collapse;">';
+                tableHTML += '<thead><tr><th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Member Name</th>';
+                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Screen Name</th>';
+                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Kick Member</th></tr></thead><tbody>';
+    
+                data.users.forEach((user, index) => {
+                    let rowColor = index % 2 === 0 ? '#ffffff' : '#f9f9f9';
+                    tableHTML += `<tr style="background-color: ${rowColor};">`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.name}</td>`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.screen}</td>`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;"><a href="#" class="kick-link" data-name="${user.name}" data-link="${user.kick_link}">kick</a></td>`;
+                    tableHTML += '</tr>';
+                });
+    
+                tableHTML += '</tbody></table>';
+    
+                // Display the table in a FancyBox modal
+                $.fancybox.open({
+                    src: `<div style="padding: 20px; max-width: 600px;">${tableHTML}</div>`,
+                    type: 'html',
+                    opts: {
+                        afterShow: function() {
+                            // Attach event listeners to kick links
+                            $('.kick-link').on('click', function(event) {
+                                event.preventDefault();
+                                let userName = $(this).data('name');
+                                let kickLink = $(this).data('link');
+    
+                                // Open confirmation FancyBox
+                                $.fancybox.open({
+                                    src: `<div style="padding: 20px; text-align: center;">
+                                            <p>Are you sure you want to remove <strong>${userName}</strong> from the group?</p>
+                                            <button id="proceed-kick" style="margin-right: 10px;">Proceed</button>
+                                            <button id="cancel-kick">Cancel</button>
+                                          </div>`,
+                                    type: 'html',
+                                    opts: {
+                                        afterShow: function() {
+                                            // Confirm kick action
+                                            $('#proceed-kick').on('click', function() {
+                                                $.fancybox.close(); // Close confirmation
+                                                
+                                                fetch(kickLink, {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' }
+                                                })
+                                                .then(response => response.json())
+                                                .then(result => {
+                                                    if (result.success) {
+                                                        $.fancybox.close(); // Close all FancyBox instances
+                                                        alert('User successfully removed from the group.');
+                                                    } else {
+                                                        alert('Failed to remove the user: ' + result.message);
+                                                    }
+                                                })
+                                                .catch(error => {
+                                                    alert('An unexpected error occurred: ' + error.message);
+                                                });
+                                            });
+    
+                                            // Cancel action
+                                            $('#cancel-kick').on('click', function() {
+                                                $.fancybox.close(); // Close only the confirmation box
+                                            });
+                                        }
+                                    }
+                                });
+                            });
+                        }
+                    }
+                });
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('An unexpected error occurred: ' + error.message);
+            Theme.removeOverlay($);
+        });
+    },    
 
     matchesFunction: function($, groupid){
         Theme.initShowOverlay($);

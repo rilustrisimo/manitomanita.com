@@ -47,6 +47,7 @@ class Groups extends Theme {
         add_action('rest_api_init', array($this, 'unshuffle_group'));
         add_action('rest_api_init', array($this, 'joined_group'));
         add_action('rest_api_init', array($this, 'matches_group'));
+        add_action('rest_api_init', array($this, 'kick_group'));
 
     }
 
@@ -56,6 +57,60 @@ class Groups extends Theme {
          */
 
         add_filter('pre_get_document_title', array($this, 'replace_group_title'), 50);
+    }
+
+    public function kick_group() {
+        register_rest_route('custom-webhook/v1', '/kick', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'handle_kick'),
+            'permission_callback' => '__return_true', // Note: Customize for secure access if needed
+        ));
+    }
+
+    public function handle_kick($request) {
+        // Get the group_id from the request
+        $group_id = $request->get_param('group_id');
+    
+        // Validate that the group_id exists and is of the 'groups' custom post type
+        if (get_post_type($group_id) !== 'groups') {
+            return new WP_REST_Response(array('success' => false, 'message' => 'Invalid group ID'), 400);
+        }
+    
+        // Query 'users' posts where 'groups' field (post object) matches the specified group_id
+        $args = array(
+            'post_type'      => 'users',
+            'posts_per_page' => -1, // Retrieve all matching posts
+            'meta_query'     => array(
+                array(
+                    'key'     => 'groups',   // The ACF field name that links to 'groups' post ID
+                    'value'   => $group_id,  // The group ID to match
+                    'compare' => '='
+                )
+            )
+        );
+    
+        // Run the query to get matching users
+        $user_query = new WP_Query($args);
+        $users = $user_query->posts;
+    
+        // Prepare response data for each matching user
+        $users_data = array();
+        foreach ($users as $user) {
+            $users_data[] = array(
+                'ID' => $user->ID,
+                'name' => get_field('name', $user->ID),
+                'screen' => get_field('screen_name', $user->ID),
+                'kick_link' => get_delete_post_link( $user->ID )
+                // Include other fields as needed
+            );
+        }
+    
+        // Return the response with matching users
+        return new WP_REST_Response(array(
+            'success' => true,
+            'message' => 'Users data and trash link retrieved successfully',
+            'users' => $users_data
+        ), 200);
     }
 
     public function matches_group() {
