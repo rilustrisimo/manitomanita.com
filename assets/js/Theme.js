@@ -350,6 +350,7 @@ var Theme = {
                                                 .then(result => {
                                                     if (result.success) {
                                                         $.fancybox.close(); // Close all FancyBox instances
+                                                        Theme.ajaxCardUsers($);
                                                         alert('User successfully removed from the group.');
                                                     } else {
                                                         alert('Failed to remove the user: ' + result.message);
