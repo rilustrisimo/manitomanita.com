@@ -296,13 +296,13 @@ var Theme = {
         .then(response => response.json())
         .then(data => {
             Theme.removeOverlay($);
-    
+    console.log(data);
             if (data.success) {
                 let tableHTML = '<table style="width: 100%; border-collapse: collapse;">';
                 tableHTML += '<thead><tr><th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Member Name</th>';
                 tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Screen Name</th>';
                 tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Kick Member</th></tr></thead><tbody>';
-    
+                
                 data.users.forEach((user, index) => {
                     let rowColor = index % 2 === 0 ? '#ffffff' : '#f9f9f9';
                     tableHTML += `<tr style="background-color: ${rowColor};">`;
