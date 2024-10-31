@@ -348,7 +348,7 @@ var Theme = {
                 // Build HTML for the table
                 let tableHTML = '<table style="width: 100%; border-collapse: collapse;">';
                 tableHTML += '<thead><tr><th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Name</th>';
-                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Screenname</th></tr></thead><tbody>';
+                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Screenname</th>';
                 tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Email</th></tr></thead><tbody>';
     
                 // Populate table rows with user data, alternating background colors
