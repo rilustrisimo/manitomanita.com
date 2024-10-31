@@ -351,6 +351,7 @@ var Theme = {
                                                     if (result.success) {
                                                         $.fancybox.close(); // Close all FancyBox instances
                                                         Theme.ajaxCardUsers($);
+                                                        Theme.getProListActions($);
                                                         alert('User successfully removed from the group.');
                                                     } else {
                                                         alert('Failed to remove the user: ' + result.message);
