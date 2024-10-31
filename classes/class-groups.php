@@ -71,6 +71,7 @@ class Groups extends Theme {
     }
 
     function handle_trash_user($request) {
+        global $wpdb;
         $user_id = $request->get_param('user_id'); // User post ID to trash
     
         // Validate user ID and post type
@@ -78,17 +79,21 @@ class Groups extends Theme {
             return new WP_REST_Response(array('success' => false, 'message' => 'Invalid user ID'), 400);
         }
     
-        // Directly update the post status to 'trash' without using wp_trash_post
-        $update_result = wp_update_post(array(
-            'ID'          => $user_id,
-            'post_status' => 'trash'
-        ), true); // The second parameter true returns WP_Error on failure
+        // Prepare the SQL query to directly update the post status
+        $update_sql = $wpdb->prepare(
+            "UPDATE {$wpdb->posts} SET post_status = %s WHERE ID = %d",
+            'trash',
+            $user_id
+        );
     
-        // Check for errors during update
-        if (is_wp_error($update_result)) {
+        // Execute the query
+        $result = $wpdb->query($update_sql);
+    
+        // Check for errors during the update
+        if ($result === false) {
             return new WP_REST_Response(array(
                 'success' => false,
-                'message' => 'Failed to trash the user: ' . $update_result->get_error_message()
+                'message' => 'Failed to trash the user due to a database error: ' . $wpdb->last_error
             ), 500);
         } else {
             return new WP_REST_Response(array(
