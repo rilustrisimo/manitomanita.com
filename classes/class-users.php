@@ -262,9 +262,19 @@ class Users extends Theme {
     }
 
     public function getAllUsersPerGroup($groupid){
+        // Meta query for matching group ID and checking that 'trashed' is not true
         $meta_query = array(
-            'key' => 'groups',
-            'value' => $groupid
+            'relation' => 'AND',
+            array(
+                'key'     => 'groups',
+                'value'   => $groupid,
+                'compare' => '='
+            ),
+            array(
+                'key'     => 'trashed',
+                'value'   => '1',          // Assuming '1' is true for trashed
+                'compare' => '!='          // Only get users where trashed is not true
+            )
         );
 
         $p = parent::createQuery('users', $meta_query);
@@ -303,9 +313,19 @@ class Users extends Theme {
         endif;
 
         
+        // Meta query for matching group ID and checking that 'trashed' is not true
         $meta_query = array(
-            'key' => 'groups',
-            'value' => $groupid
+            'relation' => 'AND',
+            array(
+                'key'     => 'groups',
+                'value'   => $groupid,
+                'compare' => '='
+            ),
+            array(
+                'key'     => 'trashed',
+                'value'   => '1',          // Assuming '1' is true for trashed
+                'compare' => '!='          // Only get users where trashed is not true
+            )
         );
 
         $p = parent::createQuery2('users', $meta_query);
