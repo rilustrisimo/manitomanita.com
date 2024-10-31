@@ -796,7 +796,7 @@ var Theme = {
             success: function(response) {
                 //console.log(response);
                 if (response.success) {
-                    $('#cards-container').append(response.data[1]);
+                    $('#cards-container').html(response.data[1]);
                     $('.memcount').text(response.data[2]);
                     $('.wishcount').text(response.data[3]);
                     $('.joined.card-columns').html(response.data[4]);
