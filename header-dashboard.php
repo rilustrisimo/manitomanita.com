@@ -21,28 +21,12 @@ $groupid = $group->getGroupId();  // Replace with your actual group ID
 $fields = $group->getGroupDetails($groupid);
 $pro = (isset($fields['pro']))?$fields['pro']:false;
 
-
 $meta_query = array(
-    'relation' => 'AND',
-    array(
-        'key'     => 'groups',
-        'value'   => $groupid,
-        'compare' => '='
-    ),
-    array(
-        'relation' => 'OR',
-        array(
-            'key'     => 'trashed',
-            'value'   => '1',
-            'compare' => '!='
-        ),
-        array(
-            'key'     => 'trashed',
-            'compare' => 'NOT EXISTS'
-        )
-    )
+	array(
+		'key' => 'groups',
+		'value' => $groupid,
+	),
 );
-
 /*
 $post_count = $group->get_users_count_with_meta($meta_query);
 $print = ($post_count > 2)?"class='user-action shuffle-btn' group-data='".$group->getGroupId()."' data-action='shuffle-group'":'disabled';
@@ -53,7 +37,6 @@ setcookie($cookiename, $post_count, $expirationTime, '/');
 */
 
 $post_count = $group->get_users_count_with_meta($meta_query);
-var_dump($post_count);
 $cookiename = 'users_group_count_' . $groupid;
 $expirationTime = time() + (30 * 24 * 60 * 60); // 30 days
 $print = ($post_count > 2) ? "class='user-action shuffle-btn' group-data='" . $group->getGroupId() . "' data-action='shuffle-group'" : 'disabled';

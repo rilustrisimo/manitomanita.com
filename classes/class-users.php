@@ -262,26 +262,9 @@ class Users extends Theme {
     }
 
     public function getAllUsersPerGroup($groupid){
-        // Meta query to match group ID and exclude users where 'trashed' is true or where 'trashed' is null
         $meta_query = array(
-            'relation' => 'AND',
-            array(
-                'key'     => 'groups',
-                'value'   => $groupid,
-                'compare' => '='
-            ),
-            array(
-                'relation' => 'OR',  // Use OR to include both cases
-                array(
-                    'key'     => 'trashed',
-                    'value'   => '1', // Check for 'trashed' being true
-                    'compare' => '!=' // Exclude if 'trashed' is true
-                ),
-                array(
-                    'key'     => 'trashed',
-                    'compare' => 'NOT EXISTS' // Include users where 'trashed' does not exist
-                )
-            )
+            'key' => 'groups',
+            'value' => $groupid
         );
 
         $p = parent::createQuery('users', $meta_query);
@@ -320,26 +303,9 @@ class Users extends Theme {
         endif;
 
         
-        // Meta query to match group ID and exclude users where 'trashed' is true or where 'trashed' is null
         $meta_query = array(
-            'relation' => 'AND',
-            array(
-                'key'     => 'groups',
-                'value'   => $groupid,
-                'compare' => '='
-            ),
-            array(
-                'relation' => 'OR',  // Use OR to include both cases
-                array(
-                    'key'     => 'trashed',
-                    'value'   => '1', // Check for 'trashed' being true
-                    'compare' => '!=' // Exclude if 'trashed' is true
-                ),
-                array(
-                    'key'     => 'trashed',
-                    'compare' => 'NOT EXISTS' // Include users where 'trashed' does not exist
-                )
-            )
+            'key' => 'groups',
+            'value' => $groupid
         );
 
         $p = parent::createQuery2('users', $meta_query);

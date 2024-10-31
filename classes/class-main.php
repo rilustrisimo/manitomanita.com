@@ -253,14 +253,14 @@ class Theme {
             'order'         => $order,
             'numberposts'   => $numberposts,
             'post_type'     => $posttype,
-            'meta_query'    => $meta_query,  // Now allows a complete meta_query array
+            'meta_query'    => array($meta_query),
             'posts_per_page'=> $numberposts
         );
         
         $the_query = get_posts($args);
-    
+
         return $the_query;
-    }    
+    }
     
     public function createQuery3($posttype, $meta_query = array(), $posts_per_page = 100, $offset = 0, $orderby = 'date', $order = 'DESC') {
         // Adjust query arguments for batching
