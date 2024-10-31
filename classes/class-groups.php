@@ -63,10 +63,8 @@ class Groups extends Theme {
     public function trash_user() {
         register_rest_route('custom-webhook/v1', '/trash-user', array(
             'methods' => 'POST',
-            'callback' => array($this, 'handle_trash_user'),
-            'permission_callback' => function() {
-                return current_user_can('delete_posts'); // Adjust permissions as needed
-            },
+            'callback' => 'handle_trash_user',
+            'permission_callback' => '__return_true', // Allow public access
         ));
     }
 
@@ -101,7 +99,7 @@ class Groups extends Theme {
                 'message' => 'User trashed successfully'
             ), 200);
         }
-    }       
+    }        
 
     public function kick_group() {
         register_rest_route('custom-webhook/v1', '/kick', array(
