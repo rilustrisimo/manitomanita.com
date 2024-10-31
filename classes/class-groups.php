@@ -360,23 +360,49 @@ class Groups extends Theme {
             'meta_query' => $meta_query,
         );
     
-        $sql = "SELECT COUNT(DISTINCT ID) FROM {$wpdb->posts} AS p ";
+        $sql = "SELECT COUNT(DISTINCT p.ID) FROM {$wpdb->posts} AS p ";
         $sql .= "LEFT JOIN {$wpdb->postmeta} AS pm ON p.ID = pm.post_id ";
         $sql .= "WHERE 1=1 ";
     
         if (!empty($meta_query)) {
             $sql .= "AND (";
-            foreach ($meta_query as $meta_condition) {
-                $sql .= $wpdb->prepare("(pm.meta_key = %s AND pm.meta_value = %s) OR ", $meta_condition['key'], $meta_condition['value']);
+            
+            // Build the meta query dynamically
+            foreach ($meta_query as $condition) {
+                if (isset($condition['relation']) && $condition['relation'] === 'OR') {
+                    $sql .= "(";  // Start new group for OR conditions
+                    
+                    // Iterate over each condition under the 'OR' relation
+                    foreach ($condition as $meta_condition) {
+                        if (is_array($meta_condition)) { // Ensure we're handling an array
+                            if (isset($meta_condition['key'], $meta_condition['value'])) {
+                                $sql .= $wpdb->prepare("(pm.meta_key = %s AND pm.meta_value = %s) OR ", $meta_condition['key'], $meta_condition['value']);
+                            } elseif (isset($meta_condition['key']) && $meta_condition['compare'] === 'NOT EXISTS') {
+                                // Handle NOT EXISTS condition
+                                $sql .= "pm.meta_key = %s OR ";
+                            }
+                        }
+                    }
+                    
+                    $sql = rtrim($sql, ' OR '); // Remove the last ' OR '
+                    $sql .= ") OR "; // Close the OR group
+                } else {
+                    // Handle standard AND conditions
+                    $sql .= $wpdb->prepare("(pm.meta_key = %s AND pm.meta_value = %s) AND ", $condition['key'], $condition['value']);
+                }
             }
+    
+            // Remove the last ' OR ' or ' AND ' added during the loop
             $sql = rtrim($sql, ' OR ');
+            $sql = rtrim($sql, ' AND ');
+    
             $sql .= ")";
         }
     
         $count = $wpdb->get_var($sql);
     
         return $count;
-    }
+    }    
 
     public function getGroupId(){
         if(isset($_SESSION['groupid']) || isset($_GET['gid'])){
