@@ -70,24 +70,31 @@ class Groups extends Theme {
         ));
     }
 
-    // Callback function to handle trashing the user post
     public function handle_trash_user($request) {
         $user_id = $request->get_param('user_id'); // User post ID to trash
-
+    
         // Check if the user ID is valid
         if (!$user_id || get_post_type($user_id) !== 'users') {
             return new WP_REST_Response(array('success' => false, 'message' => 'Invalid user ID'), 400);
         }
-
+    
+        // Temporarily grant the delete_post capability to the current user
+        add_filter('user_has_cap', function($allcaps, $caps, $args) use ($user_id) {
+            if ($args[0] === 'delete_post' && isset($args[2]) && $args[2] == $user_id) {
+                $allcaps[$caps[0]] = true;
+            }
+            return $allcaps;
+        }, 10, 3);
+    
         // Attempt to move the post to the trash
         $trashed = wp_trash_post($user_id);
-        
+    
         if ($trashed) {
             return new WP_REST_Response(array('success' => true, 'message' => 'User trashed successfully'), 200);
         } else {
             return new WP_REST_Response(array('success' => false, 'message' => 'Failed to trash the user'), 500);
         }
-    }
+    }    
 
     public function kick_group() {
         register_rest_route('custom-webhook/v1', '/kick', array(
@@ -129,8 +136,7 @@ class Groups extends Theme {
             $users_data[] = array(
                 'ID' => $user->ID,
                 'name' => get_field('name', $user->ID),
-                'screen' => get_field('screen_name', $user->ID),
-                'kick_link' => get_delete_post_link( $user->ID )
+                'screen' => get_field('screen_name', $user->ID)
                 // Include other fields as needed
             );
         }
