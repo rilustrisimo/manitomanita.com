@@ -262,7 +262,7 @@ class Users extends Theme {
     }
 
     public function getAllUsersPerGroup($groupid){
-        // Meta query for matching group ID and checking that 'trashed' is not true
+        // Meta query to match group ID and exclude users where 'trashed' is true or where 'trashed' is null
         $meta_query = array(
             'relation' => 'AND',
             array(
@@ -271,9 +271,16 @@ class Users extends Theme {
                 'compare' => '='
             ),
             array(
-                'key'     => 'trashed',
-                'value'   => '1',          // Assuming '1' is true for trashed
-                'compare' => '!='          // Only get users where trashed is not true
+                'relation' => 'OR',  // Use OR to include both cases
+                array(
+                    'key'     => 'trashed',
+                    'value'   => '1', // Check for 'trashed' being true
+                    'compare' => '!=' // Exclude if 'trashed' is true
+                ),
+                array(
+                    'key'     => 'trashed',
+                    'compare' => 'NOT EXISTS' // Include users where 'trashed' does not exist
+                )
             )
         );
 
