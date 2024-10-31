@@ -357,15 +357,12 @@ class Groups extends Theme {
     public function get_users_count_with_meta($meta_query = array()) {
         global $wpdb;
     
-        $args = array(
-            'post_type' => 'users',  // Adjust the post type if needed
-            'post_status' => 'publish',
-            'meta_query' => $meta_query,
-        );
-    
-        $sql = "SELECT COUNT(DISTINCT ID) FROM {$wpdb->posts} AS p ";
+        $sql = "SELECT COUNT(DISTINCT p.ID) FROM {$wpdb->posts} AS p ";
         $sql .= "LEFT JOIN {$wpdb->postmeta} AS pm ON p.ID = pm.post_id ";
-        $sql .= "WHERE 1=1 ";
+        $sql .= "WHERE p.post_type = %s AND p.post_status = %s ";
+    
+        // Prepare the SQL with post type 'users' and status 'publish'
+        $sql = $wpdb->prepare($sql, 'users', 'publish');
     
         if (!empty($meta_query)) {
             $sql .= "AND (";
@@ -380,6 +377,7 @@ class Groups extends Theme {
     
         return $count;
     }
+     
 
     public function getGroupId(){
         if(isset($_SESSION['groupid']) || isset($_GET['gid'])){
