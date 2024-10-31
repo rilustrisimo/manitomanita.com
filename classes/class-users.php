@@ -313,17 +313,18 @@ class Users extends Theme {
         endif;
 
         
-        // Meta query for matching group ID and checking that 'trashed' is not true
+        // Meta query to match group ID and exclude users where 'trashed' is true
         $meta_query = array(
             'relation' => 'AND',
             array(
                 'key'     => 'groups',
-                'value'   => $groupid
+                'value'   => $groupid,
+                'compare' => '='
             ),
             array(
                 'key'     => 'trashed',
-                'value'   => '1',          // Assuming '1' is true for trashed
-                'compare' => '!='          // Only get users where trashed is not true
+                'value'   => '1',    // Assuming '1' means true for trashed
+                'compare' => '!='    // Only include users where trashed is not true
             )
         );
 
