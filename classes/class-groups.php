@@ -63,7 +63,7 @@ class Groups extends Theme {
     public function trash_user() {
         register_rest_route('custom-webhook/v1', '/trash-user', array(
             'methods' => 'POST',
-            'callback' => 'handle_trash_user',
+            'callback' => array($this, 'handle_trash_user'),
             'permission_callback' => '__return_true', // Allow public access
         ));
     }
