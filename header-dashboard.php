@@ -22,11 +22,26 @@ $fields = $group->getGroupDetails($groupid);
 $pro = (isset($fields['pro']))?$fields['pro']:false;
 
 $meta_query = array(
+	'relation' => 'AND',
 	array(
-		'key' => 'groups',
-		'value' => $groupid,
+		'key'     => 'groups',
+		'value'   => $groupid,
+		'compare' => '='
 	),
+	array(
+		'relation' => 'OR',  // Use OR to include both cases
+		array(
+			'key'     => 'trashed',
+			'value'   => '1', // Check for 'trashed' being true
+			'compare' => '!=' // Exclude if 'trashed' is true
+		),
+		array(
+			'key'     => 'trashed',
+			'compare' => 'NOT EXISTS' // Include users where 'trashed' does not exist
+		)
+	)
 );
+
 /*
 $post_count = $group->get_users_count_with_meta($meta_query);
 $print = ($post_count > 2)?"class='user-action shuffle-btn' group-data='".$group->getGroupId()."' data-action='shuffle-group'":'disabled';
