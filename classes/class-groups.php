@@ -354,12 +354,6 @@ class Groups extends Theme {
     public function get_users_count_with_meta($meta_query = array()) {
         global $wpdb;
     
-        $args = array(
-            'post_type' => 'users',  // Adjust the post type if needed
-            'post_status' => 'publish',
-            'meta_query' => $meta_query,
-        );
-    
         $sql = "SELECT COUNT(DISTINCT p.ID) FROM {$wpdb->posts} AS p ";
         $sql .= "LEFT JOIN {$wpdb->postmeta} AS pm ON p.ID = pm.post_id ";
         $sql .= "WHERE 1=1 ";
@@ -367,11 +361,11 @@ class Groups extends Theme {
         if (!empty($meta_query)) {
             $sql .= "AND (";
             
-            // Build the meta query dynamically
+            // Process the meta query
             foreach ($meta_query as $condition) {
                 if (isset($condition['relation']) && $condition['relation'] === 'OR') {
-                    $sql .= "(";  // Start new group for OR conditions
-                    
+                    $sql .= "("; // Start a new group for OR conditions
+    
                     // Iterate over each condition under the 'OR' relation
                     foreach ($condition as $meta_condition) {
                         if (is_array($meta_condition)) { // Ensure we're handling an array
@@ -379,16 +373,18 @@ class Groups extends Theme {
                                 $sql .= $wpdb->prepare("(pm.meta_key = %s AND pm.meta_value = %s) OR ", $meta_condition['key'], $meta_condition['value']);
                             } elseif (isset($meta_condition['key']) && $meta_condition['compare'] === 'NOT EXISTS') {
                                 // Handle NOT EXISTS condition
-                                $sql .= "pm.meta_key = %s OR ";
+                                $sql .= "pm.meta_key IS NULL OR "; // This checks if the meta_key does not exist
                             }
                         }
                     }
-                    
+    
                     $sql = rtrim($sql, ' OR '); // Remove the last ' OR '
                     $sql .= ") OR "; // Close the OR group
                 } else {
                     // Handle standard AND conditions
-                    $sql .= $wpdb->prepare("(pm.meta_key = %s AND pm.meta_value = %s) AND ", $condition['key'], $condition['value']);
+                    if (isset($condition['key'], $condition['value'])) {
+                        $sql .= $wpdb->prepare("(pm.meta_key = %s AND pm.meta_value = %s) AND ", $condition['key'], $condition['value']);
+                    }
                 }
             }
     
@@ -402,7 +398,7 @@ class Groups extends Theme {
         $count = $wpdb->get_var($sql);
     
         return $count;
-    }    
+    }     
 
     public function getGroupId(){
         if(isset($_SESSION['groupid']) || isset($_GET['gid'])){
