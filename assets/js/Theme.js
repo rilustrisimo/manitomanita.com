@@ -296,7 +296,8 @@ var Theme = {
         .then(response => response.json())
         .then(data => {
             Theme.removeOverlay($);
-    console.log(data);
+            console.log(data);
+    
             if (data.success) {
                 let tableHTML = '<table style="width: 100%; border-collapse: collapse;">';
                 tableHTML += '<thead><tr><th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Member Name</th>';
@@ -308,7 +309,7 @@ var Theme = {
                     tableHTML += `<tr style="background-color: ${rowColor};">`;
                     tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.name}</td>`;
                     tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.screen}</td>`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;"><a href="#" class="kick-link" data-name="${user.name}" data-link="${user.kick_link}">kick</a></td>`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;"><a href="#" class="kick-link" data-name="${user.name}" data-id="${user.ID}">kick</a></td>`;
                     tableHTML += '</tr>';
                 });
     
@@ -324,7 +325,7 @@ var Theme = {
                             $('.kick-link').on('click', function(event) {
                                 event.preventDefault();
                                 let userName = $(this).data('name');
-                                let kickLink = $(this).data('link');
+                                let userId = $(this).data('id');
     
                                 // Open confirmation FancyBox
                                 $.fancybox.open({
@@ -339,10 +340,11 @@ var Theme = {
                                             // Confirm kick action
                                             $('#proceed-kick').on('click', function() {
                                                 $.fancybox.close(); // Close confirmation
-                                                
-                                                fetch(kickLink, {
+    
+                                                fetch('/wp-json/custom-webhook/v1/trash-user', {
                                                     method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' }
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ user_id: userId }) // Pass the user ID to the API
                                                 })
                                                 .then(response => response.json())
                                                 .then(result => {
@@ -377,7 +379,7 @@ var Theme = {
             alert('An unexpected error occurred: ' + error.message);
             Theme.removeOverlay($);
         });
-    },    
+    },       
 
     matchesFunction: function($, groupid){
         Theme.initShowOverlay($);

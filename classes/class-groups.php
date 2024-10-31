@@ -48,6 +48,7 @@ class Groups extends Theme {
         add_action('rest_api_init', array($this, 'joined_group'));
         add_action('rest_api_init', array($this, 'matches_group'));
         add_action('rest_api_init', array($this, 'kick_group'));
+        add_action('rest_api_init', array($this, 'trash_user'));
 
     }
 
@@ -57,6 +58,35 @@ class Groups extends Theme {
          */
 
         add_filter('pre_get_document_title', array($this, 'replace_group_title'), 50);
+    }
+
+    public function trash_user() {
+        register_rest_route('custom-webhook/v1', '/trash-user', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'handle_trash_user'),
+            'permission_callback' => function() {
+                return current_user_can('delete_posts'); // Adjust permissions as needed
+            },
+        ));
+    }
+
+    // Callback function to handle trashing the user post
+    public function handle_trash_user($request) {
+        $user_id = $request->get_param('user_id'); // User post ID to trash
+
+        // Check if the user ID is valid
+        if (!$user_id || get_post_type($user_id) !== 'users') {
+            return new WP_REST_Response(array('success' => false, 'message' => 'Invalid user ID'), 400);
+        }
+
+        // Attempt to move the post to the trash
+        $trashed = wp_trash_post($user_id);
+        
+        if ($trashed) {
+            return new WP_REST_Response(array('success' => true, 'message' => 'User trashed successfully'), 200);
+        } else {
+            return new WP_REST_Response(array('success' => false, 'message' => 'Failed to trash the user'), 500);
+        }
     }
 
     public function kick_group() {
