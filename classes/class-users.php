@@ -318,8 +318,7 @@ class Users extends Theme {
             'relation' => 'AND',
             array(
                 'key'     => 'groups',
-                'value'   => $groupid,
-                'compare' => '='
+                'value'   => $groupid
             ),
             array(
                 'key'     => 'trashed',
