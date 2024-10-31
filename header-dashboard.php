@@ -37,7 +37,6 @@ setcookie($cookiename, $post_count, $expirationTime, '/');
 */
 
 $post_count = $group->get_users_count_with_meta($meta_query);
-var_dump($post_count);
 $cookiename = 'users_group_count_' . $groupid;
 $expirationTime = time() + (30 * 24 * 60 * 60); // 30 days
 $print = ($post_count > 2) ? "class='user-action shuffle-btn' group-data='" . $group->getGroupId() . "' data-action='shuffle-group'" : 'disabled';
