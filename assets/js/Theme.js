@@ -310,7 +310,7 @@ var Theme = {
                 // Prepare CSV content
                 let csvContent = "data:text/csv;charset=utf-8,";
                 csvContent += "Name,Screen Name\n"; // Header row
-    
+    console.log(data.users);
                 // Add each user's data row
                 data.users.forEach(user => {
                     let row = `${user.name},${user.screen}`;
