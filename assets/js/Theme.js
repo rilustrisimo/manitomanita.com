@@ -309,17 +309,25 @@ var Theme = {
             if (data.success) {
                 // Prepare CSV content
                 let csvContent = "data:text/csv;charset=utf-8,";
-                csvContent += "Name,Screen Name\n"; // Header row
-    console.log(data.users);
+                csvContent += "Name,Screen Name,Pair Name,Pair Screen,Address Contact,Wishlists,Links\n"; // Header row
+    
                 // Add each user's data row
                 data.users.forEach(user => {
-                    let row = `${user.name},${user.screen}`;
+                    // Format wishlists with line breaks for each item
+                    let wishlists = user.wishlists.length > 0 ? user.wishlists.join('\n') : 'N/A';
+    
+                    // Format links with line breaks for each URL
+                    let links = user.links.flat().filter(link => link && link.link_url).map(link => link.link_url).join('\n');
+    
+                    // Structure the row data with line breaks in the Name field and wishlists/links fields
+                    let row = `"${user.name}","${user.screen}","${user.pair_name || 'N/A'}","${user.pair_screen || 'N/A'}","${user.address_contact || 'N/A'}","${wishlists}","${links}"`;
+    
                     csvContent += row + "\n";
                 });
     
                 // Generate current timestamp for filename
                 let timestamp = new Date().toISOString().replace(/[:.-]/g, '');
-
+    
                 // Create a download link for the CSV
                 let encodedUri = encodeURI(csvContent);
                 let downloadLink = document.createElement("a");
@@ -331,7 +339,6 @@ var Theme = {
                 downloadLink.click();
                 document.body.removeChild(downloadLink);
     
-                alert('CSV file generated and downloaded successfully.');
             } else {
                 alert('Error: ' + data.message);
             }
