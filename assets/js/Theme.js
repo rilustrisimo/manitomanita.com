@@ -327,22 +327,16 @@ var Theme = {
                 // Generate current timestamp for filename
                 let timestamp = new Date().toISOString().replace(/[:.-]/g, '');
     
-                // Create a Blob from the CSV content
-                let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                let url = URL.createObjectURL(blob);
-    
-                // Open the Blob URL in a new tab
-                window.open(url);
-    
-                // Alternatively, you can create a link to download the file
-                // let downloadLink = document.createElement("a");
-                // downloadLink.href = url;
-                // downloadLink.download = `manitomanita_group_data_${timestamp}.csv`;
-                // document.body.appendChild(downloadLink);
-                // downloadLink.click();
-                // document.body.removeChild(downloadLink);
-                // URL.revokeObjectURL(url); // Clean up the URL object
-    
+                // Create a download link for the CSV
+                let encodedUri = encodeURI(csvContent);
+                let downloadLink = document.createElement("a");
+                downloadLink.href = encodedUri;
+                downloadLink.download = `manitomanita_group_data_${timestamp}.csv`;
+                
+                // Append the link to the body, trigger click to download, and remove it
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
             } else {
                 alert('Error: ' + data.message);
             }
