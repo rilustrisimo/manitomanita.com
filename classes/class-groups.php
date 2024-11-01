@@ -99,10 +99,24 @@ class Groups extends Theme {
         // Prepare response data for each matching user
         $users_data = array();
         foreach ($users as $user) {
+            
+            $wishlists = array();
+            $links = array();
+
+            foreach(get_field('my_wishlists', $user->ID) as $w):
+                $wishlists[] =  $w['wishlist_description'];
+                $links[] =  $w['reference_links'];
+            endforeach;
+
             $users_data[] = array(
                 'ID' => $user->ID,
                 'name' => get_field('name', $user->ID),
                 'screen' => get_field('screen_name', $user->ID),
+                'pair_name' => get_field('name', get_field('pair', $user->ID)),
+                'pair_screen' => get_field('screen_name', get_field('pair', $user->ID)),
+                'address_contact' => get_field('my_address_and_contact_details', $user->ID),
+                'wishlists' => $wishlists,
+                'links' => $links,
                 // Include other fields as needed
             );
         }

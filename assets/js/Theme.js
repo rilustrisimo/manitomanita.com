@@ -309,19 +309,22 @@ var Theme = {
             if (data.success) {
                 // Prepare CSV content
                 let csvContent = "data:text/csv;charset=utf-8,";
-                csvContent += "ID,Name,Screen Name\n"; // Header row
+                csvContent += "Name,Screen Name\n"; // Header row
     
                 // Add each user's data row
                 data.users.forEach(user => {
-                    let row = `${user.ID},${user.name},${user.screen}`;
+                    let row = `${user.name},${user.screen}`;
                     csvContent += row + "\n";
                 });
     
+                // Generate current timestamp for filename
+                let timestamp = new Date().toISOString().replace(/[:.-]/g, '');
+
                 // Create a download link for the CSV
                 let encodedUri = encodeURI(csvContent);
                 let downloadLink = document.createElement("a");
                 downloadLink.href = encodedUri;
-                downloadLink.download = `user_data_group_${groupid}.csv`;
+                downloadLink.download = `manitomanita_group_data_${timestamp}.csv`;
     
                 // Append the link to the body, trigger click to download, and remove it
                 document.body.appendChild(downloadLink);
