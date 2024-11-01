@@ -147,26 +147,6 @@
                 "re_theme": "light",
                 "re_type": "image",
                 "re_size": "normal"
-            },
-            {
-                "key": "field_67232db7f1bf0",
-                "label": "Trashed",
-                "name": "trashed",
-                "aria-label": "",
-                "type": "true_false",
-                "instructions": "",
-                "required": 0,
-                "conditional_logic": 0,
-                "wrapper": {
-                    "width": "",
-                    "class": "",
-                    "id": ""
-                },
-                "message": "",
-                "default_value": 0,
-                "ui": 0,
-                "ui_on_text": "",
-                "ui_off_text": ""
             }
         ],
         "location": [
