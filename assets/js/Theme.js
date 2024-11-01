@@ -286,8 +286,58 @@ var Theme = {
             if(databtn == "edit"){
                 Theme.editMemberFunction($, groupid);
             }
+
+            if(databtn == "export"){
+                Theme.exportDataFunction($, groupid);
+            }
         });
     },
+
+    exportDataFunction: function($, groupid) {
+        Theme.initShowOverlay($);
+    
+        fetch('/wp-json/custom-webhook/v1/get-user-export', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
+        })
+        .then(response => response.json())
+        .then(data => {
+            Theme.removeOverlay($);
+            console.log(data);
+    
+            if (data.success) {
+                // Prepare CSV content
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "ID,Name,Screen Name\n"; // Header row
+    
+                // Add each user's data row
+                data.users.forEach(user => {
+                    let row = `${user.ID},${user.name},${user.screen}`;
+                    csvContent += row + "\n";
+                });
+    
+                // Create a download link for the CSV
+                let encodedUri = encodeURI(csvContent);
+                let downloadLink = document.createElement("a");
+                downloadLink.href = encodedUri;
+                downloadLink.download = `user_data_group_${groupid}.csv`;
+    
+                // Append the link to the body, trigger click to download, and remove it
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+    
+                alert('CSV file generated and downloaded successfully.');
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('An unexpected error occurred: ' + error.message);
+            Theme.removeOverlay($);
+        });
+    },    
 
     editMemberFunction: function($, groupid){
         Theme.initShowOverlay($);
