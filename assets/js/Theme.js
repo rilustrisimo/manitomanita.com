@@ -319,25 +319,29 @@ var Theme = {
                     // Format links with line breaks for each URL
                     let links = user.links.flat().filter(link => link && link.link_url).map(link => link.link_url).join('\n');
     
-                    // Structure the row data with line breaks in the Name field and wishlists/links fields
+                    // Structure the row data
                     let row = `"${user.name}","${user.screen}","${user.pair_name || 'N/A'}","${user.pair_screen || 'N/A'}","${user.address_contact || 'N/A'}","${wishlists}","${links}"`;
-    
                     csvContent += row + "\n";
                 });
     
                 // Generate current timestamp for filename
                 let timestamp = new Date().toISOString().replace(/[:.-]/g, '');
     
-                // Create a download link for the CSV
-                let encodedUri = encodeURI(csvContent);
-                let downloadLink = document.createElement("a");
-                downloadLink.href = encodedUri;
-                downloadLink.download = `manitomanita_group_data_${timestamp}.csv`;
+                // Create a Blob from the CSV content
+                let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                let url = URL.createObjectURL(blob);
     
-                // Append the link to the body, trigger click to download, and remove it
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
+                // Open the Blob URL in a new tab
+                window.open(url);
+    
+                // Alternatively, you can create a link to download the file
+                // let downloadLink = document.createElement("a");
+                // downloadLink.href = url;
+                // downloadLink.download = `manitomanita_group_data_${timestamp}.csv`;
+                // document.body.appendChild(downloadLink);
+                // downloadLink.click();
+                // document.body.removeChild(downloadLink);
+                // URL.revokeObjectURL(url); // Clean up the URL object
     
             } else {
                 alert('Error: ' + data.message);
@@ -347,7 +351,7 @@ var Theme = {
             alert('An unexpected error occurred: ' + error.message);
             Theme.removeOverlay($);
         });
-    },    
+    },      
 
     editMemberFunction: function($, groupid){
         Theme.initShowOverlay($);
