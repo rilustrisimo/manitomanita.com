@@ -104,8 +104,8 @@ class Groups extends Theme {
             $links = array();
 
             foreach(get_field('my_wishlists', $user->ID) as $key => $w):
-                $wishlists[] =  ($k+1).'. '.$w['wishlist_description'];
-                $links[] =  ($w['reference_links'])?($k+1).'. '.$w['reference_links']:'';
+                $wishlists[] =  '['.($key+1).'] '.$w['wishlist_description'];
+                $links[] =  ($w['reference_links'])?'['.($key+1).'] '.$w['reference_links']:'';
             endforeach;
 
             $users_data[] = array(
