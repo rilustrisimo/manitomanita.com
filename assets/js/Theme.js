@@ -282,8 +282,72 @@ var Theme = {
             if(databtn == "kick"){
                 Theme.kickFunction($, groupid);
             }
+
+            if(databtn == "edit"){
+                Theme.editMemberFunction($, groupid);
+            }
         });
     },
+
+    editMemberFunction: function($, groupid){
+        Theme.initShowOverlay($);
+    
+        fetch('/wp-json/custom-webhook/v1/edit-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
+        })
+        .then(response => response.json())
+        .then(data => {
+            Theme.removeOverlay($);
+            console.log(data);
+    
+            if (data.success) {
+                let tableHTML = '<table style="width: 100%; border-collapse: collapse;">';
+                tableHTML += '<thead><tr><th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Member Name</th>';
+                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Screen Name</th>';
+                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Edit Member</th></tr></thead><tbody>';
+                
+                data.users.forEach((user, index) => {
+                    let rowColor = index % 2 === 0 ? '#ffffff' : '#f9f9f9';
+                    tableHTML += `<tr style="background-color: ${rowColor};">`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.name}</td>`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.screen}</td>`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;"><a href="#" class="edit-link" data-name="${user.name}" data-id="${user.ID}">kick</a></td>`;
+                    tableHTML += '</tr>';
+                });
+    
+                tableHTML += '</tbody></table>';
+    
+                // Display the table in a FancyBox modal
+                $.fancybox.open({
+                    src: `<div style="padding: 20px; max-width: 600px;">${tableHTML}</div>`,
+                    type: 'html',
+                    opts: {
+                        afterShow: function() {
+                            // Attach event listeners to kick links
+                            $('.edit-link').on('click', function(event) {
+                                event.preventDefault();
+                                //let userName = $(this).data('name');
+                                let userId = $(this).data('id');
+    
+                                Theme.action = 'edit-member';
+                                Theme.userid = userId;
+
+                                Theme.initCustomPopup($)
+                            });
+                        }
+                    }
+                });
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('An unexpected error occurred: ' + error.message);
+            Theme.removeOverlay($);
+        });
+    },      
 
     kickFunction: function($, groupid){
         Theme.initShowOverlay($);
@@ -998,6 +1062,11 @@ var Theme = {
             'edit-group': {
                 title: 'EDIT GROUP<span>DETAILS</span>',
                 formid: 27,
+                uid: Theme.userid
+            },
+            'edit-member': {
+                title: 'EDIT MEMBER<span>DETAILS</span>',
+                formid: 42,
                 uid: Theme.userid
             },
             'edit-wishlist': {
