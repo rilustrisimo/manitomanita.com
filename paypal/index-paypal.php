@@ -3,7 +3,7 @@ $group = new Groups();
 $groupid = $group->getGroupId();  // Replace with your actual group ID
 ?>
 <div id="paypal-button-container"></div>
-<script src="https://www.paypal.com/sdk/js?client-id=Aev7owXcA7gNoB_lLSy9u2iikYz6Kt4YLFvtVnC-hjX7Z2DqjVpLB7Nxx-7l1ueYyDPeNQKt9_YtVcR0&currency=PHP"></script>
+<script src="https://www.paypal.com/sdk/js?client-id=AWfSmpGYQbE7kAF11flB0JO4kVfYV4ya7ORa4w73N8nODYukMkV61FHpBDM0B3MkaWFPSA22L131zVCr&currency=PHP"></script>
 <script>
     const themeBaseUrl = '<?php echo get_template_directory_uri(); ?>';
     const gid = '<?php echo $groupid; ?>';
