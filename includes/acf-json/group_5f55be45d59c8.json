@@ -219,6 +219,28 @@
                 "placeholder": "",
                 "prepend": "",
                 "append": ""
+            },
+            {
+                "key": "field_67258a3f10bcb",
+                "label": "Unshuffle Credits",
+                "name": "unshuffle_credits",
+                "aria-label": "",
+                "type": "number",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "hide",
+                    "id": ""
+                },
+                "default_value": 3,
+                "min": "",
+                "max": "",
+                "placeholder": "",
+                "step": "",
+                "prepend": "",
+                "append": ""
             }
         ],
         "location": [
