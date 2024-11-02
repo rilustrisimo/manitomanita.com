@@ -51,5 +51,6 @@ get_template_directory_uri().'/assets/images/loader.gif'; ?>"></div>
 	<?php get_template_part( 'templates/pro/pro', 'btnpop' ); ?>
 <?php else: ?>
 	<?php get_template_part( 'templates/pro/pro', 'actions' ); ?>
+	<?php get_template_part( 'templates/pro/pro', 'credits' ); ?>
 <?php endif; ?>
 <div class="layout-content">

@@ -290,6 +290,11 @@ var Theme = {
             if(databtn == "export"){
                 Theme.exportDataFunction($, groupid);
             }
+
+            if(databtn == "add-credits"){
+                $('#pro-credits.pop-container').css('display', 'flex');
+                Theme.popClose($);
+            }
         });
     },
 
