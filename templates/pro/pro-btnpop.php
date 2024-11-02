@@ -27,15 +27,15 @@ defined( 'ABSPATH' ) || die();
             <div class="paypal-pay" style="display:none;">
                 <?php get_template_part( 'paypal/index', 'paypal' ); ?>
             </div>
-            <p class="heading">With Manito Manita PRO, Moderators Can:</p>
+            <p class="heading">With Manito Manita PRO, Moderators Enjoy:</p>
             <ul>
+            <li><span><b>Ad-free</b> Experience</span></li>
             <li><span><b>Reshuffle</b> group pairings</span></li>
             <li><span><b>View</b> member names and screen names</span></li>
             <li><span><b>Access</b> and review member matches/pairs</span></li>
             <li><span><b>Remove</b> members from the group</span></li>
             <li><span><b>Edit</b> member information</span></li>
             <li><span><b>Export</b> group data</span></li>
-            <li><span><b>Ad-free</b> Experience</span></li>
             </ul>
         </div>
     </div>
