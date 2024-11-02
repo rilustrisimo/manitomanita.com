@@ -51,7 +51,6 @@ class Groups extends Theme {
         add_action('rest_api_init', array($this, 'trash_user'));
         add_action('rest_api_init', array($this, 'edit_user'));
         add_action('rest_api_init', array($this, 'get_user_export'));
-
     }
 
     protected function initFilters() {
@@ -60,6 +59,20 @@ class Groups extends Theme {
          */
 
         add_filter('pre_get_document_title', array($this, 'replace_group_title'), 50);
+        add_filter('body_class', array($this, 'my_custom_body_class'));
+    }
+
+    // Add a custom class to the body
+    public function my_custom_body_class($classes) {
+        $groupid = $this->getGroupId();  // Replace with your actual group ID
+        $fields = $this->getGroupDetails($groupid);
+        $pro = (isset($fields['pro']))?$fields['pro']:false;
+
+        if($pro):
+            $classes[] = 'pro-version'; // Replace 'my-custom-class' with your desired class name
+        endif;
+        
+        return $classes;
     }
 
     public function get_user_export() {
