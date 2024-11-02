@@ -48,7 +48,7 @@ $groupid = $group->getGroupId();  // Replace with your actual group ID
                 if (data.status === 'success') {
                     console.log('API call to add credits was successful:', data.message);
                     // Refresh the page after a successful API call
-                    location.reload();
+                    jQuery('#reload').submit(); // Refresh the page if matching succeeded
                 } else {
                     console.error('API call to add credits failed:', data.message);
                     // Hide the loader if the API call fails
