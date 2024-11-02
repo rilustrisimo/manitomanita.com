@@ -26,12 +26,12 @@ defined( 'ABSPATH' ) || die();
             <a href="#" id="make-pro-btn">Upgrade to PRO</a>
             <p class="heading">With Manito Manita PRO, Moderators Can:</p>
             <ul>
-            <li><b>Reshuffle</b> group pairings</li>
-            <li><b>View</b> member names and screen names</li>
-            <li><b>Access</b> and review member matches/pairs</li>
-            <li><b>Remove</b> members from the group</li>
-            <li><b>Edit</b> member information</li>
-            <li><b>Export</b> group data</li>
+            <li><span><b>Reshuffle</b> group pairings</span></li>
+            <li><span><b>View</b> member names and screen names</span></li>
+            <li><span><b>Access</b> and review member matches/pairs</span></li>
+            <li><span><b>Remove</b> members from the group</span></li>
+            <li><span><b>Edit</b> member information</span></li>
+            <li><span><b>Export</b> group data</span></li>
             </ul>
             <div class="paypal-pay" style="display:none;">
                 <?php get_template_part( 'paypal/index', 'paypal' ); ?>
