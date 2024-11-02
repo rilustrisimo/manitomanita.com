@@ -617,6 +617,7 @@ var Theme = {
             $('#make-pro-btn').click(function(e){
                 e.preventDefault();
                 $('.paypal-pay').show();
+                $(this).hide();
             }); 
         }
     },
