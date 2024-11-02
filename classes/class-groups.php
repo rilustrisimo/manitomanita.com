@@ -430,12 +430,13 @@ class Groups extends Theme {
 
         $post_count = $this->get_users_count_with_meta($meta_query);
         $unshuf_count = (int)get_field('unshuffle_credits', $gid);
+        $unshuf_action = ($unshuf_count > 0)?'un-shuffle':'add-credits';
         
 
         $list = "";
         $list .= "<ul class='pro-btns-list'>";
         $list .= (!$fields['matched'] && $post_count > 2)?"<li><a href='#' class='pro-list-btn' data-btn='shuffle'>Shuffle Group</a></li>":"<li><a href='javascript:;' disabled>Shuffle Group</a></li>";
-        $list .= ($fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='un-shuffle'>Unshuffle (".$unshuf_count.")</a></li>":"<li><a href='javascript:;' disabled>Unshuffle (".$unshuf_count.")</a></li>";
+        $list .= ($fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='".$unshuf_action."'>Unshuffle (".$unshuf_count.")</a></li>":"<li><a href='javascript:;' disabled>Unshuffle (".$unshuf_count.")</a></li>";
         $list .= "<li><a href='#' class='pro-list-btn' data-btn='joined'>Joined Names</a></li>";
         $list .= ($fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='matches'>See Matches</a></li>":"<li><a href='javascript:;' disabled>See Matches</a></li>";
         $list .= (!$fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='kick'>Kick Members</a></li>":"<li><a href='javascript:;' disabled>Kick Members</a></li>";
