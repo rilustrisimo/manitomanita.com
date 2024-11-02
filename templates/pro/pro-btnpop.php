@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || die();
         <div class="pop-container__content">
             <p class="subheading">Unlock Advanced Moderator Tools</p>
             <h1>₱ 199.00</h1>
-            <p class="subheading">One-time payment</p>
+            <p class="subheading">One-time payment<sup>*</sup></p>
             <a href="#" id="make-pro-btn">Upgrade to PRO</a>
             <div class="paypal-pay" style="display:none;">
                 <?php get_template_part( 'paypal/index', 'paypal' ); ?>
