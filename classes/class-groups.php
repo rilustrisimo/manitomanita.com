@@ -458,7 +458,7 @@ class Groups extends Theme {
 
         $list = "";
         $list .= "<ul class='pro-btns-list'>";
-        $list .= (!$fields['matched'] && $post_count > 2)?"<li><span><i class='fa-solid fa-shuffle'></i></span><a href='#' class='pro-list-btn' data-btn='shuffle'>Shuffle Group</a></li>":"<li><span><i class='fa-solid fa-shuffle'></i></span><a href='javascript:;' disabled>Shuffle Group</a></li>";
+        $list .= (!$fields['matched'] && $post_count > 2)?"<li><a href='#' class='pro-list-btn' data-btn='shuffle'><span><i class='fa-solid fa-shuffle'></i></span> Shuffle Group</a></li>":"<li><a href='javascript:;' disabled><span><i class='fa-solid fa-shuffle'></i></span> Shuffle Group</a></li>";
         $list .= ($fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='".$unshuf_action."'>Unshuffle (".$unshuf_count.")</a></li>":"<li><a href='javascript:;' disabled>Unshuffle (".$unshuf_count.")</a></li>";
         $list .= "<li><a href='#' class='pro-list-btn' data-btn='joined'>Joined Names</a></li>";
         $list .= ($fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='matches'>See Matches</a></li>":"<li><a href='javascript:;' disabled>See Matches</a></li>";
