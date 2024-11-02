@@ -436,7 +436,7 @@ var Theme = {
                     tableHTML += `<tr style="background-color: ${rowColor};">`;
                     tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.name}</td>`;
                     tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.screen}</td>`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;"><a href="#" class="kick-link" data-name="${user.name}" data-id="${user.ID}">kick</a></td>`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;"><a href="#" class="kick-link" data-name="${user.name}" data-id="${user.ID}">Remove</a></td>`;
                     tableHTML += '</tr>';
                 });
     
