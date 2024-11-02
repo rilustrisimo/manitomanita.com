@@ -109,8 +109,24 @@
 
         ul {
             li {
+                position: relative;
+
                 span {
                     border: none;
+
+                    &.uncount {
+                        position: absolute;
+                        top: -9px;
+                        right: -8px;
+                        background-color: @main-color2;
+                        width: 20px;
+                        height: 20px;
+                        text-align: center;
+                        line-height: 15px;
+                        font-size: 15px;
+                        border-radius: 50%;
+                        font-weight: 700;
+                    }
                 }
             }
         }
