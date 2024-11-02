@@ -29,6 +29,7 @@ defined( 'ABSPATH' ) || die();
             </div>
             <p class="heading">With Manito Manita PRO, Moderators Can:</p>
             <ul>
+            <li><span><b>No</b> Ads</span></li>
             <li><span><b>Reshuffle</b> group pairings</span></li>
             <li><span><b>View</b> member names and screen names</span></li>
             <li><span><b>Access</b> and review member matches/pairs</span></li>
