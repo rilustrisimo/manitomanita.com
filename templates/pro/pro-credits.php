@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || die();
         <div class="pop-container__content">
             <p class="subheading">You used up all the unshuffle credits</p>
             <h1>₱ 99.00</h1>
-            <p class="subheading">Add more credits</p>
+            <p class="subheading">Add more +3 credits</p>
             <div class="paypal-pay">
                 <?php get_template_part( 'paypal/index', 'paypal-credits' ); ?>
             </div>
