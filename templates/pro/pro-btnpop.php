@@ -24,6 +24,9 @@ defined( 'ABSPATH' ) || die();
             <h1>₱ 199.00</h1>
             <p class="subheading">One-time payment</p>
             <a href="#" id="make-pro-btn">Upgrade to PRO</a>
+            <div class="paypal-pay" style="display:none;">
+                <?php get_template_part( 'paypal/index', 'paypal' ); ?>
+            </div>
             <p class="heading">With Manito Manita PRO, Moderators Can:</p>
             <ul>
             <li><span><b>Reshuffle</b> group pairings</span></li>
@@ -33,9 +36,6 @@ defined( 'ABSPATH' ) || die();
             <li><span><b>Edit</b> member information</span></li>
             <li><span><b>Export</b> group data</span></li>
             </ul>
-            <div class="paypal-pay" style="display:none;">
-                <?php get_template_part( 'paypal/index', 'paypal' ); ?>
-            </div>
         </div>
     </div>
 </div>
