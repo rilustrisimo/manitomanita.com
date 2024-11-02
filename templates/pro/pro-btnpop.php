@@ -20,9 +20,9 @@ defined( 'ABSPATH' ) || die();
         <div class="pop-container__close"><a href="#"><i class="fa-solid fa-xmark"></i></a></div>
         <div class="pop-container__header">Manito Manita <span>PRO</span></div>
         <div class="pop-container__content">
-            <p>Unlock Advanced Moderator Tools</p>
-            <h1>₱199.00 PHP</h1>
-            <p>UOne-time payment</p>
+            <p class="subheading">Unlock Advanced Moderator Tools</p>
+            <h1>₱ 199.00</h1>
+            <p lass="subheading">One-time payment</p>
             <p class="heading">With Manito Manita PRO, Moderators Can:</p>
             <ul>
             <li><b>Reshuffle</b> group pairings</li>
