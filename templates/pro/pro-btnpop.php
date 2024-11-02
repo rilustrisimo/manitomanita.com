@@ -23,6 +23,7 @@ defined( 'ABSPATH' ) || die();
             <p class="subheading">Unlock Advanced Moderator Tools</p>
             <h1>₱ 199.00</h1>
             <p class="subheading">One-time payment</p>
+            <a href="#" id="make-pro-btn">Upgrade to PRO</a>
             <p class="heading">With Manito Manita PRO, Moderators Can:</p>
             <ul>
             <li><b>Reshuffle</b> group pairings</li>
@@ -32,7 +33,6 @@ defined( 'ABSPATH' ) || die();
             <li><b>Edit</b> member information</li>
             <li><b>Export</b> group data</li>
             </ul>
-            <a href="#" id="make-pro-btn">Upgrade to PRO</a>
             <div class="paypal-pay" style="display:none;">
                 <?php get_template_part( 'paypal/index', 'paypal' ); ?>
             </div>
