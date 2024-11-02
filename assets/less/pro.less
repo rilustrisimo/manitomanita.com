@@ -197,6 +197,31 @@
     display: none;
 }
 
+body.pro-version {
+    .header .bottom_layer {
+        background: @pro-color;
+    }
+    
+    .dashboard__ed .day,
+    .dashboard__ed h2 span,
+    .dashboard__gd h2 span,
+    .dashboard__ma .header-dash h2 span,
+    .dashboard__ma .body-dash #members-list .card:nth-child(odd) .action-btns a,
+    .popup__title span {
+        color: @pro-color;
+    }
+    
+    .dashboard__ma .body-dash #members-list .card:nth-child(even),
+    .popup__divider,
+    .card-columns .card:nth-child(even) {
+        background-color: @pro-color;
+    }
+    
+    .dashboard__ma .body-dash #members-list .card:nth-child(odd):before {
+        background-color: @pro-color;
+    }
+}
+
 /* Style for the overlay */
 #loader-overlay-paypal {
     position: fixed;
