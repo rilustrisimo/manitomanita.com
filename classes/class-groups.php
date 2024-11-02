@@ -404,17 +404,40 @@ class Groups extends Theme {
             
             // Check if the update was successful
             if ($updated) {
+                // Get the current value of the 'unshuffle_credits' field
+                $current_credits = (int) get_field('unshuffle_credits', $group_id);
+                
+                // Decrement the unshuffle_credits by 1, ensuring it does not go below 0
+                $new_credits = max(0, $current_credits - 1);
+    
+                // Update the 'unshuffle_credits' field with the new value
+                update_field('unshuffle_credits', $new_credits, $group_id);
+    
                 // Respond with success
-                return new WP_REST_Response(array('success' => true, 'message' => 'Group updated'), 200);
+                return new WP_REST_Response(array(
+                    'success' => true,
+                    'message' => 'Group updated successfully',
+                    'group_id' => $group_id,
+                    'matched' => false,
+                    'unshuffle_credits' => $new_credits
+                ), 200);
             } else {
                 // Respond with failure if update failed
-                return new WP_REST_Response(array('success' => false, 'message' => 'Failed to update group'), 500);
+                return new WP_REST_Response(array(
+                    'success' => false,
+                    'message' => 'Failed to update group',
+                    'group_id' => $group_id
+                ), 500);
             }
         } else {
             // Respond with failure if post does not exist or is not of 'groups' type
-            return new WP_REST_Response(array('success' => false, 'message' => 'Invalid group ID'), 400);
+            return new WP_REST_Response(array(
+                'success' => false,
+                'message' => 'Invalid group ID',
+                'group_id' => $group_id
+            ), 400);
         }
-    }
+    }    
     
 
     public function get_pro_list(){
