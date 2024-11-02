@@ -463,7 +463,7 @@ class Groups extends Theme {
         $list .= "<li><a href='#' class='pro-list-btn' data-btn='joined'><div><span><i class='fa-solid fa-user-plus'></i></span>Joined Names</div></a></li>";
         $list .= ($fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='matches'><div><span><i class='fa-solid fa-handshake'></i></span>See Matches</div></a></li>":"<li><a href='javascript:;' disabled><div><span><i class='fa-solid fa-handshake'></i></span>See Matches</div></a></li>";
         $list .= (!$fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='kick'><div><span><i class='fa-solid fa-user-xmark'></i></span>Kick Members</div></a></li>":"<li><a href='javascript:;' disabled><div><span><i class='fa-solid fa-user-xmark'></i></span>Kick Members</div></a></li>";
-        $list .= "<li><a href='#' class='pro-list-btn' data-btn='edit'><div><span><i class='fa-solid fa-pen-to-square'></i></span>Edit Member Details</div></a></li>";
+        $list .= "<li><a href='#' class='pro-list-btn' data-btn='edit'><div><span><i class='fa-solid fa-pen-to-square'></i></span>Edit Member</div></a></li>";
         $list .= "<li><a href='#' class='pro-list-btn' data-btn='export'><div><span><i class='fa-solid fa-file-arrow-down'></i></span>Export Data</div></a></li>";
         $list .= "</ul>";
 
