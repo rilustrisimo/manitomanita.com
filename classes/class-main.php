@@ -407,7 +407,7 @@ class Theme {
     public function createAcfForm($fieldGroupId, $postType, $button = 'Submit', $redirect = null){
         
         if($redirect == 'group-dashboard'){
-            $redirect = $redirect.'/?rnd='.$this->randString(10);
+            $redirect = $redirect.'/?rnd='.$this->randString(10).'&pop=try-pro';
         }
 
         return 	acf_form(array(

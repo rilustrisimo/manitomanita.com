@@ -683,6 +683,12 @@ var Theme = {
                         backdrop: true
                     },
                     {
+                        element: "#go-pro-btn",
+                        title: "TRY PRO VERSION",
+                        content: "Unlock Advanced Moderator Tools",
+                        backdrop: true
+                    },
+                    {
                         element: "#clipboard",
                         title: "SHARE THE LINK",
                         content: "Share this link to the awesome people you want to be part of the group.",

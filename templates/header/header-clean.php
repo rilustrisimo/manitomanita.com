@@ -49,6 +49,7 @@ get_template_directory_uri().'/assets/images/loader.gif'; ?>"></div>
 </div>
 <?php if(!$pro): ?>
 	<?php get_template_part( 'templates/pro/pro', 'btnpop' ); ?>
+	<?php get_template_part( 'templates/pro/pro', 'try' ); ?>
 <?php else: ?>
 	<?php get_template_part( 'templates/pro/pro', 'actions' ); ?>
 	<?php get_template_part( 'templates/pro/pro', 'credits' ); ?>
