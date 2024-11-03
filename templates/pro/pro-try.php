@@ -23,13 +23,13 @@ defined( 'ABSPATH' ) || die();
             <p class="subheading">Unlock more features for Moderators!</p>
             <img src="/wp-content/uploads/2024/11/team-leader.png" class="pro-image" />
             <ul>
-                <li>Ad-Free Experience</li>
-                <li>Reshuffle Group Pairings for flexibility</li>
-                <li>View Full Member Details including names and screen names</li>
-                <li>Access Member Matches for easy pair management</li>
-                <li>Remove Members when needed</li>
-                <li>Edit Member Information for accuracy</li>
-                <li>Export Group Data in one click</li>
+                <li><b>Ad-Free Experience</b></li>
+                <li><b>Reshuffle Group Pairings</b> for flexibility</li>
+                <li><b>View Full Member Details</b> including names and screen names</li>
+                <li><b>Access Member Matches</b> for easy pair management</li>
+                <li><b>Remove Members</b> when needed</li>
+                <li><b>Edit Member Information</b> for accuracy</li>
+                <li><b>Export Group Data</b> in one click</li>
             </ul>
             <a href="#" id="try-pro-btn">Try PRO Now</a>
         </div>
