@@ -43,6 +43,7 @@ var Theme = {
         Theme.proPurchaseButton($);
         Theme.makeProBtn($);
         Theme.proActionsScripts($);
+        Theme.tryProPop($);
     },
 
     proActionsScripts: function($){
@@ -619,6 +620,25 @@ var Theme = {
                 $('.paypal-pay').show();
                 $(this).hide();
             }); 
+        }
+    },
+
+    tryProPop: function($) {
+        if ($('#pro-try').length > 0) {
+            // Check if URL has the parameter '&pop=try-pro'
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('pop') === 'try-pro') {
+                // Set #pro-try container to display:flex
+                $('#pro-try').css('display', 'flex');
+
+                $('#try-pro-btn').click(function(e){
+                    e.preventDefault();
+                    $('#pro-try').hide();
+
+                    // Trigger click on #go-pro-btn
+                    $('#go-pro-btn').click();
+                });
+            }
         }
     },
 
