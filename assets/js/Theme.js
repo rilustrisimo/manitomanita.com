@@ -630,6 +630,7 @@ var Theme = {
             if (urlParams.get('pop') === 'try-pro') {
                 // Set #pro-try container to display:flex
                 $('#pro-try').css('display', 'flex');
+                Theme.popClose($);
 
                 $('#try-pro-btn').click(function(e){
                     e.preventDefault();
