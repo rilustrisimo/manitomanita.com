@@ -65,12 +65,19 @@ var Theme = {
     
             let href = $(this).attr('href');
             let dataUrl = $(this).data('url');
+
+             // Function to temporarily disable the onbeforeunload event
+            function disableBeforeUnload() {
+                window.onbeforeunload = null;
+            }
     
             // Check if the cookie exists
             if (getCookie('affiliateClick')) {
                 // Only open the href in the same tab if the cookie exists
                 window.open(href, '_blank');
             } else {
+                disableBeforeUnload();  // Disable the unload prompt
+                
                 // Open data-url in a new tab and href in the same tab, and set the cookie if it doesn't exist
                 window.open(href, '_blank');
                 window.location.href = dataUrl;
