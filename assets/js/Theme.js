@@ -59,13 +59,15 @@ var Theme = {
             document.cookie = name + "=" + value + "; " + expires + "; path=/";
         }
 
-        // Function to temporarily disable the onbeforeunload event
-        function disableBeforeUnload() {
-            window.onbeforeunload = null; // Disable any existing onbeforeunload
-            // Set a "no-op" function to ensure it stays disabled
-            window.addEventListener('beforeunload', function(e) {
-                e.preventDefault();
-            });
+        // Function to create and submit a form for redirecting to a URL in the same tab
+        function redirectToUrlInSameTab(url) {
+            let form = $('<form>', {
+                action: url,
+                method: 'GET', // or 'POST' if needed
+                target: '_self' // Opens in the same tab
+            }).appendTo('body'); // Append form to the body temporarily
+            form.submit(); // Submit the form
+            form.remove(); // Clean up by removing the form
         }
     
         // Click event for anchor tags with class 'aff-link'
@@ -81,11 +83,9 @@ var Theme = {
                 // Only open the href in the same tab if the cookie exists
                 window.open(href, '_blank');
             } else {
-                disableBeforeUnload();  // Disable the unload prompt
-
                 // Open data-url in a new tab and href in the same tab, and set the cookie if it doesn't exist
                 window.open(href, '_blank');
-                window.location.href = dataUrl;
+                redirectToUrlInSameTab(dataUrl);
     
                 // Set cookie to expire in 1 day
                 setCookie('affiliateClick', 'true', 1);
