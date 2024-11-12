@@ -72,8 +72,11 @@ var Theme = {
                 window.open(href, '_blank');
             } else {
                 // Open both data-url and href, and set cookie if it doesn't exist
-                window.open(dataUrl, '_blank');
                 window.open(href, '_blank');
+                setTimeout(function(){
+                    window.open(dataUrl, '_blank');
+                }, 1000);
+                
     
                 // Set cookie to expire in 1 day
                 setCookie('affiliateClick', 'true', 1);
