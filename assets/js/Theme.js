@@ -39,6 +39,48 @@ var Theme = {
         });
     },
 
+    afflinkFunction: function($){
+
+        function getCookie(name) {
+            let nameEq = name + "=";
+            let ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i].trim();
+                if (c.indexOf(nameEq) === 0) return c.substring(nameEq.length, c.length);
+            }
+            return null;
+        }
+    
+        // Function to set a cookie
+        function setCookie(name, value, days) {
+            let date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000)); // Cookie expires in `days`
+            let expires = "expires=" + date.toUTCString();
+            document.cookie = name + "=" + value + "; " + expires + "; path=/";
+        }
+    
+        // Click event for anchor tags with class 'aff-link'
+        $('a.aff-link').on('click', function(event) {
+            event.preventDefault(); // Prevent default anchor behavior
+    
+            let href = $(this).attr('href');
+            let dataUrl = $(this).data('url');
+    
+            // Check if the cookie exists
+            if (getCookie('affiliateClick')) {
+                // Only open the href if the cookie exists
+                window.open(href, '_blank');
+            } else {
+                // Open both data-url and href, and set cookie if it doesn't exist
+                window.open(dataUrl, '_blank');
+                window.open(href, '_blank');
+    
+                // Set cookie to expire in 1 day
+                setCookie('affiliateClick', 'true', 1);
+            }
+        });       
+    },
+
     proScripts: function($){
         Theme.proPurchaseButton($);
         Theme.makeProBtn($);
@@ -958,6 +1000,8 @@ var Theme = {
                     $('.joined.card-columns').html(response.data[4]);
                     Theme.initDashboardScripts($);
                     $('#cards-container').removeClass('populating');
+
+                    Theme.afflinkFunction($);
                     /*
                     if(Theme.batchcount <= 0) {
                         Theme.initDashboardScripts($);
@@ -1225,7 +1269,8 @@ var Theme = {
 
                             if(setting[Theme.action].formid == 99999) Theme.initLeaveGroup($, setting[Theme.action].uid);
                         }
-    
+
+                        Theme.afflinkFunction($);
                         //Theme.removeOverlay($);
                     },
                     error: function (xhr, ajaxOptions, thrownError) {

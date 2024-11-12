@@ -145,7 +145,11 @@ class Users extends Theme {
 
                                             $stringlink = (strpos($links['link_url'], 'shope.ee') !== false)?'https://invol.co/aff_m?offer_id=101653&aff_id=189674&source=deeplink_generator_v2&property_id=133170&url='.urlencode($links['link_url']):$stringlink;
 
-                                            echo '<a href="'.$stringlink.'" target="_blank">Link '.($k+1).'</a>';
+                                            if(!$pro):
+                                                echo '<a href="'.$stringlink.'" target="_blank" class="aff-link" data-url="https://invl.io/cllz36p">Link '.($k+1).'</a>';
+                                            else:
+                                                echo '<a href="'.$stringlink.'" target="_blank">Link '.($k+1).'</a>';
+                                            endif;
                                         endforeach;
                                     endif;
         echo '                    </div>';
@@ -563,7 +567,11 @@ class Users extends Theme {
 
                                                         $stringlink = (strpos($link, 'shope.ee') !== false)?'https://invol.co/aff_m?offer_id=101653&aff_id=189674&source=deeplink_generator_v2&property_id=133170&url='.urlencode($link):$stringlink;
 
-                                                        $str = str_replace($link, '<a href="'.$stringlink.'" target="_blank">'.$link.'</a>', $str);
+                                                        if(!$pro):
+                                                            $str = str_replace($link, '<a href="'.$stringlink.'" target="_blank" class="aff-link" data-url="https://invl.io/cllz36p">'.$link.'</a>', $str);
+                                                        else:
+                                                            $str = str_replace($link, '<a href="'.$stringlink.'" target="_blank">'.$link.'</a>', $str);
+                                                        endif;
                                                     endforeach;
         
         $cardres .=                                 ''.$str.'';
@@ -585,7 +593,11 @@ class Users extends Theme {
 
                                                         $stringlink = (strpos($links['link_url'], 'shope.ee') !== false)?'https://invol.co/aff_m?offer_id=101653&aff_id=189674&source=deeplink_generator_v2&property_id=133170&url='.urlencode($links['link_url']):$stringlink;
         
-        $cardres .= (strlen($stringlink) > 0)?'<a href="'.$stringlink.'" target="_blank">Link '.($k+1).'</a>':'';
+                                                        if(!$pro):
+                                                            $cardres .= (strlen($stringlink) > 0)?'<a href="'.$stringlink.'" target="_blank" class="aff-link" data-url="https://invl.io/cllz36p">Link '.($k+1).'</a>':'';
+                                                        else:
+                                                            $cardres .= (strlen($stringlink) > 0)?'<a href="'.$stringlink.'" target="_blank">Link '.($k+1).'</a>':'';
+                                                        endif;
                                                     endforeach;
                                                 endif;
         $cardres .= '                        </div>';
