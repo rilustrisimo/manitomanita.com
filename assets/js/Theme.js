@@ -68,23 +68,17 @@ var Theme = {
     
             // Check if the cookie exists
             if (getCookie('affiliateClick')) {
-                // Only open the href if the cookie exists
-                window.open(href, '_blank');
+                // Only open the href in the same tab if the cookie exists
+                window.location.href = href;
             } else {
-                // Open the data-url first, then redirect to href
-                let newWindow = window.open(dataUrl, '_blank');
-                
+                // Open data-url in a new tab and href in the same tab, and set the cookie if it doesn't exist
+                window.open(dataUrl, '_blank');
+                window.location.href = href;
+    
                 // Set cookie to expire in 1 day
                 setCookie('affiliateClick', 'true', 1);
-                
-                // Redirect to the href after a small delay if new window opened successfully
-                if (newWindow) {
-                    setTimeout(function() {
-                        newWindow.location.href = href;
-                    }, 500); // Delay for redirection (500 ms)
-                }
             }
-        });   
+        });
     },
 
     proScripts: function($){
