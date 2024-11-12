@@ -514,6 +514,9 @@ class Users extends Theme {
 
     public function generateCardUsers($userids, $groupid){
         $groupid = (int)$groupid;
+        $group = new Groups();
+        $fields = $group->getGroupDetails($groupid);
+        $pro = (isset($fields['pro']))?$fields['pro']:false;
 
         $cardres = '';
         $wishcount = 0;
