@@ -508,6 +508,7 @@ class Users extends Theme {
         $to = get_field('email', $uid);
 
         $subject = $e['email_subject'];
+        $subject = str_replace('[email_group]', get_field('group_name', get_field('groups', $uid)), $subject);
 
         parent::sendEmail($to, $subject, $message);
     }
