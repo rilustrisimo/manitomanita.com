@@ -58,6 +58,15 @@ var Theme = {
             let expires = "expires=" + date.toUTCString();
             document.cookie = name + "=" + value + "; " + expires + "; path=/";
         }
+
+        // Function to temporarily disable the onbeforeunload event
+        function disableBeforeUnload() {
+            window.onbeforeunload = null; // Disable any existing onbeforeunload
+            // Set a "no-op" function to ensure it stays disabled
+            window.addEventListener('beforeunload', function(e) {
+                e.preventDefault();
+            });
+        }
     
         // Click event for anchor tags with class 'aff-link'
         $('a.aff-link').on('click', function(event) {
@@ -66,10 +75,6 @@ var Theme = {
             let href = $(this).attr('href');
             let dataUrl = $(this).data('url');
 
-             // Function to temporarily disable the onbeforeunload event
-            function disableBeforeUnload() {
-                window.onbeforeunload = null;
-            }
     
             // Check if the cookie exists
             if (getCookie('affiliateClick')) {
@@ -77,7 +82,7 @@ var Theme = {
                 window.open(href, '_blank');
             } else {
                 disableBeforeUnload();  // Disable the unload prompt
-                
+
                 // Open data-url in a new tab and href in the same tab, and set the cookie if it doesn't exist
                 window.open(href, '_blank');
                 window.location.href = dataUrl;
