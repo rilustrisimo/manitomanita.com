@@ -392,8 +392,6 @@ var Theme = {
                     csvContent += row + "\n";
                 });
     
-                console.log(csvContent);
-    
                 // Generate current timestamp for filename
                 let timestamp = new Date().toISOString().replace(/[:.-]/g, '');
     
