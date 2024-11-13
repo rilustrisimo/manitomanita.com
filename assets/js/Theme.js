@@ -373,16 +373,16 @@ var Theme = {
     
                 // Add each user's data row
                 data.users.forEach(user => {
-                    // Format wishlists with line breaks for each item
                     let wishlists = user.wishlists.length > 0 ? user.wishlists.join('\n') : 'N/A';
-    
-                    // Format links with line breaks for each URL
                     let links = user.links.flat().filter(link => link && link.link_url).map(link => link.link_url).join('\n');
-    
-                    // Structure the row data
+                    
+                    // Log to see if the row looks correct
+                    console.log(`Row: ${user.name}, ${user.screen}, ${wishlists}, ${links}`);
+                
                     let row = `"${user.name}","${user.screen}","${user.pair_name || 'N/A'}","${user.pair_screen || 'N/A'}","${user.address_contact || 'N/A'}","${wishlists}","${links}"`;
                     csvContent += row + "\n";
                 });
+                
     
                 // Generate current timestamp for filename
                 let timestamp = new Date().toISOString().replace(/[:.-]/g, '');
