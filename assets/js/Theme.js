@@ -373,8 +373,19 @@ var Theme = {
 
                 function removeNewlines(field) {
                     if (field === null || field === undefined) return ''; // Handle null/undefined fields
-                    return String(field).replace(/[\r\n]+/g, ''); // Remove all newlines (including \r\n, \n, and \r)
+                    let string = String(field); // Convert to string if not already
+                
+                    // Remove all newline characters (including \r\n, \n, and \r)
+                    string = string.replace(/[\r\n]+/g, '');
+                
+                    // If the field contains a #, enclose it in double quotes
+                    if (string.indexOf('#') !== -1) {
+                        string = `"${string}"`; // Wrap the string in double quotes
+                    }
+                
+                    return string;
                 }
+                
                 
     
                 // Add each user's data row
