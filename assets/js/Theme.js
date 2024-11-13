@@ -378,14 +378,11 @@ var Theme = {
                     // Remove all newline characters (including \r\n, \n, and \r)
                     string = string.replace(/[\r\n]+/g, '');
                 
-                    // If the field contains a #, enclose it in double quotes
-                    if (string.indexOf('#') !== -1) {
-                        string = `"${string}"`; // Wrap the string in double quotes
-                    }
+                    // Replace # with its HTML entity code
+                    string = string.replace(/#/g, '&#35;');
                 
                     return string;
                 }
-                
                 
     
                 // Add each user's data row
