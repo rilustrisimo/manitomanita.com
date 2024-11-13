@@ -681,7 +681,8 @@ class Groups extends Theme {
     }
 
     public function my_save_post( $post_id ) {	
-
+        var_dump($_POST);
+        die();
         if(isset($_POST['_acf_post_id'])) {
             /**
              * get post details
