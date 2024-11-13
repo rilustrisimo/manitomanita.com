@@ -368,51 +368,56 @@ var Theme = {
     
             if (data.success) {
                 // Prepare CSV content
-                let csvContent = "data:text/csv;charset=utf-8,";
-                csvContent += "Name,Screen Name,Pair Name,Pair Screen,Address Contact,Wishlists,Links\n"; // Header row
-
+                let csvContent = "Name,Screen Name,Pair Name,Pair Screen,Address Contact,Wishlists,Links\n"; // Header row
+    
                 function removeNewlines(field) {
                     if (field === null || field === undefined) return ''; // Handle null/undefined fields
                     let string = String(field); // Convert to string if not already
-                
+    
                     // Remove all newline characters (including \r\n, \n, and \r)
                     string = string.replace(/[\r\n]+/g, '');
-                
+    
                     // Replace # with its HTML entity code
                     string = string.replace(/#/g, '&#35;');
-                
+    
                     return string;
                 }
-                
     
                 // Add each user's data row
                 data.users.forEach(user => {
                     let wishlists = user.wishlists.length > 0 ? user.wishlists.join('|') : 'N/A';
                     let links = user.links.flat().filter(link => link && link.link_url).map(link => link.link_url).join('|');
-                    
+    
                     // Log to see if the row looks correct
                     console.log(`Row: ${user.name}, ${user.screen}, ${wishlists}, ${links}`);
-                
+    
                     let row = `"${user.name}","${user.screen}","${user.pair_name || 'N/A'}","${user.pair_screen || 'N/A'}","${user.address_contact || 'N/A'}","${removeNewlines(wishlists)}","${removeNewlines(links)}"`;
                     csvContent += row + "\n";
                 });
-
+    
                 console.log(csvContent);
-                
     
                 // Generate current timestamp for filename
                 let timestamp = new Date().toISOString().replace(/[:.-]/g, '');
     
-                // Create a download link for the CSV
-                let encodedUri = encodeURI(csvContent);
+                // Create a Blob with the CSV content
+                let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+                // Create a download link for the CSV file
                 let downloadLink = document.createElement("a");
-                downloadLink.href = encodedUri;
-                downloadLink.download = `manitomanita_group_data_${timestamp}.csv`;
-                
-                // Append the link to the body, trigger click to download, and remove it
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
+    
+                // Use URL.createObjectURL to generate a download URL for the Blob
+                if (navigator.msSaveBlob) { // For IE
+                    navigator.msSaveBlob(blob, `manitomanita_group_data_${timestamp}.csv`);
+                } else { // For other browsers
+                    downloadLink.href = URL.createObjectURL(blob);
+                    downloadLink.download = `manitomanita_group_data_${timestamp}.csv`;
+    
+                    // Append the link to the body, trigger click to download, and remove it
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                }
             } else {
                 alert('Error: ' + data.message);
             }
@@ -421,7 +426,7 @@ var Theme = {
             alert('An unexpected error occurred: ' + error.message);
             Theme.removeOverlay($);
         });
-    },      
+    },     
 
     editMemberFunction: function($, groupid){
         Theme.initShowOverlay($);
