@@ -518,9 +518,13 @@ class Groups extends Theme {
     }
 
     public function getGroupDetails($groupid){
-        $this->groupid = (isset($_SESSION['groupid']))?$_SESSION['groupid']:$groupid;
+        if($groupid):
+            $this->groupid = $groupid;
+        else:
+            $this->groupid = (isset($_SESSION['groupid']))?$_SESSION['groupid']:$groupid;
+        endif;
 
-        return get_fields($groupid);
+        return get_fields($this->groupid);
     }
 
     public function get_users_count_with_meta($meta_query = array()) {
@@ -549,14 +553,15 @@ class Groups extends Theme {
      
 
     public function getGroupId(){
-        if(isset($_SESSION['groupid']) || isset($_GET['gid'])){
+        if(isset($_GET['gid'])){
+            return $_GET['gid'];
+        }else{
+
             if(isset($_SESSION['groupid'])){
                 return $_SESSION['groupid'];
             }else{
-                return $_GET['gid'];
+                return false;
             }
-        }else{
-            return false;
         }
     }
 
@@ -603,7 +608,11 @@ class Groups extends Theme {
         $creds = array();
 
         if($this->checkGroupCredentials()){
-            $creds = array($_SESSION['groupid'], $_SESSION['grouppw']);
+            if(isset($_GET['gid']) and isset($_GET['pw'])):
+                $creds = array($_GET['gid'], $_GET['pw']);
+            else:
+                $creds = array($_SESSION['groupid'], $_SESSION['grouppw']);
+            endif;
         }
 
         return $creds;

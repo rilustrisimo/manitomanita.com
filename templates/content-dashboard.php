@@ -173,7 +173,8 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
 <div id="join-group" class="popup">
     <div class="popup__title">Join<span>Group</span></div>
 	<div class="popup__divider"></div>
-    <div class="popup__inner"><?php $group->createAcfForm(42, 'users', 'Join Group', 'group-dashboard/?gid='.$_SESSION['groupid'].'&pw='.$_SESSION['grouppw']); ?></div>
+    <?php $creds = $group->getGroupCredentials(); ?>
+    <div class="popup__inner"><?php $group->createAcfForm(42, 'users', 'Join Group', 'group-dashboard/?gid='.$creds[0].'&pw='.$creds[1]); ?></div>
 </div>
 <?php endif; ?>
 <div id="input-password" class="popup">
@@ -191,7 +192,7 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
 	<div class="popup__title">Comment<span>Member</span></div>
 	<div class="popup__divider"></div>
     <div class="popup__inner">
-		<form action="<?php echo get_permalink(get_the_ID()).'?gid='.$_SESSION['groupid'].'&pw='.$_SESSION['grouppw']; ?>" method="POST" id="comment-user" class="acf-form">
+		<form action="<?php echo get_permalink(get_the_ID()).'?gid='.$creds[0].'&pw='.$creds[1]; ?>" method="POST" id="comment-user" class="acf-form">
             <input type="hidden" name="user-data" value="">
             <div class="com-field acf-field"><div class="acf-label"><label>Your Comment</label></div><textarea name="comment" required></textarea></div>
             <div class="acf-field" data-type="recaptcha"><div id="comment-grecaptcha"></div></div>

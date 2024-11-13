@@ -97,7 +97,10 @@ class Users extends Theme {
             elseif(trim($form) == "99999"): //leave group
                 echo "<h2>Are you sure you want to leave group?</h2><div class='leave-btns'><a href='#' data-action='false'>No</a><a href='#' data-action='true'>Yes</a></div>";
             else:
-                parent::updateAcfForm($uid, $form, 'Update', 'group-dashboard/?gid='.$_SESSION['groupid'].'&pw='.$_SESSION['grouppw']);
+                $group = new Groups();
+                $creds = $group->getGroupCredentials();
+
+                parent::updateAcfForm($uid, $form, 'Update', 'group-dashboard/?gid='.$creds[0].'&pw='.$creds[1]);
             endif;
         }
     }
@@ -230,8 +233,11 @@ class Users extends Theme {
                         'post_title'   => $_POST['acf']['field_5f55f0e476675'].' - '.$_POST['acf']['field_5f55f1bc76676']
                     );
 
+                    $group = new Groups();
+                    $groupId = $group->getGroupId();
+
                     //group assign
-                    update_field('groups', $_SESSION['groupid'], $post_id);
+                    update_field('groups', $groupId, $post_id);
                     //user password hashed
                     update_field('password', wp_hash_password($_POST['acf']['field_5f55f1e576678']), $post_id);
 
