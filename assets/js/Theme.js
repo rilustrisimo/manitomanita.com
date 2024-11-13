@@ -371,17 +371,39 @@ var Theme = {
                 let csvContent = "data:text/csv;charset=utf-8,";
                 csvContent += "Name,Screen Name,Pair Name,Pair Screen,Address Contact,Wishlists,Links\n"; // Header row
     
-                // Add each user's data row
-                data.users.forEach(user => {
-                    let wishlists = user.wishlists.length > 0 ? user.wishlists.join('\n') : 'N/A';
-                    let links = user.links.flat().filter(link => link && link.link_url).map(link => link.link_url).join('\n');
-                    
-                    // Log to see if the row looks correct
-                    console.log(`Row: ${user.name}, ${user.screen}, ${wishlists}, ${links}`);
+                function escapeCsvField(field) {
+                    if (field === null || field === undefined) return 'N/A'; // Handle null/undefined fields
+                    let string = String(field); // Convert to string if not already
                 
-                    let row = `"${user.name}","${user.screen}","${user.pair_name || 'N/A'}","${user.pair_screen || 'N/A'}","${user.address_contact || 'N/A'}","${wishlists}","${links}"`;
+                    // Escape double quotes by doubling them
+                    string = string.replace(/"/g, '""');
+                
+                    // If the field contains a comma, a newline, or a quote, it must be enclosed in double quotes
+                    if (string.indexOf(',') !== -1 || string.indexOf('\n') !== -1 || string.indexOf('"') !== -1) {
+                        string = `"${string}"`;
+                    }
+                
+                    return string;
+                }
+                
+                data.users.forEach(user => {
+                    let wishlists = user.wishlists.length > 0 ? user.wishlists.map(item => escapeCsvField(item)).join('\n') : 'N/A';
+                    let links = user.links.flat().filter(link => link && link.link_url).map(link => escapeCsvField(link.link_url)).join('\n');
+                
+                    // Escape and format each field
+                    let row = [
+                        escapeCsvField(user.name),
+                        escapeCsvField(user.screen),
+                        escapeCsvField(user.pair_name || 'N/A'),
+                        escapeCsvField(user.pair_screen || 'N/A'),
+                        escapeCsvField(user.address_contact || 'N/A'),
+                        wishlists, // wishlists already escaped
+                        links // links already escaped
+                    ].join(',');
+                
+                    // Add the row to the CSV content
                     csvContent += row + "\n";
-                });
+                });                
                 
     
                 // Generate current timestamp for filename
