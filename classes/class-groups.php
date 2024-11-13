@@ -681,8 +681,6 @@ class Groups extends Theme {
     }
 
     public function my_save_post( $post_id ) {	
-        var_dump($_POST);
-        die();
         if(isset($_POST['_acf_post_id'])) {
             /**
              * get post details
@@ -723,6 +721,23 @@ class Groups extends Theme {
 
                     $this->setUserGroupSession($post_id, get_field('group_password', $post_id));
                     $this->setEmailForCreateGroup($post_id);
+
+
+                    // Retrieve the initial redirect URL (you may have it set as a parameter or derived in your function)
+                    $initial_redirect = home_url('/group-dashboard/?rnd='.$this->randString(10).'&pop=try-pro'); // Replace this if you retrieve from elsewhere
+
+                    // Append gid (post_id) and pw (group password)
+                    $redirect_url = add_query_arg(
+                        array(
+                            'gid' => $post_id,
+                            'pw'  => $gen
+                        ),
+                        $initial_redirect
+                    );
+
+                    // Redirect to the modified URL
+                    wp_redirect($redirect_url);
+                    exit; // Ensure no further code is executed
                 }
 
                 /**
