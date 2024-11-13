@@ -371,32 +371,21 @@ var Theme = {
                 let csvContent = "data:text/csv;charset=utf-8,";
                 csvContent += "Name,Screen Name,Pair Name,Pair Screen,Address Contact,Wishlists,Links\n"; // Header row
 
-                function escapeCsvField(field) {
-                    if (field === null || field === undefined) return 'N/A'; // Handle null/undefined fields
-                
-                    let string = String(field); // Convert to string if not already
-                
-                    // Escape double quotes by doubling them
-                    string = string.replace(/"/g, '""');
-                
-                    // If the field contains a comma, newline, or double quote, it must be enclosed in double quotes
-                    if (string.indexOf(',') !== -1 || string.indexOf('\n') !== -1 || string.indexOf('\r') !== -1 || string.indexOf('"') !== -1) {
-                        // Wrap the entire field in double quotes if necessary
-                        string = `"${string}"`;
-                    }
-                
-                    return string;
+                function removeNewlines(field) {
+                    if (field === null || field === undefined) return ''; // Handle null/undefined fields
+                    return String(field).replace(/[\r\n]+/g, ''); // Remove all newlines (including \r\n, \n, and \r)
                 }
+                
     
                 // Add each user's data row
                 data.users.forEach(user => {
-                    let wishlists = user.wishlists.length > 0 ? user.wishlists.join('\n') : 'N/A';
-                    let links = user.links.flat().filter(link => link && link.link_url).map(link => link.link_url).join('\n');
+                    let wishlists = user.wishlists.length > 0 ? user.wishlists.join('|') : 'N/A';
+                    let links = user.links.flat().filter(link => link && link.link_url).map(link => link.link_url).join('|');
                     
                     // Log to see if the row looks correct
                     console.log(`Row: ${user.name}, ${user.screen}, ${wishlists}, ${links}`);
                 
-                    let row = `"${escapeCsvField(user.name)}","${escapeCsvField(user.screen)}","${escapeCsvField(user.pair_name) || 'N/A'}","${escapeCsvField(user.pair_screen) || 'N/A'}","${escapeCsvField(user.address_contact) || 'N/A'}","${escapeCsvField(wishlists)}","${escapeCsvField(links)}"`;
+                    let row = `"${user.name}","${user.screen}","${user.pair_name || 'N/A'}","${user.pair_screen || 'N/A'}","${user.address_contact || 'N/A'}","${removeNewlines(wishlists)}","${removeNewlines(links)}"`;
                     csvContent += row + "\n";
                 });
 
