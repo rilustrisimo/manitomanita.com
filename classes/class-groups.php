@@ -467,12 +467,13 @@ class Groups extends Theme {
         $post_count = $this->get_users_count_with_meta($meta_query);
         $unshuf_count = (int)get_field('unshuffle_credits', $gid);
         $unshuf_action = ($unshuf_count > 0)?'un-shuffle':'add-credits';
+        $unshuf_txt = ($unshuf_count > 0)?'Unshuffle':'Add Unshuffle Credits';
         
 
         $list = "";
         $list .= "<ul class='pro-btns-list'>";
         $list .= (!$fields['matched'] && $post_count > 2)?"<li><a href='#' class='pro-list-btn' data-btn='shuffle'><div><span><i class='fa-solid fa-shuffle'></i></span> Shuffle Group</div></a></li>":"<li><a href='javascript:;' disabled><span><i class='fa-solid fa-shuffle'></i></span> Shuffle Group</a></li>";
-        $list .= ($fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='".$unshuf_action."'><div><span><i class='fa-solid fa-clock-rotate-left'></i></span>Unshuffle</div></a><span class='uncount'>".$unshuf_count."</span></li>":"<li><a href='javascript:;' disabled><div><span><i class='fa-solid fa-clock-rotate-left'></i></span>Unshuffle</div></a><span class='uncount'>".$unshuf_count."</span></li>";
+        $list .= ($fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='".$unshuf_action."'><div><span><i class='fa-solid fa-clock-rotate-left'></i></span>".$unshuf_txt."</div></a><span class='uncount'>".$unshuf_count."</span></li>":"<li><a href='javascript:;' disabled><div><span><i class='fa-solid fa-clock-rotate-left'></i></span>Unshuffle</div></a><span class='uncount'>".$unshuf_count."</span></li>";
         $list .= "<li><a href='#' class='pro-list-btn' data-btn='joined'><div><span><i class='fa-solid fa-user-plus'></i></span>Joined Names</div></a></li>";
         $list .= ($fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='matches'><div><span><i class='fa-solid fa-handshake'></i></span>See Matches</div></a></li>":"<li><a href='javascript:;' disabled><div><span><i class='fa-solid fa-handshake'></i></span>See Matches</div></a></li>";
         $list .= (!$fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='kick'><div><span><i class='fa-solid fa-user-xmark'></i></span>Kick Members</div></a></li>":"<li><a href='javascript:;' disabled><div><span><i class='fa-solid fa-user-xmark'></i></span>Kick Members</div></a></li>";

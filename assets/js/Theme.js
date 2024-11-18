@@ -368,7 +368,7 @@ var Theme = {
     
             if (data.success) {
                 // Prepare CSV content
-                let csvContent = "Name,Screen Name,Pair Name,Pair Screen,Address Contact,Wishlists,Links\n"; // Header row
+                let csvContent = "\uFEFF" + "Name,Screen Name,Pair Name,Pair Screen,Address Contact,Wishlists,Links\n"; // Header row
     
                 function removeNewlines(field) {
                     if (field === null || field === undefined) return ''; // Handle null/undefined fields
