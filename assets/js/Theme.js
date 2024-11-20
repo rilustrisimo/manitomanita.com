@@ -1078,11 +1078,13 @@ var Theme = {
                 e.preventDefault();
 
                 var btn = $(this);
+                var uname = btn.parents('.card').find('h2 button').text();
                 var uid = (btn.hasClass('editgroup-btn') || btn.hasClass('shuffle-btn'))?btn.attr('group-data'):btn.attr('user-data');
                 var box = (btn.hasClass('comment-btn'))?'#comment-box':'#input-password';
                 var action = btn.attr('data-action');
                 var notice = $('#input-pw .notices');
                 notice.hide();
+                $('.header-details').hide();
 
                 $.fancybox.open({
                     src: box,
@@ -1096,10 +1098,12 @@ var Theme = {
                         "</button>",
                     },
                     afterShow : function( instance, current ) {
+                        $('.header-details').html(uname);
                         $('.popup').find('.fancybox-button').appendTo('.popup__title');
                         $('input[name="user-data"]').val(uid);
                         notice.html('<a href="javascript:;" id="reset-pass">Forgot Password?</a>.');
                         notice.show();
+                        $('.header-details').show();
 
                         $('#reset-pass').unbind();
                         $('#reset-pass').click(function(){

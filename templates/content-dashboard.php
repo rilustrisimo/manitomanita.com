@@ -181,6 +181,7 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
 	<div class="popup__title">Supply<span>Password</span></div>
 	<div class="popup__divider"></div>
     <div class="popup__inner">
+        <div class="header-details"></div>
 		<form action="#" method="POST" id="input-pw" class="acf-form">
             <input type="hidden" name="user-data" value="">
             <div class="pw-field acf-field"><div class="acf-label"><label>Your Password</label></div><input type="password" name="password" required><div class="notices" style="display:none;"></div></div>
