@@ -1387,6 +1387,8 @@ var Theme = {
             e.preventDefault();
             var l = $(this);
             l.css('top', '13px');
+
+            l.parent().find('input').focus();
         });
 
         $('.acf-form input, .acf-form textarea').keyup(function(){
