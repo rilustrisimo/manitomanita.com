@@ -1123,11 +1123,9 @@ var Theme = {
         var notice = $('#input-pw .notices');
 
         submitbtn.unbind(); // clear binds
-        notice.hide();
 
         submitbtn.click(function(e){
             e.preventDefault();
-            notice.hide();
 
             if(pw.val().length == 0){
                 notice.text('Please supply your password to continue.');
