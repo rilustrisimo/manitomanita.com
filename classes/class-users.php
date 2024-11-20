@@ -386,13 +386,14 @@ class Users extends Theme {
 
             $group = new Groups();
 
-            $creds = $group->getGroupCredentials();
+            //$creds = $group->getGroupCredentials();
+            $gpass = $group->getGroupPassword($uid);
 
             $name = ($posttype == "groups")?get_field('your_name', $uid):get_field('name', $uid);
 
             $message = $e['email_body'];
             $message = str_replace('[email_name]', ucwords($name), $message);
-            $message = str_replace('[email_resetpass]', get_permalink(1389).'?uid='.$uid.'&gpw='.$creds[1], $message);
+            $message = str_replace('[email_resetpass]', get_permalink(1389).'?uid='.$uid.'&gpw='.$gpass, $message);
             
             $to = $email;
 
