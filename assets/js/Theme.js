@@ -1379,6 +1379,8 @@ var Theme = {
         $('.acf-form input, .acf-form textarea').focus(function(){
             var l = $(this).parents('.acf-field').find('.acf-label');
             l.css('top', '13px');
+
+            $(this).parents('.acf-field').find('.acf-label p').show();
         });
 
         $('.acf-label').click(function(e){
