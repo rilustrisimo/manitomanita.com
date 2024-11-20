@@ -1082,6 +1082,7 @@ var Theme = {
                 var box = (btn.hasClass('comment-btn'))?'#comment-box':'#input-password';
                 var action = btn.attr('data-action');
                 var notice = $('#input-pw .notices');
+                notice.hide();
 
                 $.fancybox.open({
                     src: box,
