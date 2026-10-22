@@ -125,34 +125,27 @@ class Users extends Theme {
         echo '    <div class="container">';
         echo '        <div class="row">';
         echo '            <div class="col-md-12">';
-        echo '                <h2><i class="far fa-user"></i> '.get_field('screen_name', $pair).'</h2>';
+        $gid = $groupid;
+        $pairName = get_field('screen_name', $pair);
+        $legacyAff = (!$pro)?array('class' => 'aff-link', 'attrs' => array('data-url' => 'https://invl.io/cllz36p')):array('class' => '', 'attrs' => array());
+
+        echo '                <h2><i class="far fa-user"></i> '.$pairName.'</h2>';
         echo '                <h2><i class="fas fa-gifts"></i> WISH<span>LIST</span></h2>';
-        echo '                  <ul class="wishlist-list">';
                                 $wishlist = get_field('my_wishlists', $pair);
-        echo '                                                ';
+                                $shopKeyword = ($wishlist)?Affiliate::keywordsFrom($wishlist[0]['wishlist_description']):'';
+        echo                    Affiliate::shopButtonsHtml($gid, 'match-shop-btn', $shopKeyword, '<i class="fas fa-gift"></i> Shop for '.esc_html($pairName));
+        echo '                  <ul class="wishlist-list">';
                                 if(!$wishlist){
                                     echo '<div class="placeholder">No wishlist provided yet.</div>';
                                 }
                                 if($wishlist):
                                 foreach($wishlist as $w):
         echo '                <li>';
-        echo '                    <div class="wish-content">'.$w['wishlist_description'].'</div>';
+        echo '                    <div class="wish-content">'.Affiliate::linkify($w['wishlist_description'], 'match-wishlist', $gid).'</div>';
         echo '                    <div class="wish-links">';
                                     if($w['reference_links']):
                                         foreach($w['reference_links'] as $k => $links):
-                                            $stringlink = (strpos($links['link_url'], 'lazada.com.ph') !== false)?'https://invol.co/aff_m?offer_id=101166&aff_id=189674&source=deeplink_generator_v2&url='.urlencode($links['link_url']):$links['link_url'];
-
-                                            $stringlink = (strpos($links['link_url'], 'shopee.ph') !== false)?'https://invol.co/aff_m?offer_id=101653&aff_id=189674&source=deeplink_generator_v2&property_id=133170&url='.urlencode($links['link_url']):$stringlink;
-
-                                            $stringlink = (strpos($links['link_url'], 'shp.ee') !== false)?'https://invol.co/aff_m?offer_id=101653&aff_id=189674&source=deeplink_generator_v2&property_id=133170&url='.urlencode($links['link_url']):$stringlink;
-
-                                            $stringlink = (strpos($links['link_url'], 'shope.ee') !== false)?'https://invol.co/aff_m?offer_id=101653&aff_id=189674&source=deeplink_generator_v2&property_id=133170&url='.urlencode($links['link_url']):$stringlink;
-
-                                            if(!$pro):
-                                                echo '<a href="'.$stringlink.'" target="_blank" class="aff-link" data-url="https://invl.io/cllz36p">Link '.($k+1).'</a>';
-                                            else:
-                                                echo '<a href="'.$stringlink.'" target="_blank">Link '.($k+1).'</a>';
-                                            endif;
+                                            echo Affiliate::referenceLink($links['link_url'], $k, 'match-wishlist', $gid, $legacyAff['class'], $legacyAff['attrs']);
                                         endforeach;
                                     endif;
         echo '                    </div>';
@@ -160,6 +153,10 @@ class Users extends Theme {
                                 endforeach; 
                                 endif;
         echo '                  </ul>';
+                                $aiIdeas = GiftAI::ideasFor($pair);
+        echo                    ($aiIdeas)
+                                    ? Affiliate::giftIdeasHtml($gid, 'ai-gift-ideas', false, $aiIdeas, 'Gift ideas for '.esc_html($pairName))
+                                    : Affiliate::giftIdeasHtml($gid, 'match-gift-ideas');
         echo '                <h2><i class="fas fa-gifts"></i> ADDRESS <span>AND</span> CONTACTS</h2>';
         echo                  '<div style="padding: 32px;">'.get_field('my_address_and_contact_details', $pair).'</div>';
 
@@ -555,6 +552,7 @@ class Users extends Theme {
 
                                         if(!$wishlist){
         $cardres .= '                       <div class="placeholder"><i class="fas fa-gifts"></i> No wishlist provided yet.</div>';
+        $cardres .=                         Affiliate::shopButtonsHtml($groupid, 'members-empty-wishlist');
                                         }
                                         
                                         if($wishlist):
@@ -564,51 +562,14 @@ class Users extends Theme {
 
         $cardres .= '                       <li>';
         $cardres .= '                        <div class="wish-content">';
-                                                $str = $w['wishlist_description'];
-                                                $pattern = "~(?:(https?)://([^\s<]+)|(www\.[^\s<]+?\.[^\s<]+))(?<![\.,:])~i";
-
-                                                if(preg_match_all($pattern, $str, $matches)):
-
-                                                    foreach($matches[0] as $link):
-                                                        $stringlink = (strpos($link, 'lazada.com.ph') !== false)?'https://invol.co/aff_m?offer_id=101166&aff_id=189674&source=deeplink_generator_v2&property_id=133170&url='.urlencode($link):$link;
-        
-                                                        $stringlink = (strpos($link, 'shopee.ph') !== false)?'https://invol.co/aff_m?offer_id=101653&aff_id=189674&source=deeplink_generator_v2&property_id=133170&url='.urlencode($link):$stringlink;
-
-                                                        $stringlink = (strpos($link, 'shp.ee') !== false)?'https://invol.co/aff_m?offer_id=101653&aff_id=189674&source=deeplink_generator_v2&property_id=133170&url='.urlencode($link):$stringlink;
-
-                                                        $stringlink = (strpos($link, 'shope.ee') !== false)?'https://invol.co/aff_m?offer_id=101653&aff_id=189674&source=deeplink_generator_v2&property_id=133170&url='.urlencode($link):$stringlink;
-
-                                                        if(!$pro):
-                                                            $str = str_replace($link, '<a href="'.$stringlink.'" target="_blank" class="aff-link" data-url="https://invl.io/cllz36p">'.$link.'</a>', $str);
-                                                        else:
-                                                            $str = str_replace($link, '<a href="'.$stringlink.'" target="_blank">'.$link.'</a>', $str);
-                                                        endif;
-                                                    endforeach;
-        
-        $cardres .=                                 ''.$str.'';
-                                                else:
-        $cardres .=                                 $w['wishlist_description'];
-                                                endif;
-        
-        
+                                                $legacyAff = (!$pro)?array('class' => 'aff-link', 'attrs' => array('data-url' => 'https://invl.io/cllz36p')):array('class' => '', 'attrs' => array());
+        $cardres .=                                 Affiliate::linkify($w['wishlist_description'], 'members-wishlist', $groupid, $legacyAff['class'], $legacyAff['attrs']);
         $cardres .= '                        </div>';
         $cardres .= '                        <div class="wish-links">';
         
                                                 if($w['reference_links']):
                                                     foreach($w['reference_links'] as $k => $links):
-                                                        $stringlink = (strpos($links['link_url'], 'lazada.com.ph') !== false)?'https://invol.co/aff_m?offer_id=101166&aff_id=189674&source=deeplink_generator_v2&property_id=133170&url='.urlencode($links['link_url']):$links['link_url'];
-        
-                                                        $stringlink = (strpos($links['link_url'], 'shopee.ph') !== false)?'https://invol.co/aff_m?offer_id=101653&aff_id=189674&source=deeplink_generator_v2&property_id=133170&url='.urlencode($links['link_url']):$stringlink;
-
-                                                        $stringlink = (strpos($links['link_url'], 'shp.ee') !== false)?'https://invol.co/aff_m?offer_id=101653&aff_id=189674&source=deeplink_generator_v2&property_id=133170&url='.urlencode($links['link_url']):$stringlink;
-
-                                                        $stringlink = (strpos($links['link_url'], 'shope.ee') !== false)?'https://invol.co/aff_m?offer_id=101653&aff_id=189674&source=deeplink_generator_v2&property_id=133170&url='.urlencode($links['link_url']):$stringlink;
-        
-                                                        if(!$pro):
-                                                            $cardres .= (strlen($stringlink) > 0)?'<a href="'.$stringlink.'" target="_blank" class="aff-link" data-url="https://invl.io/cllz36p">Link '.($k+1).'</a>':'';
-                                                        else:
-                                                            $cardres .= (strlen($stringlink) > 0)?'<a href="'.$stringlink.'" target="_blank">Link '.($k+1).'</a>':'';
-                                                        endif;
+        $cardres .=                                     Affiliate::referenceLink($links['link_url'], $k, 'members-wishlist', $groupid, $legacyAff['class'], $legacyAff['attrs']);
                                                     endforeach;
                                                 endif;
         $cardres .= '                        </div>';

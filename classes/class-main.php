@@ -63,7 +63,7 @@ class Theme {
     
 
     function __autoload() {
-        $classes = array('groups', 'logs', 'users', 'wishlists');
+        $classes = array('affiliate', 'gift-ai', 'groups', 'logs', 'users', 'wishlists');
 
         foreach($classes as $value){
             require_once PARENT_DIR . '/classes/class-'. $value .'.php';
@@ -264,7 +264,7 @@ class Theme {
         return $valid;
     }
 
-    public function sendEmail($email = array(), $subject, $message, $bcc = false){
+    public function sendEmail($email, $subject, $message, $bcc = false){
 		$headers = "From: Manito Manita <rouie@manitomanita.com>\r\n";
 		$headers .= "MIME-Version: 1.0\r\n";
         $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";

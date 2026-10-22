@@ -1,0 +1,102 @@
+{
+    "key": "group_mm_gift_ideas",
+    "title": "Gift Ideas",
+    "fields": [
+        {
+            "key": "field_mm_gift_ideas",
+            "label": "Gift Ideas",
+            "name": "gift_ideas",
+            "type": "repeater",
+            "instructions": "Shown as price-filtered Lazada / Shopee search links (affiliate) on the match page and in emails. Leave empty to use the built-in defaults.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "collapsed": "field_mm_gift_idea_label",
+            "min": 0,
+            "max": 0,
+            "layout": "table",
+            "button_label": "Add Gift Idea",
+            "sub_fields": [
+                {
+                    "key": "field_mm_gift_idea_label",
+                    "label": "Label",
+                    "name": "label",
+                    "type": "text",
+                    "instructions": "e.g. Scented candles",
+                    "required": 1,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "placeholder": "",
+                    "prepend": "",
+                    "append": "",
+                    "maxlength": ""
+                },
+                {
+                    "key": "field_mm_gift_idea_icon",
+                    "label": "Icon",
+                    "name": "icon",
+                    "type": "text",
+                    "instructions": "Font Awesome class, e.g. fas fa-mug-hot",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "fas fa-gift",
+                    "placeholder": "",
+                    "prepend": "",
+                    "append": "",
+                    "maxlength": ""
+                },
+                {
+                    "key": "field_mm_gift_idea_keyword",
+                    "label": "Search Keyword",
+                    "name": "keyword",
+                    "type": "text",
+                    "instructions": "What to search on Lazada / Shopee, e.g. scented candle gift set",
+                    "required": 1,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "placeholder": "",
+                    "prepend": "",
+                    "append": "",
+                    "maxlength": ""
+                }
+            ]
+        }
+    ],
+    "location": [
+        [
+            {
+                "param": "options_page",
+                "operator": "==",
+                "value": "theme-gift-ideas"
+            }
+        ]
+    ],
+    "menu_order": 0,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "hide_on_screen": "",
+    "active": true,
+    "description": "",
+    "modified": 1792627200
+}

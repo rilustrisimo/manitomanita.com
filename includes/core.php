@@ -146,6 +146,13 @@ if ( ! function_exists( 'qed_filter_after_theme_setup' ) ) {
 			));
 
 			acf_add_options_sub_page(array(
+				'page_title' 	=> 'Gift Ideas',
+				'menu_title'	=> 'Gift Ideas',
+				'menu_slug' 	=> 'theme-gift-ideas',
+				'parent_slug'	=> 'theme-general-settings',
+			));
+
+			acf_add_options_sub_page(array(
 				'page_title' 	=> 'Theme Blog Settings',
 				'menu_title'	=> 'Blog Settings',
 				'parent_slug'	=> 'theme-general-settings',

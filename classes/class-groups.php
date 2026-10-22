@@ -51,6 +51,15 @@ class Groups extends Theme {
         add_action('rest_api_init', array($this, 'trash_user'));
         add_action('rest_api_init', array($this, 'edit_user'));
         add_action('rest_api_init', array($this, 'get_user_export'));
+
+        // Groups is instantiated in several places; register the cron hooks once.
+        static $cronHooked = false;
+
+        if(!$cronHooked){
+            $cronHooked = true;
+            add_action('init', array($this, 'scheduleExchangeReminders'));
+            add_action('mm_exchange_reminders', array($this, 'sendExchangeReminders'));
+        }
     }
 
     protected function initFilters() {
@@ -823,6 +832,7 @@ class Groups extends Theme {
 		$message = $e['email_body'];
 		$message = str_replace('[email_group]', get_field('group_name', $gid), $message);
         $message = str_replace('[email_grouplink]', get_permalink(23).'?gid='.$creds[0].'&pw='.$creds[1], $message);
+        $message = $this->addGiftIdeas($message, $gid, 'email-match');
 
 		$to = $this->getAllMembersEmailsPerGroupId($gid);
 
@@ -972,6 +982,7 @@ class Groups extends Theme {
 		$message = $e['email_body'];
 		$message = str_replace('[email_group]', get_field('group_name', $gid), $message);
 		$message = str_replace('[email_grouplink]', get_permalink(23).'?gid='.$creds[0].'&pw='.$creds[1], $message);
+		$message = $this->addGiftIdeas($message, $gid, 'email-match');
 
 		$to = $this->getAllMembersEmailsPerGroupId($gid);
 
@@ -979,5 +990,86 @@ class Groups extends Theme {
 		$subject = str_replace('[email_group]', get_field('group_name', $gid), $subject);
         
         parent::sendEmail($to, $subject, $message);
+    }
+
+    /**
+     * Replaces [email_gift_ideas] with the affiliate gift ideas block,
+     * or appends it when the template has no placeholder.
+     */
+    public function addGiftIdeas($message, $gid, $placement){
+        $block = Affiliate::giftIdeasHtml($gid, $placement, true);
+
+        if(strpos($message, '[email_gift_ideas]') !== false){
+            return str_replace('[email_gift_ideas]', $block, $message);
+        }
+
+        $pos = stripos($message, '</body>');
+
+        return ($pos !== false)?substr_replace($message, $block, $pos, 0):$message.$block;
+    }
+
+    public function getEmailTemplate($tag){
+        $em = get_posts(array('post_type' => 'emails', 'posts_per_page' => -1));
+
+        foreach($em as $epost){
+            $f = get_fields($epost->ID);
+
+            if(isset($f['email_tag']) && $f['email_tag'] == $tag) return $f;
+        }
+
+        return false;
+    }
+
+    public function scheduleExchangeReminders(){
+        if(!wp_next_scheduled('mm_exchange_reminders')){
+            wp_schedule_event(time(), 'daily', 'mm_exchange_reminders');
+        }
+    }
+
+    /**
+     * Daily cron: emails members of matched groups whose gift exchange is 3 days away.
+     * Uses the "group-reminder" email template. Each group is reminded once.
+     */
+    public function sendExchangeReminders(){
+        $e = $this->getEmailTemplate('group-reminder');
+
+        if(!$e) return;
+
+        // gift_exchange_date returns m/d/Y; compare in the site's timezone.
+        $target = wp_date('m/d/Y', strtotime('+3 days'));
+
+        $groups = get_posts(array(
+            'post_type'      => 'groups',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'meta_query'     => array(
+                array('key' => 'matched', 'value' => '1'),
+                array('key' => '_mm_reminder_sent', 'compare' => 'NOT EXISTS'),
+            ),
+        ));
+
+        foreach($groups as $gid){
+            $date = get_field('gift_exchange_date', $gid);
+
+            if(!$date || $date !== $target) continue;
+
+            // Mark first so an overlapping cron run can't send twice.
+            if(!add_post_meta($gid, '_mm_reminder_sent', time(), true)) continue;
+
+            $groupName = get_field('group_name', $gid);
+            $link = get_permalink(23).'?gid='.$gid.'&pw='.urlencode(get_field('group_password', $gid));
+
+            $message = $e['email_body'];
+            $message = str_replace('[email_group]', $groupName, $message);
+            $message = str_replace('[email_grouplink]', $link, $message);
+            $message = str_replace('[email_date]', DateTime::createFromFormat('m/d/Y', $date)->format('F j, Y'), $message);
+            $message = $this->addGiftIdeas($message, $gid, 'email-reminder');
+
+            $subject = str_replace('[email_group]', $groupName, $e['email_subject']);
+
+            foreach($this->getAllMembersEmailsPerGroupId($gid) as $to){
+                if($to) parent::sendEmail($to, $subject, $message);
+            }
+        }
     }
 }

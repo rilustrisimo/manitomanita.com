@@ -1894,3 +1894,48 @@
     margin-bottom: 15px;
     color: @main-color1;
 }
+
+/* Affiliate gift ideas & shop buttons */
+.shop-for {
+    margin: 0 0 16px;
+    font-size: 14px;
+
+    &__label { margin-right: 6px; font-weight: bold; }
+}
+
+.gift-btn {
+    display: inline-block;
+    padding: 4px 12px;
+    margin: 2px 4px 2px 0;
+    border-radius: 4px;
+    color: #fff !important;
+    font-size: 13px;
+    text-decoration: none !important;
+
+    &--lazada { background: #0f146d; }
+    &--shopee { background: #ee4d2d; }
+    &:hover { opacity: .85; }
+}
+
+.gift-ideas {
+    margin: 24px 0;
+
+    &__list { list-style: none; padding: 0 32px; margin: 0; }
+
+    &__item {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    &__label i { width: 20px; margin-right: 6px; text-align: center; }
+
+    &__why { display: block; margin-left: 26px; font-size: 12px; color: #888; }
+}
+
+.aff-disclosure { padding: 8px 32px; font-size: 11px; color: #999; }
+
+.aff-recent .aff-cta-optional { display: none; }

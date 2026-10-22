@@ -24,6 +24,7 @@ var Theme = {
         this.initPromos($);
         this.initCardsUsers($);
         this.proScripts($);
+        this.initAffiliateCap($);
 
         $( '[data-toggle="tooltip"]' ).tooltip();
 
@@ -1243,6 +1244,24 @@ var Theme = {
                 console.log('Request failed: ' + thrownError.message) ;
                 Theme.removeOverlay($);
                 },
+        });
+    },
+
+    /**
+     * Hides optional affiliate CTAs (.aff-cta-optional) for 24h after the visitor clicks one of our
+     * affiliate links (.mm-aff). UX only: the merchant's tracking cookie can't be read from this site.
+     */
+    initAffiliateCap:function($){
+        var key = 'mm_aff_last_click',
+            day = 24 * 60 * 60 * 1000;
+
+        try {
+            var last = parseInt(window.localStorage.getItem(key), 10);
+            if (last && (Date.now() - last) < day) $('body').addClass('aff-recent');
+        } catch (e) {}
+
+        $(document).on('click', 'a.mm-aff', function(){
+            try { window.localStorage.setItem(key, String(Date.now())); } catch (e) {}
         });
     },
 
