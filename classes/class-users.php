@@ -659,16 +659,27 @@ class Users extends Theme {
     }
 
     public function addCommentToUser() {
-        if(!(isset($_POST['user-data']) and isset($_POST['comment']) and isset($_POST['g-recaptcha-response']))){
-            return;
-        }
+        if(Captcha::enabled()){
+            if(!(isset($_POST['user-data']) and isset($_POST['comment']))){
+                return;
+            }
 
-        if(!$this->gCaptchaChecker()){
-            return 'You are not human! Must check captcha before sending new comment.';
+            $captchaError = Captcha::check();
+            if($captchaError) return $captchaError;
+        }else{
+            if(!(isset($_POST['user-data']) and isset($_POST['comment']) and isset($_POST['g-recaptcha-response']))){
+                return;
+            }
+
+            if(!$this->gCaptchaChecker()){
+                return 'You are not human! Must check captcha before sending new comment.';
+            }
         }
         
-        $uid = $_POST['user-data'];
-        $mes = $_POST['comment'];
+        $uid = (int) $_POST['user-data'];
+        $mes = sanitize_textarea_field(wp_unslash($_POST['comment']));
+
+        if($mes === '' || get_post_type($uid) != 'users') return 'Please write a comment first.';
 
         $commentdata = array(
             'comment_content' => $mes,

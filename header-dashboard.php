@@ -48,6 +48,7 @@ if (!(isset($_COOKIE[$cookiename]) && $_COOKIE[$cookiename] == $post_count)) {
 }
 
 ?>
+<?php if(!Captcha::enabled()): // Turnstile replaces this when its keys are set ?>
 <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
 <script type="text/javascript">
 	var onloadCallback = function() {
@@ -56,6 +57,7 @@ if (!(isset($_COOKIE[$cookiename]) && $_COOKIE[$cookiename] == $post_count)) {
 		});
 	};
 </script>
+<?php endif; ?>
 <header class="header" role="banner">
 	<div class="top_layer">
 		<div class="header__content-wrap">

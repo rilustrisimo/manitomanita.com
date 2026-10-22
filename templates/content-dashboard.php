@@ -189,7 +189,7 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
         <div class="header-details"></div>
 		<form action="#" method="POST" id="input-pw" class="acf-form">
             <input type="hidden" name="user-data" value="">
-            <div class="pw-field acf-field"><div class="acf-label"><label>Your Password</label></div><input type="password" name="password" required><div class="notices" style="display:none;"></div></div>
+            <div class="pw-field acf-field"><div class="acf-label"><label for="mm-pw-input">Password</label><p class="description">The password you set when you joined or created the group.</p></div><input type="password" name="password" id="mm-pw-input" autocomplete="current-password" placeholder="Enter your password" required><div class="notices" style="display:none;"></div></div>
             <div class="pw-submit acf-form-submit"><input type="submit" name="submit" value="Submit" class="button"></div>
         </form>
 	</div>
@@ -200,8 +200,10 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
     <div class="popup__inner">
 		<form action="<?php echo get_permalink(get_the_ID()).'?gid='.$creds[0].'&pw='.$creds[1]; ?>" method="POST" id="comment-user" class="acf-form">
             <input type="hidden" name="user-data" value="">
-            <div class="com-field acf-field"><div class="acf-label"><label>Your Comment</label></div><textarea name="comment" required></textarea></div>
+            <div class="com-field acf-field"><div class="acf-label"><label for="mm-comment-input">Your comment</label><p class="description">Everyone in the group can read comments.</p></div><textarea name="comment" id="mm-comment-input" rows="4" maxlength="1000" placeholder="Write something nice&hellip;" required></textarea></div>
+            <?php if(Captcha::enabled()): echo Captcha::widget(); else: ?>
             <div class="acf-field" data-type="recaptcha"><div id="comment-grecaptcha"></div></div>
+            <?php endif; ?>
             <div class="com-submit acf-form-submit"><input type="submit" name="submit" value="Submit" class="button"></div>
         </form>
 	</div>

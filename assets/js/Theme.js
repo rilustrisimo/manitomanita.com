@@ -25,6 +25,7 @@ var Theme = {
         this.initCardsUsers($);
         this.proScripts($);
         this.initAffiliateCap($);
+        this.initPasswordToggles($);
 
         $( '[data-toggle="tooltip"]' ).tooltip();
 
@@ -153,7 +154,7 @@ var Theme = {
 
     ProInitPasswordScripts: function($){
         var submitbtn = $('#input-pw input[type="submit"]');
-        var pw = $('#input-pw input[type="password"]');
+        var pw = $('#input-pw input[name="password"]'); // by name: the show/hide toggle changes its type
         var userid = $('input#groupid-val');
         var notice = $('#input-pw .notices');
 
@@ -1140,7 +1141,7 @@ var Theme = {
 
     initPasswordScripts: function($){
         var submitbtn = $('#input-pw input[type="submit"]');
-        var pw = $('#input-pw input[type="password"]');
+        var pw = $('#input-pw input[name="password"]'); // by name: the show/hide toggle changes its type
         var userid = $('#input-pw input[name="user-data"]');
         var notice = $('#input-pw .notices');
 
@@ -1268,6 +1269,31 @@ var Theme = {
         $btn.appendTo($title);
     },
 
+    /**
+     * Adds a show/hide button to password fields in popups. Safe to call repeatedly.
+     */
+    initPasswordToggles: function($){
+        $('.popup input[type="password"]').not('[data-mm-pw]').each(function(){
+            var $input = $(this).attr('data-mm-pw', '1');
+
+            $input.wrap('<span class="mm-pw-wrap"></span>');
+            $('<button type="button" class="mm-pw-toggle" aria-label="Show password" aria-pressed="false">Show</button>').insertAfter($input);
+        });
+
+        $(document).off('click.mmPw').on('click.mmPw', '.mm-pw-toggle', function(){
+            var $btn = $(this), $input = $btn.siblings('input'), show = $input.attr('type') === 'password';
+
+            $input.attr('type', show ? 'text' : 'password').trigger('focus');
+            $btn.text(show ? 'Hide' : 'Show').attr({ 'aria-pressed': show ? 'true' : 'false', 'aria-label': show ? 'Hide password' : 'Show password' });
+        });
+
+        // Popups are reused (e.g. the password prompt for each member): hide passwords again on close.
+        $(document).off('afterClose.mmPw').on('afterClose.mmPw', function(){
+            $('input[data-mm-pw]').attr('type', 'password');
+            $('.mm-pw-toggle').text('Show').attr({ 'aria-pressed': 'false', 'aria-label': 'Show password' });
+        });
+    },
+
     initAffiliateCap:function($){
         var key = 'mm_aff_last_click',
             day = 24 * 60 * 60 * 1000;
@@ -1355,6 +1381,7 @@ var Theme = {
                             if((setting[Theme.action].formid != 99999) && (setting[Theme.action].formid != 9999) && (setting[Theme.action].formid != 125)){
                                 acf.do_action('append', $('#custom-popup .popup__inner'));
                                 Theme.acfFormScripts($);
+                                Theme.initPasswordToggles($);
                                 $('#custom-popup .popup__inner .acf-label').css('top', '13px');
                                 $('#custom-popup .hide-dash').hide();
                             }

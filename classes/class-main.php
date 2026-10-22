@@ -63,7 +63,7 @@ class Theme {
     
 
     function __autoload() {
-        $classes = array('affiliate', 'gift-ai', 'groups', 'logs', 'users', 'wishlists');
+        $classes = array('affiliate', 'captcha', 'gift-ai', 'groups', 'logs', 'users', 'wishlists');
 
         foreach($classes as $value){
             require_once PARENT_DIR . '/classes/class-'. $value .'.php';
@@ -102,6 +102,44 @@ class Theme {
 
          add_filter('acf/validate_value/name=your_email', array($this, 'validateEmail'), 10, 4);
          add_filter('acf/validate_value/name=email', array($this, 'validateEmail'), 10, 4);
+
+         // Theme is instantiated in several places; register the front-end field hints once.
+         static $hintsHooked = false;
+
+         if(!$hintsHooked){
+             $hintsHooked = true;
+             add_filter('acf/prepare_field', array($this, 'frontEndFieldHints'));
+         }
+    }
+
+    /**
+     * Placeholders and short explanations for the Create Group / Join Group / Edit forms (front end only).
+     */
+    public function frontEndFieldHints($field){
+        if(!$field || is_admin()) return $field;
+
+        $hints = array(
+            // Group fields
+            'field_5f55be68de4c7' => array('placeholder' => 'e.g. Office Christmas Party 2026'),
+            'field_5f55bf05de4ca' => array('placeholder' => 'e.g. 500', 'instructions' => 'The minimum gift budget per person, in pesos (&#8369;).'),
+            'field_5f55bf19de4cb' => array('placeholder' => 'Your full name', 'instructions' => 'You&rsquo;ll be the group moderator.'),
+            'field_5f55bf2fde4cc' => array('placeholder' => 'you@example.com'),
+            'field_5f55bf45de4cd' => array('placeholder' => 'Create a password', 'instructions' => 'You&rsquo;ll use this to manage the group: edit details and draw names.'),
+            // Member fields
+            'field_5f55f0e476675' => array('placeholder' => 'Your full name'),
+            'field_5f55f1bc76676' => array('placeholder' => 'e.g. Ana', 'instructions' => 'This is how others in the group will see you.'),
+            'field_5f55f1d576677' => array('placeholder' => 'you@example.com'),
+            'field_5f55f1e576678' => array('placeholder' => 'Create a password', 'instructions' => 'You&rsquo;ll need this to edit your wishlist and see your match.'),
+        );
+
+        if(!isset($hints[$field['key']])) return $field;
+
+        foreach($hints[$field['key']] as $k => $v){
+            if($k == 'instructions' && !empty($field['instructions'])) continue; // keep existing instructions
+            $field[$k] = $v;
+        }
+
+        return $field;
     }
 
     public function paypalWebhookAPICredits() {
@@ -423,6 +461,7 @@ class Theme {
             'form' => true,
             'return' => (is_null($redirect))?home_url():home_url('/'.$redirect),
             'updated_message' => __("Account Created", 'acf'),
+            'html_after_fields' => Captcha::widget(), // empty unless Turnstile keys are set
         ));
     }
 
