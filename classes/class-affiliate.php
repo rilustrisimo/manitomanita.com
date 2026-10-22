@@ -22,19 +22,28 @@ class Affiliate {
     const PROPERTY_ID = '133170';
 
     /**
-     * Involve Asia merchants. Add approved offers here.
+     * Fallback Involve Asia merchants, used when the API offer map (Involve::offerFor) has no match.
+     * 'offer_id' is the aff_m tracking id; 'api_id' is the id the Deeplink API expects.
      * 'domains' are matched against the end of the link's host.
      */
     protected static $merchants = array(
         'lazada' => array(
             'name'     => 'Lazada',
-            'offer_id' => '101166',
+            'offer_id' => '103490', // Lazada Talent (PH); the old 101166 redirects here
+            'api_id'   => 4644,
             'domains'  => array('lazada.com.ph'),
         ),
         'shopee' => array(
             'name'     => 'Shopee',
-            'offer_id' => '101653',
+            'offer_id' => '103880', // Shopee PH - CPS; the old 101653 redirects here
+            'api_id'   => 5034,
             'domains'  => array('shopee.ph', 'shp.ee', 'shope.ee'),
+        ),
+        'shein' => array(
+            'name'     => 'SHEIN',
+            'offer_id' => '103795', // Shein Global - CPS (covers PH)
+            'api_id'   => 4949,
+            'domains'  => array('shein.com', 'shein.top'),
         ),
     );
 
@@ -53,7 +62,8 @@ class Affiliate {
     );
 
     /**
-     * Returns the merchant key for a URL, or false.
+     * Merchant for a URL: ['name', 'offer_id', 'api_id'] or false.
+     * Approved offers from the Involve Asia API win; the built-in list is the fallback.
      */
     public static function merchantFor( $url ) {
         $host = parse_url( self::normalize( $url ), PHP_URL_HOST );
@@ -65,16 +75,27 @@ class Affiliate {
         foreach ( self::$merchants as $key => $m ) {
             foreach ( $m['domains'] as $domain ) {
                 if ( $host === $domain || substr( $host, -strlen( '.' . $domain ) ) === '.' . $domain ) {
-                    return $key;
+                    $fallback = array( 'name' => $m['name'], 'offer_id' => $m['offer_id'], 'api_id' => $m['api_id'] );
+                    break 2;
                 }
             }
         }
 
-        return false;
+        if ( class_exists( 'Involve' ) && Involve::enabled() && ( $offer = Involve::offerFor( $host ) ) ) {
+            return array(
+                'name'     => isset( $fallback ) ? $fallback['name'] : $offer['name'],
+                'offer_id' => $offer['link_id'],
+                'api_id'   => $offer['api_id'],
+            );
+        }
+
+        return isset( $fallback ) ? $fallback : false;
     }
 
-    public static function merchantName( $key ) {
-        return isset( self::$merchants[ $key ] ) ? self::$merchants[ $key ]['name'] : '';
+    public static function merchantName( $merchant ) {
+        if ( is_array( $merchant ) ) return $merchant['name'];
+
+        return isset( self::$merchants[ $merchant ] ) ? self::$merchants[ $merchant ]['name'] : '';
     }
 
     /**
@@ -93,8 +114,15 @@ class Affiliate {
 
         if ( ! $merchant ) return $url;
 
+        // Product pages: use the stored Deeplink API link, which opens the exact product (also in the
+        // store's app). Search pages (gift ideas, "Find it") are skipped to save the monthly quota.
+        if ( class_exists( 'Involve' ) && Involve::enabled() && ! self::isSearchUrl( $url ) ) {
+            $deeplink = Involve::deeplink( self::normalize( $url ), $merchant['api_id'] );
+            if ( $deeplink ) return $deeplink;
+        }
+
         $params = array(
-            'offer_id'    => self::$merchants[ $merchant ]['offer_id'],
+            'offer_id'    => $merchant['offer_id'],
             'aff_id'      => self::AFF_ID,
             'property_id' => self::PROPERTY_ID,
             'source'      => 'deeplink_generator_v2',
@@ -115,6 +143,15 @@ class Affiliate {
         $link = self::link( self::searchUrl( $merchant, 'x' ), $placement, $groupId );
 
         return substr( $link, 0, strpos( $link, '&url=' ) + 5 );
+    }
+
+    /**
+     * Store search/listing pages (not single products).
+     */
+    public static function isSearchUrl( $url ) {
+        $path = (string) parse_url( self::normalize( $url ), PHP_URL_PATH );
+
+        return (bool) preg_match( '~^/(catalog|search|pdsearch|tag)\b|^/?$~i', $path );
     }
 
     /**
@@ -151,7 +188,7 @@ class Affiliate {
      */
     public static function linkifyText( $text, $placement = '', $groupId = '' ) {
         // http(s):// or www. links, plus bare store links like "s.lazada.com.ph/..." or "shp.ee/...".
-        $pattern = "~((?:https?://|www\.|(?<![\w@./-])(?:[a-z0-9-]+\.)*(?:lazada\.com\.ph|shopee\.ph|shp\.ee|shope\.ee)/)[^\s<]+?)(?=[.,:;!?)\]]*(?:\s|$))~i";
+        $pattern = "~((?:https?://|www\.|(?<![\w@./-])(?:[a-z0-9-]+\.)*(?:lazada\.com\.ph|shopee\.ph|shp\.ee|shope\.ee|shein\.com)/)[^\s<]+?)(?=[.,:;!?)\]]*(?:\s|$))~i";
         // The text is shown exactly as written (escaped, never stripped); only link destinations change.
         $parts   = preg_split( $pattern, (string) $text, -1, PREG_SPLIT_DELIM_CAPTURE );
         $html    = '';

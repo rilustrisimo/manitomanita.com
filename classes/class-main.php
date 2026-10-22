@@ -63,7 +63,7 @@ class Theme {
     
 
     function __autoload() {
-        $classes = array('affiliate', 'captcha', 'gift-ai', 'groups', 'logs', 'users', 'wishlists');
+        $classes = array('affiliate', 'captcha', 'gift-ai', 'involve', 'groups', 'logs', 'users', 'wishlists');
 
         foreach($classes as $value){
             require_once PARENT_DIR . '/classes/class-'. $value .'.php';

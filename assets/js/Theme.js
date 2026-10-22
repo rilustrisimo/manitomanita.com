@@ -74,7 +74,14 @@ var Theme = {
     
         // Click event for anchor tags with class 'aff-link'
         // Delegated and namespaced so repeated calls (every popup / cards reload) don't stack handlers.
+        // Phones/tablets: let the link open normally (no second redirect), so iOS/Android hand the
+        // product link to the Shopee/Lazada app and it opens the right product page.
+        var isTouchDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+            (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent)); // iPadOS
+
         $(document).off('click.mmAffLink').on('click.mmAffLink', 'a.aff-link', function(event) {
+            if (isTouchDevice) return;
+
             event.preventDefault(); // Prevent default anchor behavior
     
             let href = $(this).attr('href');
