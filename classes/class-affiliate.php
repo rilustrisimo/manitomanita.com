@@ -240,7 +240,7 @@ class Affiliate {
             return $html;
         }
 
-        $html  = '<section class="mm-sec mm-gifts aff-cta-optional">';
+        $html  = '<section class="mm-sec mm-gifts">';
         $html .= '<h3 class="mm-sec__title"><i class="fas fa-lightbulb"></i> GIFT<span>IDEAS</span></h3>';
         $html .= '<p class="mm-gifts__sub">' . $subtitle . '</p>';
         $html .= '<div class="mm-gifts__grid">';
@@ -281,7 +281,10 @@ class Affiliate {
         $hint    = ( $keyword !== '' ) ? 'Search &ldquo;' . esc_html( $keyword ) . '&rdquo;' . $within : 'Gift ideas' . $within;
         $query   = ( $keyword !== '' ) ? $keyword : 'gift';
 
-        $html  = '<div class="mm-shop aff-cta-optional">';
+        // Only the repeated members-list strips are capped (Theme.js initAffiliateCap); match/editor CTAs always show.
+        $capped = ( strpos( $placement, 'members-' ) === 0 ) ? ' aff-cta-optional' : '';
+
+        $html  = '<div class="mm-shop' . $capped . '">';
         $html .= '<div class="mm-shop__text">';
         $html .= '<span class="mm-shop__icon"><i class="fas fa-gift"></i></span>';
         $html .= '<span><strong>' . esc_html( $title ) . '</strong><small>' . $hint . '</small></span>';

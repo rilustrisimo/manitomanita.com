@@ -223,7 +223,7 @@ class Users extends Theme {
         echo '    <h3 class="mm-sec__title"><i class="fas fa-location-dot"></i> ADDRESS<span>&nbsp;&amp; CONTACTS</span><em class="mm-sec__tag">Optional</em></h3>';
         echo '    <label class="mm-field">';
         echo '        <span class="mm-field__hint">Only your match sees this. Add it if your gift will be delivered.</span>';
-        echo '        <textarea name="address" rows="3" maxlength="1000" placeholder="House no., street, city &middot; mobile number">'.esc_textarea($address).'</textarea>';
+        echo '        <textarea name="address" rows="3" maxlength="1000" aria-label="Address and contact details" placeholder="House no., street, city &middot; mobile number">'.esc_textarea($address).'</textarea>';
         echo '    </label>';
         echo '</section>';
 
@@ -245,7 +245,8 @@ class Users extends Theme {
         $html .= '    <span class="mm-item__label">Item <span data-mm-num>1</span></span>';
         $html .= '    <button type="button" class="mm-icon-btn" data-mm-remove-item aria-label="Remove item" title="Remove item"><i class="far fa-trash-can"></i></button>';
         $html .= '</div>';
-        $html .= '<textarea class="mm-item__text" rows="2" maxlength="'.self::WISH_MAX_TEXT.'" placeholder="e.g. Red insulated tumbler, 500ml" data-mm-text>'.esc_textarea(wp_strip_all_tags((string) $text)).'</textarea>';
+        $html .= '<textarea class="mm-item__text" rows="2" aria-label="Describe the item" maxlength="'.self::WISH_MAX_TEXT.'" placeholder="e.g. Red insulated tumbler, 500ml" data-mm-text>'.esc_textarea(wp_strip_all_tags((string) $text)).'</textarea>';
+        $html .= '<div class="mm-item__meta" data-mm-meta><span data-mm-chars>0</span>/'.self::WISH_MAX_TEXT.'</div>';
         $html .= '<div class="mm-item__error" data-mm-error></div>';
         $html .= '<div class="mm-links" data-mm-links>';
         foreach($links as $l) $html .= $this->wishlistLinkHtml($l);

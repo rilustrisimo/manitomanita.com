@@ -609,6 +609,11 @@
     border-color: #e5484d;
 }
 
+#custom-popup .mm-match .mm-item.is-invalid textarea,
+.mm-match .mm-item.is-invalid textarea {
+    border-color: #e5484d;
+}
+
 .mm-item__head {
     display: flex;
     align-items: center;
@@ -628,27 +633,71 @@
     margin-left: auto;
 }
 
+/* Reset the theme's base form styles (elements/forms.less: centred grey text, 512px max width, 200px textareas) */
+#custom-popup .mm-match textarea,
+#custom-popup .mm-match input[type="url"],
 .mm-match textarea,
 .mm-match input[type="url"] {
     display: block;
     width: 100%;
+    max-width: none;
+    height: auto;
+    min-height: 0;
     margin: 0;
-    padding: 10px 12px;
-    border: 1px solid #dcdcdc;
+    padding: 11px 14px;
+    border: 1px solid #d9d9d9;
     border-radius: 10px;
     background: #fff;
     color: var(--mm-dark);
-    font: inherit;
+    font-family: inherit;
     font-size: 16px; /* 16px stops iOS from zooming in */
-    line-height: 1.4;
+    font-weight: 400;
+    line-height: 1.45;
+    text-align: left;
     box-shadow: none;
     outline: none;
-    resize: vertical;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
 }
 
+#custom-popup .mm-match textarea,
+.mm-match textarea {
+    min-height: 74px; /* two lines */
+    resize: none;
+    overflow-y: hidden; /* grows with its content (Theme.js) */
+    field-sizing: content;
+}
+
+#custom-popup .mm-match textarea[name="address"],
+.mm-match textarea[name="address"] {
+    min-height: 98px; /* three lines */
+}
+
+#custom-popup .mm-match textarea:focus,
+#custom-popup .mm-match input[type="url"]:focus,
 .mm-match textarea:focus,
 .mm-match input[type="url"]:focus {
     border-color: var(--mm-accent);
+    box-shadow: 0 0 0 3px var(--mm-accent-soft);
+    color: var(--mm-dark);
+    text-align: left;
+}
+
+.mm-match .mm-item:focus-within {
+    box-shadow: none;
+}
+
+.mm-item__meta {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #a8a8a8;
+}
+
+.mm-item__meta.is-near {
+    color: #e08a00;
 }
 
 .mm-match textarea::placeholder,
@@ -683,11 +732,13 @@
     gap: 8px;
 }
 
+#custom-popup .mm-link input[type="url"],
 .mm-link input[type="url"] {
-    padding: 8px 10px;
-    font-size: 14px;
+    padding: 9px 12px;
+    font-size: 15px;
 }
 
+#custom-popup .mm-link.is-invalid input[type="url"],
 .mm-link.is-invalid input[type="url"] {
     border-color: #e5484d;
 }

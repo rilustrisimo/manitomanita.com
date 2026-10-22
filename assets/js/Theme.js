@@ -1248,7 +1248,7 @@ var Theme = {
     },
 
     /**
-     * Hides optional affiliate CTAs (.aff-cta-optional) for 24h after the visitor clicks one of our
+     * Hides optional affiliate CTAs (.aff-cta-optional: the members-list 'Browse gifts' strips) for 24h after the visitor clicks one of our
      * affiliate links (.mm-aff). UX only: the merchant's tracking cookie can't be read from this site.
      */
     initAffiliateCap:function($){
@@ -1385,6 +1385,16 @@ var Theme = {
             keywords = function(text){
                 return $.trim(text.replace(/(https?:\/\/|www\.)\S+/ig, ' ').replace(/\s+/g, ' ')).split(' ').slice(0, 6).join(' ');
             },
+            autosize = function(el){
+                if (!el) return;
+                el.style.height = 'auto';
+                el.style.height = (el.scrollHeight + 2) + 'px';
+            },
+            counter = function($it){
+                var len = ($it.find('[data-mm-text]').val() || '').length, max = parseInt($it.find('[data-mm-text]').attr('maxlength'), 10) || 500;
+                $it.find('[data-mm-chars]').text(len);
+                $it.find('[data-mm-meta]').toggleClass('is-near', len > max * 0.9);
+            },
             status = function(msg, type){
                 $status.text(msg || '').attr('data-type', type || '');
             },
@@ -1395,6 +1405,7 @@ var Theme = {
                     var $it = $(this), text = $it.find('[data-mm-text]').val() || '', kw = keywords(text);
 
                     $it.find('[data-mm-num]').text(i + 1);
+                    counter($it);
                     $it.find('[data-mm-remove-item]').toggle($items.length > 1 || $.trim(text) !== '' || $it.find('[data-mm-link]').length > 0);
                     $it.find('[data-mm-add-link]').toggle($it.find('[data-mm-link]').length < cfg.maxLinks);
 
@@ -1415,6 +1426,7 @@ var Theme = {
                 var $it = $empty.length ? $empty : $(itemTpl).appendTo($list);
 
                 if (text) $it.find('[data-mm-text]').val(text);
+                autosize($it.find('[data-mm-text]')[0]);
                 refresh();
                 return $it;
             };
@@ -1459,6 +1471,7 @@ var Theme = {
         });
 
         $form.on('input', '[data-mm-text]', function(){
+            autosize(this);
             $(this).closest('[data-mm-item]').removeClass('is-invalid').find('[data-mm-error]').text('');
             refresh();
         });
@@ -1538,6 +1551,8 @@ var Theme = {
             });
         });
 
+        $form.find('textarea').each(function(){ autosize(this); });
+        $form.on('input', 'textarea[name="address"]', function(){ autosize(this); });
         refresh();
     },
 
