@@ -58,3 +58,15 @@ function my_custom_styles() {
     } 
   </style>';
 }
+
+/**
+ * Plain-CSS UI styles (the LESS build is cached per theme version, so these are separate files).
+ * Versioned by file mtime so changes show up immediately.
+ */
+add_action( 'wp_enqueue_scripts', 'mm_enqueue_ui_styles', 20 );
+function mm_enqueue_ui_styles() {
+	foreach ( array( 'mm-match', 'mm-dashboard' ) as $name ) {
+		$file = '/assets/csslib/' . $name . '.css';
+		wp_enqueue_style( $name, PARENT_URL . $file, array(), (string) @filemtime( PARENT_DIR . $file ) );
+	}
+}

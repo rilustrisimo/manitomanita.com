@@ -54,7 +54,7 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
                         <div class="row metrics">
                             <div class="col-md-6">
                                 <h2>Spending<span>Minimum</span></h2>
-                                <div class="bigger"><?php echo $fields['spending_minimum']; ?></div>
+                                <div class="bigger"><span class="mm-cur">&#8369;</span><?php echo $fields['spending_minimum']; ?></div>
                             </div>
                             <div class="col-md-3">
                                 <h2>MEMBER<span>S</span></h2>
@@ -75,10 +75,15 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
                             <div class="row">
                                 <?php $creds = $group->getGroupCredentials(); ?>
                                 <div class="col-12 col-sm-12 col-md-6"><h2>MEMBERS<span>AREA</span></h2></div>
-                                <div class="col-12 col-sm-12 col-md-6 clip"><i class="fas fa-link"></i> <input type="text" name="clipboard" id="clipboard" value="<?php echo get_permalink(get_the_ID()).'?gid='.$creds[0].'&pw='.$creds[1]; ?>"><div class="label">Copied to clipboard</div></div>
+                                <div class="col-12 col-sm-12 col-md-6 clip"><i class="fas fa-link"></i> <input type="text" name="clipboard" id="clipboard" readonly value="<?php echo get_permalink(get_the_ID()).'?gid='.$creds[0].'&pw='.$creds[1]; ?>"><div class="label">Copied to clipboard</div><div class="mm-clip-hint">Share this link to invite members &middot; tap to copy</div></div>
                             </div>
                         </div>
                         <div class="body-dash">
+                            <?php if(!empty($fields['matched'])): ?>
+                            <div class="mm-dash-status is-matched"><i class="fas fa-gift"></i><div><strong>Names have been drawn!</strong> Tap <em>See Match</em> on your name to see who you&rsquo;re giving a gift to.</div></div>
+                            <?php else: ?>
+                            <div class="mm-dash-status"><i class="far fa-clock"></i><div><strong>Waiting for names to be drawn.</strong> Find your name below and add your wishlist. <em>See Match</em> unlocks once the moderator draws names.</div></div>
+                            <?php endif; ?>
                             <div class="accordion" id="members-list">
                                 <!-- SAMPLE CARD -->
                                 <div class="card sample-card" style="display:none;">

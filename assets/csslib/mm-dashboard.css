@@ -1,0 +1,1009 @@
+/*
+ * Group dashboard (templates/content-dashboard.php, Users::generateCardUsers()).
+ * Restyles the existing markup only; classes, ids and data attributes used by Theme.js are unchanged.
+ * The theme's rules (pages/page.less, responsive.less) nest #members-list with :nth-child and use
+ * !important on mobile, so these overrides repeat the id (#members-list#members-list) and use
+ * !important where the theme does.
+ * Theme colours: #1b1b1b (main), #3ec7c2 (accent), #6d6d6d (text).
+ */
+
+.dashboard {
+    --mm-dark: #1b1b1b;
+    --mm-accent: #3ec7c2;
+    --mm-accent-dark: #2a9d99;
+    --mm-accent-soft: rgba(62, 199, 194, .12);
+    --mm-text: #6d6d6d;
+    --mm-line: #ececec;
+}
+
+/* ---------- Summary cards ---------- */
+
+/* Bootstrap 3 rows add clearfix ::before/::after, which become stray items in flex/grid rows */
+.dashboard .dashboard__inner > .col-md-12 > .row:first-child::before,
+.dashboard .dashboard__inner > .col-md-12 > .row:first-child::after,
+.dashboard .dashboard__gd > .row::before,
+.dashboard .dashboard__gd > .row::after,
+.dashboard .dashboard__ma .header-dash > .row::before,
+.dashboard .dashboard__ma .header-dash > .row::after,
+#members-list#members-list .card .card-body > .row::before,
+#members-list#members-list .card .card-body > .row::after {
+    content: none;
+    display: none;
+}
+
+/* Equal-height date and group cards */
+.dashboard .dashboard__inner > .col-md-12 > .row:first-child {
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 16px;
+}
+
+.dashboard .dashboard__inner > .col-md-12 > .row:first-child > [class*="col-"] {
+    float: none;
+}
+
+.dashboard .dashboard__ma .header-dash > .row {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.dashboard .dashboard__ma .header-dash > .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* The header's own padding is the gutter (responsive.less zeroes the .clip column's side padding on phones) */
+.dashboard .dashboard__ma .header-dash > .row > [class*="col-"] {
+    float: none;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#members-list#members-list .card .card-body > .row {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#members-list#members-list .card .card-body > .row > [class*="col-"] {
+    float: none;
+    flex: 1 1 260px;
+    width: auto;
+}
+
+.dashboard .dashboard__ed,
+.dashboard .dashboard__gd {
+    height: 100%;
+    border-radius: 28px;
+}
+
+.dashboard .dashboard__ed h2,
+.dashboard .dashboard__gd h2,
+.dashboard .dashboard__ma .header-dash h2 {
+    font-size: 13px !important;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    line-height: 1.2 !important;
+}
+
+.dashboard .dashboard__ed h2 span,
+.dashboard .dashboard__gd h2 span,
+.dashboard .dashboard__ma .header-dash h2 span {
+    font-weight: 400;
+}
+
+/* Exchange date */
+.dashboard .dashboard__ed {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 20px 30px;
+}
+
+.dashboard .dashboard__ed h2 {
+    padding: 0 0 14px;
+    text-align: center;
+}
+
+.dashboard .dashboard__ed .month {
+    font-size: 30px;
+    line-height: 1;
+    letter-spacing: 1px;
+}
+
+.dashboard .dashboard__ed .day {
+    font-family: inherit;
+    font-size: 120px;
+    line-height: .95;
+    letter-spacing: -2px;
+}
+
+.dashboard .dashboard__ed .year {
+    font-size: 40px;
+    line-height: 1;
+    letter-spacing: 2px;
+}
+
+/* Group details */
+.dashboard .dashboard__gd {
+    display: flex;
+    flex-direction: column;
+    padding: 28px 32px 30px;
+}
+
+.dashboard .dashboard__gd > .row {
+    margin: 0;
+}
+
+.dashboard .dashboard__gd > .row > [class*="col-"] {
+    padding: 0;
+}
+
+.dashboard .dashboard__gd h2 {
+    padding: 0 0 6px;
+}
+
+.dashboard .dashboard__gd .big {
+    font-size: 36px;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.dashboard .dashboard__gd > .row:nth-child(2) {
+    margin-top: 20px;
+}
+
+/* Name + "Edit details": the button takes the width it needs */
+.dashboard .dashboard__gd > .row:first-child {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.dashboard .dashboard__gd > .row:first-child > [class*="col-"] {
+    float: none;
+    width: auto;
+}
+
+.dashboard .dashboard__gd > .row:first-child > [class*="col-"]:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.dashboard .dashboard__gd > .row:first-child > .edit-button {
+    flex: 0 0 auto;
+}
+
+.dashboard .dashboard__gd > .row:nth-child(2) .big {
+    font-size: 24px;
+}
+
+.dashboard .dashboard__gd .edit-button {
+    padding: 0;
+    text-align: right;
+}
+
+.dashboard .dashboard__gd .edit-button a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border: 1px solid rgba(255, 255, 255, .35);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    white-space: nowrap;
+}
+
+.dashboard .dashboard__gd .edit-button a:hover {
+    border-color: var(--mm-accent);
+}
+
+/* Spending minimum / members / wishlists */
+.dashboard .dashboard__gd .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 24px;
+}
+
+.dashboard .dashboard__gd .metrics > [class*="col-"] {
+    float: none;
+    flex: none;
+    width: auto;
+    max-width: none;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .07);
+}
+
+.dashboard .dashboard__gd .metrics > div h2,
+.dashboard .dashboard__gd .metrics > div:not(:first-child) h2 {
+    padding: 0 0 8px;
+    text-align: left;
+}
+
+.dashboard .dashboard__gd .metrics .bigger,
+.dashboard .dashboard__gd .metrics > div:first-child .bigger {
+    font-size: 44px;
+    line-height: 1;
+    text-align: left;
+}
+
+.dashboard .dashboard__gd .metrics .mm-cur {
+    margin-right: 2px;
+    font-size: .6em;
+    vertical-align: .25em;
+    color: var(--mm-accent);
+}
+
+/* ---------- Members area ---------- */
+
+.dashboard .dashboard__ma {
+    margin-top: 16px;
+    padding: 0;
+    border: 1px solid var(--mm-line);
+    border-radius: 28px;
+    background: #fff;
+}
+
+.dashboard .dashboard__ma .header-dash {
+    padding: 18px 28px;
+    line-height: normal;
+}
+
+.dashboard .dashboard__ma .header-dash > .row {
+    align-items: center;
+    row-gap: 12px;
+}
+
+.dashboard .dashboard__ma .header-dash h2 {
+    font-size: 15px !important;
+}
+
+.dashboard .dashboard__ma .header-dash .clip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px 10px;
+    padding: 0;
+    font-size: 16px;
+    line-height: normal;
+    text-align: left;
+}
+
+.dashboard .dashboard__ma .header-dash .clip input {
+    flex: 1 1 220px;
+    max-width: 420px;
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font-size: 14px;
+    line-height: 38px;
+    text-overflow: ellipsis;
+    cursor: copy;
+}
+
+.dashboard .dashboard__ma .header-dash .clip .label {
+    top: -6px;
+    right: 28px;
+    border-radius: 999px;
+    padding: 2px 10px;
+}
+
+.mm-clip-hint {
+    flex: 1 1 100%;
+    font-size: 12px;
+    color: rgba(255, 255, 255, .6);
+    text-align: right;
+}
+
+/* Status banner */
+.mm-dash-status {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 18px 24px 6px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: #f6f6f6;
+    color: var(--mm-dark);
+    font-size: 15px;
+    line-height: 1.45;
+}
+
+.mm-dash-status.is-matched {
+    background: var(--mm-accent-soft);
+}
+
+.mm-dash-status > svg,
+.mm-dash-status > i {
+    flex: 0 0 auto;
+    margin-top: 3px;
+    color: var(--mm-accent-dark);
+}
+
+.mm-dash-status em {
+    font-style: normal;
+    font-weight: 700;
+}
+
+/* Member rows */
+#members-list#members-list .card,
+#members-list#members-list .card:nth-child(odd),
+#members-list#members-list .card:nth-child(even),
+#members-list#members-list .card:nth-child(1),
+#members-list#members-list .card:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+    margin: 0 !important;
+    padding: 16px 24px !important;
+    border: 0;
+    border-bottom: 1px solid var(--mm-line);
+    border-radius: 0;
+    background: #fff;
+}
+
+#members-list#members-list .card.sample-card {
+    display: none;
+}
+
+#members-list#members-list #cards-container .card:last-child {
+    border-bottom: 0;
+}
+
+#members-list#members-list .card::before {
+    content: none !important;
+    display: none !important;
+}
+
+#members-list#members-list .card .card-header {
+    order: 1;
+    flex: 1 1 260px;
+    min-width: 0;
+    padding: 0 !important;
+    border: 0;
+    background: none;
+}
+
+#members-list#members-list .card .card-header h2 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 14px;
+    margin: 0;
+    padding: 0;
+}
+
+#members-list#members-list .card .card-header h2 button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    color: var(--mm-dark);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.3;
+    text-align: left;
+    text-decoration: none;
+    box-shadow: none;
+}
+
+#members-list#members-list .card .card-header h2 button:hover .mm-member__name {
+    color: var(--mm-accent-dark);
+}
+
+.mm-avatar {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--mm-accent-soft);
+    color: var(--mm-accent-dark);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.mm-member__name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    transition: color .15s ease;
+}
+
+#members-list#members-list .card .card-header h2 button > svg,
+#members-list#members-list .card .card-header h2 button > i {
+    flex: 0 0 auto;
+    width: 14px;
+    color: #b8b8b8;
+}
+
+/* "View details" / "Comment" */
+#members-list#members-list .card .action-btns {
+    position: static !important;
+    display: inline-flex !important;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    width: auto !important;
+    margin: 0 !important;
+    text-align: left !important;
+}
+
+#members-list#members-list .card .action-btns a {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 5px;
+    margin: 0 !important;
+    padding: 2px 0 !important;
+    color: var(--mm-text);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+#members-list#members-list .card .action-btns a:hover {
+    color: var(--mm-accent-dark);
+}
+
+/* Edit wishlist / See match / Leave group */
+#members-list#members-list .card .user-action-btns {
+    order: 2;
+    position: static !important;
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 !important;
+    text-align: left;
+}
+
+#members-list#members-list .card .user-action-btns a {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 38px;
+    margin: 0 !important;
+    padding: 8px 14px;
+    border: 1px solid var(--mm-dark);
+    border-radius: 999px;
+    background: var(--mm-dark);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: .2px;
+    white-space: nowrap;
+    transition: background .15s ease, border-color .15s ease, color .15s ease, opacity .15s ease;
+}
+
+#members-list#members-list .card .user-action-btns a:hover {
+    border-color: var(--mm-accent-dark);
+    background: var(--mm-accent-dark);
+    color: #fff;
+}
+
+/* See Match: the main action once names are drawn */
+#members-list#members-list .card .user-action-btns a.match-btn {
+    border-color: var(--mm-accent);
+    background: var(--mm-accent);
+    color: var(--mm-dark);
+}
+
+#members-list#members-list .card .user-action-btns a.match-btn:hover {
+    border-color: var(--mm-accent-dark);
+    background: var(--mm-accent-dark);
+    color: #fff;
+}
+
+/* Leave group: secondary */
+#members-list#members-list .card .user-action-btns a.leave-btn {
+    border-color: #dcdcdc;
+    background: #fff;
+    color: var(--mm-text);
+}
+
+#members-list#members-list .card .user-action-btns a.leave-btn:hover {
+    border-color: #e5484d;
+    background: #fff;
+    color: #e5484d;
+}
+
+#members-list#members-list .card .user-action-btns a[disabled],
+#members-list#members-list .card .user-action-btns a[disabled]:hover {
+    border-color: #e6e6e6;
+    background: #f4f4f4;
+    color: #a8a8a8;
+    cursor: not-allowed;
+}
+
+/* Expanded details */
+#members-list#members-list .card .collapse,
+#members-list#members-list .card .collapsing {
+    order: 3;
+    flex: 1 1 100%;
+}
+
+#members-list#members-list .card .card-body {
+    margin-top: 4px;
+    padding: 16px 18px !important;
+    border-radius: 14px;
+    background: #fafafa;
+}
+
+#members-list#members-list .card .card-body > .row {
+    row-gap: 12px;
+}
+
+#members-list#members-list .card .card-body h2 {
+    margin: 0 0 10px;
+    padding: 0;
+    color: var(--mm-dark);
+    font-size: 13px !important;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+#members-list#members-list .card .card-body h2 span {
+    color: var(--mm-accent);
+}
+
+#members-list#members-list .card .card-body .placeholder {
+    color: var(--mm-text);
+    font-size: 14px;
+}
+
+#members-list#members-list .card .card-body .wishlist-list li {
+    margin-bottom: 12px;
+    padding-left: 32px;
+}
+
+#members-list#members-list .card .card-body .wishlist-list li::before {
+    top: 1px;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#members-list#members-list .card .card-body .wish-content {
+    font-size: 15px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+#members-list#members-list .card .card-body .wish-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 8px;
+}
+
+#members-list#members-list .card .card-body .wish-links a {
+    margin: 0;
+    padding: 5px 12px;
+    border: 1px solid var(--mm-dark);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--mm-dark);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: none;
+}
+
+#members-list#members-list .card .card-body .wish-links a:hover {
+    background: var(--mm-dark);
+    color: #fff;
+}
+
+#members-list#members-list .card .card-body .comments-list li {
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border-radius: 4px 12px 12px 12px;
+    background: #fff;
+    border: 1px solid var(--mm-line);
+}
+
+#members-list#members-list .card .card-body .com-content {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+#members-list#members-list .card .card-body .com-date {
+    margin-top: 4px;
+    color: #9a9a9a;
+}
+
+/* ---------- Tablets and phones ---------- */
+
+@media (max-width: 1199px) {
+    .dashboard .dashboard__gd .metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard .dashboard__gd .metrics > [class*="col-"]:first-child {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 767px) {
+    /* The template's col-12 isn't a Bootstrap 3 class; give the flex columns their full width */
+    .dashboard .dashboard__inner > .col-md-12 > .row:first-child > [class*="col-"],
+    .dashboard .dashboard__ma .header-dash > .row > [class*="col-"] {
+        width: 100%;
+    }
+
+    .dashboard .dashboard__ed .day {
+        font-size: 96px;
+    }
+
+    .dashboard .dashboard__ed .month {
+        font-size: 26px;
+    }
+
+    .dashboard .dashboard__ed .year {
+        font-size: 34px;
+    }
+
+    .dashboard .dashboard__gd {
+        padding: 24px 22px 24px;
+    }
+
+    .dashboard .dashboard__gd .big {
+        font-size: 28px;
+    }
+
+    .dashboard .dashboard__gd .metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .dashboard .dashboard__gd .metrics > [class*="col-"]:first-child {
+        grid-column: 1 / -1;
+    }
+
+    .dashboard .dashboard__gd .metrics > [class*="col-"] {
+        padding: 12px;
+    }
+
+    .dashboard .dashboard__gd .metrics .bigger,
+    .dashboard .dashboard__gd .metrics > div:first-child .bigger {
+        font-size: 30px;
+    }
+
+    .dashboard .dashboard__gd .metrics > div h2 {
+        font-size: 11px !important;
+        letter-spacing: 1px;
+    }
+
+    .dashboard .dashboard__ma .header-dash {
+        padding: 16px 18px;
+    }
+
+    .dashboard .dashboard__ma .header-dash .clip {
+        justify-content: flex-start;
+    }
+
+    .dashboard .dashboard__ma .header-dash .clip input {
+        max-width: none;
+    }
+
+    .mm-clip-hint {
+        text-align: left;
+    }
+
+    .mm-dash-status {
+        margin: 14px 14px 4px;
+        font-size: 14px;
+    }
+
+    #members-list#members-list .card,
+    #members-list#members-list .card:nth-child(odd),
+    #members-list#members-list .card:nth-child(even),
+    #members-list#members-list .card:nth-child(1),
+    #members-list#members-list .card:last-child {
+        padding: 14px 16px !important;
+    }
+
+    #members-list#members-list .card .card-header {
+        flex-basis: 100%;
+    }
+
+    #members-list#members-list .card .action-btns {
+        width: 100% !important;
+        padding-left: 46px;
+    }
+
+    #members-list#members-list .card .user-action-btns {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+    }
+
+    #members-list#members-list .card .user-action-btns a {
+        min-width: 0;
+        padding: 9px 6px;
+        font-size: 12px;
+        white-space: nowrap;
+        text-align: center;
+    }
+
+    #members-list#members-list .card .user-action-btns a > svg,
+    #members-list#members-list .card .user-action-btns a > i {
+        display: none;
+    }
+
+    #members-list#members-list .card .card-body {
+        padding: 14px !important;
+    }
+}
+
+/* ---------- Phones: larger tap targets, readable type, less scrolling ---------- */
+
+@media (max-width: 767px) {
+    .dashboard {
+        padding-top: 16px;
+    }
+
+    .dashboard .dashboard__inner > .col-md-12 > .row:first-child {
+        row-gap: 12px;
+    }
+
+    /* Date on one line: OCTOBER 23 2026 */
+    .dashboard .dashboard__ed {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: center;
+        gap: 0 10px;
+        margin: 0;
+        padding: 18px 20px 20px;
+        border-radius: 22px;
+    }
+
+    .dashboard .dashboard__ed h2 {
+        flex: 1 1 100%;
+        padding: 0 0 8px;
+    }
+
+    .dashboard .dashboard__ed .month,
+    .dashboard .dashboard__ed .year {
+        font-size: 22px;
+        line-height: 1;
+    }
+
+    .dashboard .dashboard__ed .day {
+        font-size: 56px;
+        line-height: 1;
+        letter-spacing: -1px;
+    }
+
+    /* Group details */
+    .dashboard .dashboard__gd {
+        padding: 20px 18px;
+        border-radius: 22px;
+    }
+
+    .dashboard .dashboard__gd .big {
+        font-size: 24px;
+    }
+
+    .dashboard .dashboard__gd > .row:nth-child(2) {
+        margin-top: 14px;
+    }
+
+    .dashboard .dashboard__gd > .row:nth-child(2) .big {
+        font-size: 18px;
+    }
+
+    .dashboard .dashboard__gd .edit-button a {
+        min-height: 36px;
+        padding: 8px 12px;
+        font-size: 11px;
+    }
+
+    .dashboard .dashboard__gd .metrics {
+        gap: 8px;
+        padding-top: 18px;
+    }
+
+    .dashboard .dashboard__gd .metrics > [class*="col-"] {
+        padding: 12px 14px;
+        border-radius: 14px;
+    }
+
+    .dashboard .dashboard__gd .metrics .bigger,
+    .dashboard .dashboard__gd .metrics > div:first-child .bigger {
+        font-size: 28px;
+    }
+
+    /* Members area */
+    .dashboard .dashboard__ma {
+        margin-top: 12px;
+        border-radius: 22px;
+    }
+
+    .dashboard .dashboard__ma .header-dash {
+        padding: 16px;
+    }
+
+    .dashboard .dashboard__ma .header-dash h2 {
+        font-size: 14px !important;
+    }
+
+    .dashboard .dashboard__ma .header-dash .clip {
+        gap: 6px 8px;
+    }
+
+    .dashboard .dashboard__ma .header-dash .clip input {
+        flex: 1 1 0;
+        min-width: 0;
+        height: 44px;
+        font-size: 15px;
+        line-height: 44px;
+    }
+
+    .mm-clip-hint {
+        font-size: 13px;
+    }
+
+    .mm-dash-status {
+        margin: 12px 12px 4px;
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+
+    #members-list#members-list .card,
+    #members-list#members-list .card:nth-child(odd),
+    #members-list#members-list .card:nth-child(even),
+    #members-list#members-list .card:nth-child(1),
+    #members-list#members-list .card:last-child {
+        gap: 12px;
+        padding: 16px !important;
+    }
+
+    /* Name row: the whole name is the tap target */
+    #members-list#members-list .card .card-header h2 {
+        gap: 10px;
+    }
+
+    #members-list#members-list .card .card-header h2 button {
+        flex: 1 1 100%;
+        min-height: 44px;
+        font-size: 18px;
+    }
+
+    #members-list#members-list .card .card-header h2 button > svg,
+    #members-list#members-list .card .card-header h2 button > i {
+        margin-left: auto;
+        width: 18px;
+    }
+
+    .mm-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    /* View details / Comment: two equal, tappable pills */
+    #members-list#members-list .card .action-btns {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        width: 100% !important;
+        padding-left: 0;
+    }
+
+    #members-list#members-list .card .action-btns a {
+        justify-content: center;
+        min-height: 42px;
+        padding: 8px 10px !important;
+        border-radius: 12px;
+        background: #f4f4f4;
+        color: var(--mm-dark);
+        font-size: 14px;
+    }
+
+    /* Edit wishlist / See match / Leave group: icon above label */
+    #members-list#members-list .card .user-action-btns {
+        gap: 8px;
+    }
+
+    #members-list#members-list .card .user-action-btns a {
+        flex-direction: column;
+        gap: 5px;
+        min-height: 58px;
+        padding: 10px 4px;
+        border-radius: 14px;
+        font-size: 13px;
+        line-height: 1.15;
+        white-space: normal;
+    }
+
+    #members-list#members-list .card .user-action-btns a > svg,
+    #members-list#members-list .card .user-action-btns a > i {
+        display: inline-block;
+        font-size: 16px;
+    }
+
+    /* Pressed feedback instead of hover */
+    #members-list#members-list .card .user-action-btns a,
+    #members-list#members-list .card .action-btns a,
+    #members-list#members-list .card .card-header h2 button,
+    .dashboard .dashboard__gd .edit-button a {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    #members-list#members-list .card .user-action-btns a:active,
+    #members-list#members-list .card .action-btns a:active {
+        transform: scale(.97);
+        opacity: .85;
+    }
+
+    /* Expanded details */
+    #members-list#members-list .card .card-body {
+        padding: 14px !important;
+        border-radius: 14px;
+    }
+
+    #members-list#members-list .card .card-body .wish-content {
+        font-size: 16px;
+    }
+
+    #members-list#members-list .card .card-body .wish-links a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 36px;
+        padding: 6px 14px;
+        font-size: 13px;
+    }
+
+    #members-list#members-list .card .card-body .com-content {
+        font-size: 15px;
+    }
+}
+
+/* Small phones (iPhone SE / mini) */
+@media (max-width: 359px) {
+    #members-list#members-list .card .action-btns a {
+        padding: 8px 6px !important;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    #members-list#members-list .card .user-action-btns a {
+        font-size: 12px;
+    }
+
+    .dashboard .dashboard__gd > .row:first-child {
+        flex-wrap: wrap;
+    }
+
+    .dashboard .dashboard__ma .header-dash .clip > svg,
+    .dashboard .dashboard__ma .header-dash .clip > i {
+        display: none;
+    }
+
+    .dashboard .dashboard__ed .month,
+    .dashboard .dashboard__ed .year {
+        font-size: 18px;
+    }
+
+    .dashboard .dashboard__ed .day {
+        font-size: 46px;
+    }
+}

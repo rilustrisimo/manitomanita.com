@@ -52,16 +52,6 @@ class Affiliate {
         array('label' => 'Board & card games','icon' => 'fas fa-dice',          'keyword' => 'party card game'),
     );
 
-    public static function init() {
-        add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueueStyles' ), 20 );
-    }
-
-    public static function enqueueStyles() {
-        $file = '/assets/csslib/mm-match.css';
-
-        wp_enqueue_style( 'mm-affiliate', PARENT_URL . $file, array(), (string) @filemtime( PARENT_DIR . $file ) );
-    }
-
     /**
      * Returns the merchant key for a URL, or false.
      */
@@ -319,5 +309,3 @@ class Affiliate {
         return preg_match( '~^https?://~i', $url ) ? $url : 'https://' . ltrim( $url, '/' );
     }
 }
-
-Affiliate::init();

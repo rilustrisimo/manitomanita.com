@@ -765,11 +765,12 @@ class Users extends Theme {
         $cardres .= '    <div class="card-header" id="heading'.$userid.'">';
         $cardres .= '    <h2 class="mb-0">';
         $cardres .= '        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse'.$userid.'" aria-expanded="false" aria-controls="collapse'.$userid.'">';
-        $cardres .= '        <i class="fas fa-chevron-circle-right"></i> '.get_field('screen_name', $userid).'';
+        $screenName = (string) get_field('screen_name', $userid);
+        $cardres .= '        <span class="mm-avatar" aria-hidden="true">'.esc_html(mb_strtoupper(mb_substr(trim($screenName), 0, 1))).'</span><span class="mm-member__name">'.$screenName.'</span> <i class="fas fa-chevron-circle-right"></i>';
         $cardres .= '        </button>';
         $cardres .= '        <div class="action-btns">';
-        $cardres .= '            <a href="#" class="expand-deets"><i class="fas fa-stream"></i> Expand Details</a>';
-        $cardres .= '            <a href="#" class="user-action comment-btn" user-data="'.$userid.'"><i class="far fa-comment"></i> Comment Member</a>';
+        $cardres .= '            <a href="#" class="expand-deets"><i class="fas fa-stream"></i> View details</a>';
+        $cardres .= '            <a href="#" class="user-action comment-btn" user-data="'.$userid.'"><i class="far fa-comment"></i> Comment</a>';
         $cardres .= '        </div>';
         $cardres .= '        ';
         $cardres .= '    </h2>';
@@ -837,9 +838,9 @@ class Users extends Theme {
         $cardres .= '    <div class="user-action-btns">';
         $cardres .= '        <a href="#" class="user-action wish-btn" user-data="'.$userid.'" data-action="edit-wishlist"><i class="fas fa-gift"></i> Edit Wishlist</a>';
         
-                        $matchattr =  (!get_field('matched', $groupid))?'disabled':'class="user-action match-btn" user-data="'.$userid.'" data-action="see-match"'; 
+                        $matchattr =  (!get_field('matched', $groupid))?'disabled title="Available once the moderator draws names"':'class="user-action match-btn" user-data="'.$userid.'" data-action="see-match"'; 
 
-                        $matchattr2 = (get_field('matched', $groupid))?'disabled':'class="user-action leave-btn" user-data="'.$userid.'" data-action="leave-group"';
+                        $matchattr2 = (get_field('matched', $groupid))?'disabled title="Members can\'t leave after names are drawn"':'class="user-action leave-btn" user-data="'.$userid.'" data-action="leave-group"';
 
         $cardres .= '        <a href="javascript:;" '.$matchattr.'><i class="fas fa-user-friends"></i> See Match</a>';
         $cardres .= '        <a href="javascript:;" '.$matchattr2.'><i class="fas fa-sign-out-alt"></i> Leave Group</a>';
