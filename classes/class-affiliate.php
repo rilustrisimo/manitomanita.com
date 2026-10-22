@@ -57,7 +57,7 @@ class Affiliate {
     }
 
     public static function enqueueStyles() {
-        $file = '/assets/csslib/mm-affiliate.css';
+        $file = '/assets/csslib/mm-match.css';
 
         wp_enqueue_style( 'mm-affiliate', PARENT_URL . $file, array(), (string) @filemtime( PARENT_DIR . $file ) );
     }
@@ -229,8 +229,8 @@ class Affiliate {
             return $html;
         }
 
-        $html  = '<div class="mm-gifts aff-cta-optional">';
-        $html .= '<h2><i class="fas fa-lightbulb"></i> GIFT<span>IDEAS</span></h2>';
+        $html  = '<section class="mm-sec mm-gifts aff-cta-optional">';
+        $html .= '<h3 class="mm-sec__title"><i class="fas fa-lightbulb"></i> GIFT<span>IDEAS</span></h3>';
         $html .= '<p class="mm-gifts__sub">' . $subtitle . '</p>';
         $html .= '<div class="mm-gifts__grid">';
 
@@ -252,7 +252,7 @@ class Affiliate {
         }
 
         $html .= '</div>';
-        $html .= '</div>';
+        $html .= '</section>';
 
         return $html;
     }

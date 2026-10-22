@@ -120,50 +120,72 @@ class Users extends Theme {
         $fields = $group->getGroupDetails($groupid);
         $pro = (isset($fields['pro']))?$fields['pro']:false;
 
-        echo '<div class="header-image"><img src="'.get_template_directory_uri().'/assets/images/gift.png"></div>';
-        echo '<div class="inner-contents">';
-        echo '    <div class="container">';
-        echo '        <div class="row">';
-        echo '            <div class="col-md-12">';
         $gid = $groupid;
         $pairName = get_field('screen_name', $pair);
+        $wishlist = get_field('my_wishlists', $pair);
+        $address = get_field('my_address_and_contact_details', $pair);
+        $comments = get_comments(array('post_id' => $pair));
+        $budget = Affiliate::budget($gid);
+        $date = (!empty($fields['gift_exchange_date']))?DateTime::createFromFormat('m/d/Y', $fields['gift_exchange_date']):false;
         $legacyAff = (!$pro)?array('class' => 'aff-link', 'attrs' => array('data-url' => 'https://invl.io/cllz36p')):array('class' => '', 'attrs' => array());
 
-        echo '                <h2><i class="far fa-user"></i> '.$pairName.'</h2>';
-        echo '                <h2><i class="fas fa-gifts"></i> WISH<span>LIST</span></h2>';
-                                $wishlist = get_field('my_wishlists', $pair);
-        echo '                  <ul class="wishlist-list">';
-                                if(!$wishlist){
-                                    echo '<div class="placeholder">No wishlist provided yet.</div>';
-                                }
-                                if($wishlist):
-                                foreach($wishlist as $w):
-        echo '                <li>';
-        echo '                    <div class="wish-content">'.Affiliate::linkify($w['wishlist_description'], 'match-wishlist', $gid).'</div>';
-        echo '                    <div class="wish-links">';
-                                    if($w['reference_links']):
-                                        foreach($w['reference_links'] as $k => $links):
-                                            echo Affiliate::referenceLink($links['link_url'], $k, 'match-wishlist', $gid, $legacyAff['class'], $legacyAff['attrs']);
-                                        endforeach;
-                                    endif;
-        echo '                    </div>';
-        echo '                </li>';
-                                endforeach; 
-                                endif;
-        echo '                  </ul>';
-                                if($wishlist){
-                                    echo Affiliate::shopButtonsHtml($gid, 'match-shop-btn', Affiliate::keywordsFrom($wishlist[0]['wishlist_description']), 'Shop for '.$pairName);
-                                }
-                                $aiIdeas = GiftAI::ideasFor($pair);
-        echo                    ($aiIdeas)
-                                    ? Affiliate::giftIdeasHtml($gid, 'ai-gift-ideas', false, $aiIdeas, 'Picked for '.esc_html($pairName).' from their wishlist')
-                                    : Affiliate::giftIdeasHtml($gid, 'match-gift-ideas');
-        echo '                <h2><i class="fas fa-gifts"></i> ADDRESS <span>AND</span> CONTACTS</h2>';
-        echo                  '<div style="padding: 32px;">'.get_field('my_address_and_contact_details', $pair).'</div>';
+        echo '<div class="mm-match">';
+
+        /** HEADER */
+        echo '<div class="mm-match__hero">';
+        echo '    <img class="mm-match__gift" src="'.get_template_directory_uri().'/assets/images/gift.png" alt="">';
+        echo '    <div class="mm-match__eyebrow">You&rsquo;re giving a gift to</div>';
+        echo '    <div class="mm-match__name">'.esc_html($pairName).'</div>';
+        echo '    <div class="mm-match__chips">';
+        if($budget > 0) echo '<span class="mm-chip"><i class="fas fa-wallet"></i> &#8369;'.number_format($budget).' minimum</span>';
+        if($date) echo '<span class="mm-chip"><i class="far fa-calendar"></i> '.$date->format('M j, Y').'</span>';
+        echo '    </div>';
+        echo '</div>';
+
+        /** WISHLIST */
+        echo '<section class="mm-sec">';
+        echo '    <h3 class="mm-sec__title"><i class="fas fa-gifts"></i> WISH<span>LIST</span>'.(($wishlist)?'<em class="mm-sec__count">'.count($wishlist).'</em>':'').'</h3>';
+        if($wishlist):
+            echo '<ol class="mm-wish">';
+            foreach($wishlist as $i => $w):
+                echo '<li class="mm-wish__item">';
+                echo '    <span class="mm-wish__num">'.($i+1).'</span>';
+                echo '    <div class="mm-wish__body">';
+                echo '        <div class="mm-wish__text">'.Affiliate::linkify($w['wishlist_description'], 'match-wishlist', $gid).'</div>';
+                if($w['reference_links']):
+                    echo '    <div class="mm-wish__links">';
+                    foreach($w['reference_links'] as $k => $links):
+                        echo Affiliate::referenceLink($links['link_url'], $k, 'match-wishlist', $gid, trim('mm-wish__link '.$legacyAff['class']), $legacyAff['attrs']);
+                    endforeach;
+                    echo '    </div>';
+                endif;
+                echo '    </div>';
+                echo '</li>';
+            endforeach;
+            echo '</ol>';
+            echo Affiliate::shopButtonsHtml($gid, 'match-shop-btn', Affiliate::keywordsFrom($wishlist[0]['wishlist_description']), 'Shop for '.$pairName);
+        else:
+            echo '<div class="mm-empty"><i class="fas fa-gift"></i><p>'.esc_html($pairName).' hasn&rsquo;t added a wishlist yet. Check the gift ideas below.</p></div>';
+        endif;
+        echo '</section>';
+
+        /** GIFT IDEAS */
+        $aiIdeas = GiftAI::ideasFor($pair);
+        echo ($aiIdeas)
+            ? Affiliate::giftIdeasHtml($gid, 'ai-gift-ideas', false, $aiIdeas, 'Picked for '.esc_html($pairName).' from their wishlist')
+            : Affiliate::giftIdeasHtml($gid, 'match-gift-ideas');
+
+        /** ADDRESS AND CONTACTS */
+        echo '<section class="mm-sec">';
+        echo '    <h3 class="mm-sec__title"><i class="fas fa-location-dot"></i> ADDRESS<span>&nbsp;&amp; CONTACTS</span></h3>';
+        echo (trim(wp_strip_all_tags((string) $address)) !== '')
+            ? '<div class="mm-card mm-address">'.$address.'</div>'
+            : '<div class="mm-empty"><i class="fas fa-address-card"></i><p>No address or contact details yet.</p></div>';
+        echo '</section>';
 
         if(!$pro):
             /** VALUE DEALS */
-            echo '<h2>GREAT VALUE <span>DEALS</span></h2><div class="row product-list"><div class="col-md-12 col-sm-12 col-12 product-item text-center"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+            echo '<section class="mm-sec mm-sec--ad"><div class="mm-sec__label">Sponsored</div><div class="mm-ad"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
             <!-- Manito Manita Match Page -->
             <ins class="adsbygoogle"
                 style="display:inline-block;width:300px;height:250px"
@@ -171,31 +193,34 @@ class Users extends Theme {
                 data-ad-slot="3964563495"></ins>
             <script>
                 (adsbygoogle = window.adsbygoogle || []).push({});
-            </script></div></div>';
+            </script></div></section>';
             //get_template_part('lazada/assets/offers', 'content');// offers template
             /** VALUE DEALS END */
         endif;
 
-        echo '            </div>';
-        echo '            <div class="col-md-12">';
-        echo '                <h2><i class="far fa-comments"></i> COMMENT<span>S</span></h2>';
-        echo '                        <ul class="comments-list">';
-                                        $comments = get_comments(array('post_id' => $pair));
-                                        if(count($comments) == 0){
-                                            echo '<div class="placeholder"><i class="fas fa-comment"></i> Somebody has to say something.</div>';
-                                        }
-                                        foreach($comments as $c):
-        echo '                            <li>';
-        echo '                                <div class="com-content">'.$c->comment_content.'</div>';
-        echo '                                <div class="com-date">'.date('F d, Y h:i:sa', strtotime($c->comment_date)).'</div>';
-        echo '                            </li>';
-                                        endforeach;
-        echo '                    </ul>';
-        echo '            </div>';
-        echo '        </div>';
-        echo '      <h2 class="fb">Thank you for using Manito<span>Manita</span>. Kindly show support by clicking Like and <span>Share</span> below for our facebook page.</h2>';
-        echo '      <iframe src="https://www.facebook.com/plugins/like.php?href=https%3A%2F%2Fwww.facebook.com%2Fmanitomanitaph&width=450&layout=standard&action=like&size=large&show_faces=false&share=true&height=35&appId=62030021851" width="264" height="60" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe>';
-        echo '    </div>';
+        /** COMMENTS */
+        echo '<section class="mm-sec">';
+        echo '    <h3 class="mm-sec__title"><i class="far fa-comments"></i> COMMENT<span>S</span>'.((count($comments) > 0)?'<em class="mm-sec__count">'.count($comments).'</em>':'').'</h3>';
+        if(count($comments) == 0):
+            echo '<div class="mm-empty"><i class="fas fa-comment"></i><p>Somebody has to say something.</p></div>';
+        else:
+            echo '<ul class="mm-comments">';
+            foreach($comments as $c):
+                echo '<li class="mm-comment">';
+                echo '    <div class="mm-comment__text">'.$c->comment_content.'</div>';
+                echo '    <time class="mm-comment__date">'.date('M j, Y · g:i a', strtotime($c->comment_date)).'</time>';
+                echo '</li>';
+            endforeach;
+            echo '</ul>';
+        endif;
+        echo '</section>';
+
+        /** FOOTER */
+        echo '<div class="mm-match__footer">';
+        echo '    <p>Thank you for using Manito<span>Manita</span>! Support us by liking and sharing our Facebook page.</p>';
+        echo '    <iframe src="https://www.facebook.com/plugins/like.php?href=https%3A%2F%2Fwww.facebook.com%2Fmanitomanitaph&width=450&layout=standard&action=like&size=large&show_faces=false&share=true&height=35&appId=62030021851" width="264" height="60" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe>';
+        echo '</div>';
+
         echo '</div>';
     }
 

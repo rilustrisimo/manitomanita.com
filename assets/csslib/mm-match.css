@@ -1,0 +1,550 @@
+/*
+ * See Match popup, gift ideas and shop buttons.
+ * Markup: Users::generateSeeMatchElements(), Affiliate::giftIdeasHtml() / shopButtonsHtml().
+ * Plain CSS (the LESS build is cached per theme version); enqueued with its mtime as version.
+ * Theme colours: #1b1b1b (main), #3ec7c2 (accent), #6d6d6d (text).
+ */
+
+.mm-match {
+    --mm-dark: #1b1b1b;
+    --mm-accent: #3ec7c2;
+    --mm-accent-dark: #2a9d99;
+    --mm-accent-soft: rgba(62, 199, 194, .12);
+    --mm-text: #6d6d6d;
+    --mm-line: #ececec;
+    --mm-radius: 14px;
+
+    color: var(--mm-text);
+    font-size: 16px;
+    line-height: 1.45;
+    text-align: left;
+}
+
+.mm-match *,
+.mm-match *::before,
+.mm-match *::after {
+    box-sizing: border-box;
+}
+
+/* ---------- Header ---------- */
+
+.mm-match__hero {
+    text-align: center;
+    padding: 4px 0 22px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--mm-line);
+}
+
+.mm-match__gift {
+    width: 64px;
+    height: auto;
+    margin: 0 auto 10px;
+    display: block;
+}
+
+.mm-match__eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--mm-accent-dark);
+}
+
+.mm-match__name {
+    margin-top: 2px;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--mm-dark);
+    overflow-wrap: anywhere;
+}
+
+.mm-match__chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.mm-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--mm-accent-soft);
+    color: var(--mm-dark);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.mm-chip svg,
+.mm-chip i {
+    color: var(--mm-accent-dark);
+}
+
+/* ---------- Sections ---------- */
+
+.mm-sec {
+    padding: 22px 0 6px;
+}
+
+.mm-sec + .mm-sec {
+    border-top: 1px solid var(--mm-line);
+}
+
+.mm-match .mm-sec__title {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 0 0 14px;
+    padding: 0;
+    border: 0;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--mm-dark);
+}
+
+.mm-match .mm-sec__title span {
+    color: var(--mm-accent);
+    font-weight: 400;
+}
+
+.mm-match .mm-sec__title > svg,
+.mm-match .mm-sec__title > i {
+    width: 18px;
+    margin-right: 8px;
+    color: var(--mm-dark);
+}
+
+.mm-sec__count {
+    margin-left: auto;
+    min-width: 24px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--mm-dark);
+    color: #fff;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-align: center;
+}
+
+.mm-sec__label {
+    margin-bottom: 8px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #aaa;
+    text-align: center;
+}
+
+.mm-ad {
+    text-align: center;
+}
+
+.mm-card {
+    padding: 14px 16px;
+    border: 1px solid var(--mm-line);
+    border-radius: var(--mm-radius);
+    background: #fafafa;
+}
+
+.mm-address {
+    color: var(--mm-dark);
+    font-size: 15px;
+    overflow-wrap: anywhere;
+}
+
+.mm-empty {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px dashed #d9d9d9;
+    border-radius: var(--mm-radius);
+    color: var(--mm-text);
+    font-size: 14px;
+}
+
+.mm-empty p {
+    margin: 0;
+}
+
+.mm-empty svg,
+.mm-empty i {
+    flex: 0 0 auto;
+    font-size: 18px;
+    color: #c4c4c4;
+}
+
+/* ---------- Wishlist ---------- */
+
+.mm-match .mm-wish {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+}
+
+.mm-match .mm-wish__item {
+    display: flex;
+    gap: 12px;
+    margin: 0;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--mm-line);
+}
+
+.mm-match .mm-wish__item:last-child {
+    border-bottom: 0;
+}
+
+.mm-match .mm-wish__item::before {
+    content: none;
+}
+
+.mm-wish__num {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--mm-dark);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 26px;
+    text-align: center;
+}
+
+.mm-wish__body {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-top: 2px;
+}
+
+.mm-wish__text {
+    color: var(--mm-dark);
+    font-size: 16px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.mm-wish__text a {
+    color: var(--mm-accent-dark);
+    text-decoration: underline;
+}
+
+.mm-wish__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.mm-match a.mm-wish__link {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 12px;
+    border: 1px solid var(--mm-dark);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--mm-dark);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    line-height: 1.2;
+    text-decoration: none;
+    transition: background .15s ease, color .15s ease;
+}
+
+.mm-match a.mm-wish__link:hover,
+.mm-match a.mm-wish__link:focus {
+    background: var(--mm-dark);
+    color: #fff;
+}
+
+/* ---------- Store pills ---------- */
+
+.mm-store {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 92px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: .3px;
+    color: #fff !important;
+    text-decoration: none !important;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.mm-store svg,
+.mm-store i {
+    font-size: 12px;
+}
+
+.mm-store--lazada { background: #0f146d; }
+.mm-store--shopee { background: #ee4d2d; }
+
+.mm-store:hover,
+.mm-store:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, .15);
+    color: #fff !important;
+}
+
+/* ---------- "Shop for <name>" strip ---------- */
+
+.mm-shop {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 16px;
+    padding: 14px 16px;
+    border-radius: var(--mm-radius, 14px);
+    background: rgba(62, 199, 194, .1);
+    border: 1px solid rgba(62, 199, 194, .35);
+}
+
+.mm-shop__text {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.mm-shop__text strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1b1b1b;
+    line-height: 1.25;
+}
+
+.mm-shop__text small {
+    display: block;
+    font-size: 13px;
+    color: #6d6d6d;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.mm-shop__icon,
+.mm-gift__icon {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #3ec7c2;
+    color: #fff;
+    font-size: 16px;
+}
+
+.mm-shop__btns,
+.mm-gift__btns {
+    display: flex;
+    gap: 8px;
+}
+
+/* ---------- Gift ideas ---------- */
+
+.mm-gifts__sub {
+    margin: -6px 0 14px;
+    font-size: 13px;
+    color: #6d6d6d;
+}
+
+.mm-gifts__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.mm-gift {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid #ececec;
+    border-radius: 14px;
+    background: #fff;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.mm-gift:hover {
+    border-color: rgba(62, 199, 194, .6);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .06);
+}
+
+.mm-gift__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.mm-gift__icon {
+    width: 34px;
+    height: 34px;
+    font-size: 15px;
+    background: rgba(62, 199, 194, .15);
+    color: #2a9d99;
+}
+
+.mm-gift__label {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1b1b1b;
+    line-height: 1.3;
+}
+
+.mm-gift__why {
+    margin-top: 3px;
+    font-size: 13px;
+    color: #6d6d6d;
+    line-height: 1.35;
+}
+
+.mm-gift__btns .mm-store {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* ---------- Comments ---------- */
+
+.mm-match .mm-comments {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+}
+
+.mm-match .mm-comment {
+    margin: 0 0 10px;
+    padding: 12px 14px;
+    border-radius: 4px var(--mm-radius) var(--mm-radius) var(--mm-radius);
+    background: #f4f4f4;
+}
+
+.mm-match .mm-comment::before {
+    content: none;
+}
+
+.mm-comment__text {
+    color: var(--mm-dark);
+    font-size: 15px;
+    overflow-wrap: anywhere;
+}
+
+.mm-comment__date {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #9a9a9a;
+}
+
+/* ---------- Footer ---------- */
+
+.mm-match__footer {
+    margin-top: 10px;
+    padding: 20px 0 4px;
+    border-top: 1px solid var(--mm-line);
+    text-align: center;
+}
+
+.mm-match__footer p {
+    max-width: 420px;
+    margin: 0 auto 10px;
+    font-size: 14px;
+    color: var(--mm-text);
+}
+
+.mm-match__footer p span {
+    color: var(--mm-accent);
+    font-weight: 700;
+}
+
+.mm-match__footer iframe {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+/* ---------- Members list (narrow columns) ---------- */
+
+.card-body .mm-shop {
+    margin: 0 0 16px;
+}
+
+/* ---------- Phones ---------- */
+
+@media (max-width: 575px) {
+    .mm-match__name {
+        font-size: 26px;
+    }
+
+    .mm-shop__btns {
+        width: 100%;
+    }
+
+    .mm-shop__btns .mm-store {
+        flex: 1 1 0;
+    }
+
+    .mm-gifts__grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Compact rows: name on the left, store buttons stacked on the right */
+    .mm-gift {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+    }
+
+    .mm-gift__head {
+        flex: 1 1 auto;
+        min-width: 0;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .mm-gift__icon {
+        width: 30px;
+        height: 30px;
+        font-size: 13px;
+    }
+
+    .mm-gift__btns {
+        flex: 0 0 auto;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .mm-gift__btns .mm-store {
+        flex: 0 0 auto;
+        width: 96px;
+        padding: 7px 10px;
+        font-size: 12px;
+    }
+}
+
+/* Hidden for 24h after an affiliate click (assets/js/Theme.js initAffiliateCap) */
+.aff-recent .aff-cta-optional {
+    display: none;
+}
