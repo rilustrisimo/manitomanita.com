@@ -112,6 +112,12 @@ var Theme = {
 
     openPasswordField: function($) {
         var box = '#input-password';
+        var unamef = 'Moderator Password';
+        var notice = $('#input-pw .notices');
+        var userid = $('input#groupid-val');
+        notice.hide();
+        $('.header-details').hide();
+
 
         $.fancybox.open({
             src: box,
@@ -125,10 +131,20 @@ var Theme = {
                 "</button>",
             },
             afterShow : function( instance, current ) {
+                $('.header-details').html(unamef);
+                notice.html('<a href="javascript:;" id="reset-pass">Forgot Password?</a>.');
+                notice.show();
+                $('.header-details').show();
+
                 $('.popup').find('.fancybox-button').appendTo('.popup__title');
                 $('input[name="user-data"]').val($('input#groupid-val').val());
 
                 Theme.ProInitPasswordScripts($);
+
+                $('#reset-pass').unbind();
+                $('#reset-pass').click(function(){
+                    Theme.generateNewPassword($, userid.val());
+                });
             }
         });
     },
@@ -140,11 +156,9 @@ var Theme = {
         var notice = $('#input-pw .notices');
 
         submitbtn.unbind(); // clear binds
-        notice.hide();
 
         submitbtn.click(function(e){
             e.preventDefault();
-            notice.hide();
 
             if(pw.val().length == 0){
                 notice.text('Please supply your password to continue.');
