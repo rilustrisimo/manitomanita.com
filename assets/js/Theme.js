@@ -41,6 +41,10 @@ var Theme = {
         });
     },
 
+    /**
+     * Legacy second redirect for links with class 'aff-link' + data-url. The theme no longer outputs
+     * that markup (all groups get the plain affiliate link), so this only affects old cached HTML.
+     */
     afflinkFunction: function($){
 
         function getCookie(name) {

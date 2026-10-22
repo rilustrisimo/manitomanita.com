@@ -333,7 +333,8 @@ class Users extends Theme {
         $comments = get_comments(array('post_id' => $pair));
         $budget = Affiliate::budget($gid);
         $date = (!empty($fields['gift_exchange_date']))?DateTime::createFromFormat('m/d/Y', $fields['gift_exchange_date']):false;
-        $legacyAff = (!$pro)?array('class' => 'aff-link', 'attrs' => array('data-url' => 'https://invl.io/cllz36p')):array('class' => '', 'attrs' => array());
+        // Same plain affiliate link for pro and non-pro groups (the old non-pro second redirect to invl.io is gone).
+        $legacyAff = array('class' => '', 'attrs' => array());
 
         echo '<div class="mm-match">';
 
@@ -789,7 +790,8 @@ class Users extends Theme {
         $cardres .= '    <div id="collapse'.$userid.'" class="collapse" aria-labelledby="heading'.$userid.'" data-parent="#members-list">';
         $wishlist = get_field("my_wishlists", $userid);
         $comments = get_comments(array('post_id' => $userid, 'orderby' => 'comment_date', 'order' => 'DESC')); // newest first
-        $legacyAff = (!$pro)?array('class' => 'aff-link', 'attrs' => array('data-url' => 'https://invl.io/cllz36p')):array('class' => '', 'attrs' => array());
+        // Same plain affiliate link for pro and non-pro groups (the old non-pro second redirect to invl.io is gone).
+        $legacyAff = array('class' => '', 'attrs' => array());
         if($wishlist) $wishcount++;
 
         $cardres .= '    <div class="card-body">';
