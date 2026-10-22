@@ -1333,7 +1333,9 @@ var Theme = {
                             var con = (resp.substr(resp.length-1, 1) === '0')?resp.substr(0, resp.length-1):resp;
                             $('#custom-popup .popup__inner').html(con); //set popup title
 
-                            if((setting[Theme.action].formid != 99999) && (setting[Theme.action].formid != 9999)){
+                            if(setting[Theme.action].formid == 125) Theme.initWishlistEditor($);
+
+                            if((setting[Theme.action].formid != 99999) && (setting[Theme.action].formid != 9999) && (setting[Theme.action].formid != 125)){
                                 acf.do_action('append', $('#custom-popup .popup__inner'));
                                 Theme.acfFormScripts($);
                                 $('#custom-popup .popup__inner .acf-label').css('top', '13px');
@@ -1355,6 +1357,188 @@ var Theme = {
                 });
             }
         });
+    },
+
+    /**
+     * Wishlist editor in the Edit Wishlist popup (markup: Users::generateWishlistEditor()).
+     */
+    initWishlistEditor: function($){
+        var $form = $('#custom-popup .mm-edit__form');
+        if (!$form.length) return;
+
+        var cfg = $form.data('config') || {},
+            $list = $form.find('[data-mm-items]'),
+            itemTpl = $form.find('[data-mm-item-tpl]').html(),
+            linkTpl = $form.find('[data-mm-link-tpl]').html(),
+            $status = $form.find('[data-mm-status]'),
+            storeOf = function(url){
+                if (/(^|\.|\/\/)lazada\.com\.ph/i.test(url)) return 'Lazada';
+                if (/(^|\.|\/\/)(shopee\.ph|shp\.ee|shope\.ee)/i.test(url)) return 'Shopee';
+                return url ? 'Link' : 'Link';
+            },
+            findUrl = function(store, text){
+                var s = cfg.stores && cfg.stores[store];
+                if (!s) return '#';
+                var search = s.search.replace('%25s', encodeURIComponent(text));
+                return s.prefix ? s.prefix + encodeURIComponent(search) : search;
+            },
+            keywords = function(text){
+                return $.trim(text.replace(/(https?:\/\/|www\.)\S+/ig, ' ').replace(/\s+/g, ' ')).split(' ').slice(0, 6).join(' ');
+            },
+            status = function(msg, type){
+                $status.text(msg || '').attr('data-type', type || '');
+            },
+            refresh = function(){
+                var $items = $list.children('[data-mm-item]');
+
+                $items.each(function(i){
+                    var $it = $(this), text = $it.find('[data-mm-text]').val() || '', kw = keywords(text);
+
+                    $it.find('[data-mm-num]').text(i + 1);
+                    $it.find('[data-mm-remove-item]').toggle($items.length > 1 || $.trim(text) !== '' || $it.find('[data-mm-link]').length > 0);
+                    $it.find('[data-mm-add-link]').toggle($it.find('[data-mm-link]').length < cfg.maxLinks);
+
+                    var $find = $it.find('[data-mm-find]');
+                    $find.prop('hidden', kw.length < 3);
+                    $find.find('[data-store]').each(function(){
+                        $(this).attr('href', findUrl($(this).data('store'), kw));
+                    });
+                });
+
+                $form.find('[data-mm-count]').text($items.length);
+                $form.find('[data-mm-add-item]').toggle($items.length < cfg.maxItems);
+            },
+            addItem = function(text){
+                var $empty = $list.children('[data-mm-item]').filter(function(){
+                    return $.trim($(this).find('[data-mm-text]').val()) === '' && $(this).find('[data-mm-link]').length === 0;
+                }).first();
+                var $it = $empty.length ? $empty : $(itemTpl).appendTo($list);
+
+                if (text) $it.find('[data-mm-text]').val(text);
+                refresh();
+                return $it;
+            };
+
+        $form.find('[data-mm-url]').each(function(){
+            $(this).siblings('[data-mm-store]').text(storeOf($(this).val())).attr('data-store', storeOf($(this).val()).toLowerCase());
+        });
+
+        $form.on('click', '[data-mm-add-item]', function(){
+            if ($list.children('[data-mm-item]').length >= cfg.maxItems) return;
+            addItem('').find('[data-mm-text]').trigger('focus');
+        });
+
+        $form.on('click', '[data-mm-remove-item]', function(){
+            var $it = $(this).closest('[data-mm-item]');
+
+            if ($list.children('[data-mm-item]').length > 1) {
+                $it.remove();
+            } else {
+                $it.find('[data-mm-text]').val('');
+                $it.find('[data-mm-link]').remove();
+            }
+            refresh();
+        });
+
+        $form.on('click', '[data-mm-add-link]', function(){
+            var $links = $(this).closest('[data-mm-item]').find('[data-mm-links]');
+            if ($links.children().length >= cfg.maxLinks) return;
+            $(linkTpl).appendTo($links).find('[data-mm-url]').trigger('focus');
+            refresh();
+        });
+
+        $form.on('click', '[data-mm-remove-link]', function(){
+            $(this).closest('[data-mm-link]').remove();
+            refresh();
+        });
+
+        $form.on('input', '[data-mm-url]', function(){
+            var st = storeOf($(this).val());
+            $(this).siblings('[data-mm-store]').text(st).attr('data-store', st.toLowerCase());
+            $(this).closest('[data-mm-link]').removeClass('is-invalid');
+        });
+
+        $form.on('input', '[data-mm-text]', function(){
+            $(this).closest('[data-mm-item]').removeClass('is-invalid').find('[data-mm-error]').text('');
+            refresh();
+        });
+
+        $form.on('click', '[data-mm-suggest]', function(){
+            var label = $(this).data('mm-suggest'), $btn = $(this),
+                exists = $list.find('[data-mm-text]').filter(function(){
+                    return $.trim($(this).val()).toLowerCase() === String(label).toLowerCase();
+                }).length > 0;
+
+            if (!exists) {
+                if ($list.children('[data-mm-item]').length >= cfg.maxItems) {
+                    status('You can add up to ' + cfg.maxItems + ' items.', 'error');
+                    return;
+                }
+                var $it = addItem(label);
+                $it.addClass('is-new');
+                setTimeout(function(){ $it.removeClass('is-new'); }, 1200);
+            }
+            $btn.addClass('is-added').html('<i class="fas fa-check"></i> Added');
+        });
+
+        $form.on('submit', function(e){
+            e.preventDefault();
+
+            var data = { action: 'save_wishlist', uid: $form.find('[name="uid"]').val(), nonce: $form.find('[name="nonce"]').val(), address: $form.find('[name="address"]').val(), items: [] },
+                firstError = null;
+
+            $list.children('[data-mm-item]').each(function(){
+                var $it = $(this), text = $.trim($it.find('[data-mm-text]').val()), links = [];
+
+                $it.find('[data-mm-url]').each(function(){
+                    var v = $.trim($(this).val());
+                    if (!v) return;
+                    if (!/^https?:\/\//i.test(v)) v = 'https://' + v.replace(/^\/+/, '');
+                    if (!/^https?:\/\/[^\s\/]+\.[^\s]{2,}/i.test(v)) {
+                        $(this).closest('[data-mm-link]').addClass('is-invalid');
+                        firstError = firstError || $(this);
+                        return;
+                    }
+                    links.push(v);
+                });
+
+                if (text === '' && links.length > 0) {
+                    $it.addClass('is-invalid').find('[data-mm-error]').text('Add a short description so your match knows what this link is for.');
+                    firstError = firstError || $it.find('[data-mm-text]');
+                }
+
+                if (text !== '' || links.length > 0) data.items.push({ text: text, links: links });
+            });
+
+            if (firstError) {
+                status('Please fix the highlighted fields.', 'error');
+                firstError.trigger('focus');
+                return;
+            }
+
+            var $save = $form.find('[data-mm-save]').prop('disabled', true);
+            status('Saving...', 'busy');
+
+            $.ajax({
+                url: $('#ajax-url').val(),
+                type: 'POST',
+                dataType: 'JSON',
+                data: data
+            }).done(function(resp){
+                if (resp && resp.success) {
+                    status(resp.data.message, 'ok');
+                    setTimeout(function(){ window.location.reload(); }, 700);
+                } else {
+                    status((resp && resp.data && resp.data.message) || 'Something went wrong. Please try again.', 'error');
+                    $save.prop('disabled', false);
+                }
+            }).fail(function(){
+                status('Could not save. Check your connection and try again.', 'error');
+                $save.prop('disabled', false);
+            });
+        });
+
+        refresh();
     },
 
     initLeaveGroup: function($, uids){

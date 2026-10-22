@@ -44,6 +44,9 @@ class Users extends Theme {
         add_action( 'wp_ajax_pass_generate', array($this, 'pass_generate') );
         add_action( 'wp_ajax_nopriv_pass_generate', array($this, 'pass_generate') ); 
 
+        add_action( 'wp_ajax_save_wishlist', array($this, 'save_wishlist') );
+        add_action( 'wp_ajax_nopriv_save_wishlist', array($this, 'save_wishlist') );
+
         add_action( 'wp_ajax_user_card_generate', array($this, 'user_card_generate') );
         add_action( 'wp_ajax_nopriv_user_card_generate', array($this, 'user_card_generate') ); 
 
@@ -76,6 +79,9 @@ class Users extends Theme {
 
 		if(wp_check_password($password, $hashed, $uid)) {
 		    $result = true;
+
+            // Lets save_wishlist() trust this member for the rest of the session.
+            if(get_post_type($uid) == 'users') $_SESSION['mm_verified'][(int) $uid] = time();
 		} else {
 		    $result = false;
         }
@@ -94,6 +100,8 @@ class Users extends Theme {
         if($form){
             if(trim($form) == "9999"): //see match
                 $this->generateSeeMatchElements($uid);
+            elseif(trim($form) == "125"): //edit wishlist
+                $this->generateWishlistEditor($uid);
             elseif(trim($form) == "99999"): //leave group
                 echo "<h2>Are you sure you want to leave group?</h2><div class='leave-btns'><a href='#' data-action='false'>No</a><a href='#' data-action='true'>Yes</a></div>";
             else:
@@ -111,6 +119,203 @@ class Users extends Theme {
         $result = wp_delete_post($uid);
 
         wp_send_json_success($result);
+    }
+
+    const WISH_MAX_ITEMS = 20;
+    const WISH_MAX_LINKS = 5;
+    const WISH_MAX_TEXT  = 500;
+
+    protected function isVerifiedMember($uid){
+        $t = (isset($_SESSION['mm_verified'][(int) $uid]))?(int) $_SESSION['mm_verified'][(int) $uid]:0;
+
+        return ($t > time() - 2 * HOUR_IN_SECONDS);
+    }
+
+    /**
+     * Wishlist editor (replaces the ACF form for field group 125). Saves via save_wishlist().
+     */
+    public function generateWishlistEditor($uid) {
+        $uid = (int) $uid;
+
+        if(get_post_type($uid) != 'users' || !$this->isVerifiedMember($uid)){
+            echo '<div class="mm-match"><div class="mm-empty"><i class="fas fa-lock"></i><p>Please enter your password again to edit your wishlist.</p></div></div>';
+            return;
+        }
+
+        $gid = get_field('groups', $uid);
+        $group = get_fields($gid);
+        $wishlist = get_field('my_wishlists', $uid);
+        $address = (string) get_field('my_address_and_contact_details', $uid, false);
+        $budget = Affiliate::budget($gid);
+        $date = (!empty($group['gift_exchange_date']))?DateTime::createFromFormat('m/d/Y', $group['gift_exchange_date']):false;
+        $ideas = GiftAI::ideasFor($uid);
+        $ideas = ($ideas)?$ideas:Affiliate::giftIdeas();
+        $items = ($wishlist)?$wishlist:array(array('wishlist_description' => '', 'reference_links' => array()));
+
+        $config = array(
+            'maxItems' => self::WISH_MAX_ITEMS,
+            'maxLinks' => self::WISH_MAX_LINKS,
+            'budget'   => $budget,
+            'stores'   => array(
+                'lazada' => array('prefix' => Affiliate::linkPrefix('lazada', 'wishlist-editor-find', $gid), 'search' => Affiliate::searchUrl('lazada', '%s', $budget)),
+                'shopee' => array('prefix' => Affiliate::linkPrefix('shopee', 'wishlist-editor-find', $gid), 'search' => Affiliate::searchUrl('shopee', '%s', $budget)),
+            ),
+        );
+
+        echo '<div class="mm-match mm-edit">';
+        echo '<form class="mm-edit__form" novalidate data-config="'.esc_attr(wp_json_encode($config)).'">';
+        echo '<input type="hidden" name="action" value="save_wishlist">';
+        echo '<input type="hidden" name="uid" value="'.$uid.'">';
+        echo '<input type="hidden" name="nonce" value="'.wp_create_nonce('mm_wishlist_'.$uid).'">';
+
+        /** INTRO */
+        echo '<div class="mm-match__hero mm-edit__hero">';
+        echo '    <div class="mm-match__eyebrow">Your wishlist</div>';
+        echo '    <div class="mm-edit__title">What would you like to receive?</div>';
+        echo '    <p class="mm-edit__lead">Your Manito/Manita will see this. Be specific &mdash; size, colour or brand helps a lot.</p>';
+        echo '    <div class="mm-match__chips">';
+        if($budget > 0) echo '<span class="mm-chip"><i class="fas fa-wallet"></i> &#8369;'.number_format($budget).' minimum</span>';
+        if($date) echo '<span class="mm-chip"><i class="far fa-calendar"></i> '.$date->format('M j, Y').'</span>';
+        echo '    </div>';
+        echo '</div>';
+
+        /** ITEMS */
+        echo '<section class="mm-sec">';
+        echo '    <h3 class="mm-sec__title"><i class="fas fa-gifts"></i> WISH<span>LIST</span><em class="mm-sec__count" data-mm-count>'.count($items).'</em></h3>';
+        echo '    <ol class="mm-items" data-mm-items>';
+        foreach($items as $w):
+            $links = array();
+            foreach((array) ($w['reference_links'] ?? array()) as $l){
+                if(!empty($l['link_url'])) $links[] = $l['link_url'];
+            }
+            echo $this->wishlistItemHtml($w['wishlist_description'] ?? '', $links);
+        endforeach;
+        echo '    </ol>';
+        echo '    <template data-mm-item-tpl>'.$this->wishlistItemHtml('', array()).'</template>';
+        echo '    <template data-mm-link-tpl>'.$this->wishlistLinkHtml('').'</template>';
+        echo '    <button type="button" class="mm-btn mm-btn--ghost mm-btn--block" data-mm-add-item><i class="fas fa-plus"></i> Add another item</button>';
+        echo '</section>';
+
+        /** SUGGESTIONS */
+        echo '<section class="mm-sec mm-suggest">';
+        echo '    <h3 class="mm-sec__title"><i class="fas fa-lightbulb"></i> NEED<span>&nbsp;IDEAS?</span></h3>';
+        echo '    <p class="mm-gifts__sub">Tap <strong>Add</strong> to put an idea on your wishlist'.(($budget > 0)?' &middot; within &#8369;'.number_format($budget):'').'</p>';
+        echo '    <div class="mm-suggest__grid">';
+        foreach($ideas as $idea):
+            $icon = !empty($idea['icon'])?$idea['icon']:'fas fa-gift';
+            echo '<div class="mm-suggest__item">';
+            echo '    <span class="mm-gift__icon"><i class="'.esc_attr($icon).'"></i></span>';
+            echo '    <div class="mm-suggest__text"><div class="mm-gift__label">'.esc_html($idea['label']).'</div>';
+            if(!empty($idea['why'])) echo '<div class="mm-gift__why">'.esc_html($idea['why']).'</div>';
+            echo '        <div class="mm-suggest__stores">';
+            echo              Affiliate::anchor(Affiliate::searchUrl('lazada', $idea['keyword'], $budget), 'Lazada', 'wishlist-editor-ideas', $gid, 'mm-suggest__store');
+            echo              Affiliate::anchor(Affiliate::searchUrl('shopee', $idea['keyword'], $budget), 'Shopee', 'wishlist-editor-ideas', $gid, 'mm-suggest__store');
+            echo '        </div>';
+            echo '    </div>';
+            echo '    <button type="button" class="mm-btn mm-btn--add" data-mm-suggest="'.esc_attr($idea['label']).'"><i class="fas fa-plus"></i> Add</button>';
+            echo '</div>';
+        endforeach;
+        echo '    </div>';
+        echo '</section>';
+
+        /** ADDRESS */
+        echo '<section class="mm-sec">';
+        echo '    <h3 class="mm-sec__title"><i class="fas fa-location-dot"></i> ADDRESS<span>&nbsp;&amp; CONTACTS</span><em class="mm-sec__tag">Optional</em></h3>';
+        echo '    <label class="mm-field">';
+        echo '        <span class="mm-field__hint">Only your match sees this. Add it if your gift will be delivered.</span>';
+        echo '        <textarea name="address" rows="3" maxlength="1000" placeholder="House no., street, city &middot; mobile number">'.esc_textarea($address).'</textarea>';
+        echo '    </label>';
+        echo '</section>';
+
+        /** FOOTER */
+        echo '<div class="mm-edit__footer">';
+        echo '    <div class="mm-edit__status" data-mm-status role="status" aria-live="polite"></div>';
+        echo '    <button type="button" class="mm-btn mm-btn--ghost" data-fancybox-close>Cancel</button>';
+        echo '    <button type="submit" class="mm-btn mm-btn--primary" data-mm-save><i class="fas fa-check"></i> Save wishlist</button>';
+        echo '</div>';
+
+        echo '</form>';
+        echo '</div>';
+    }
+
+    protected function wishlistItemHtml($text, $links){
+        $html  = '<li class="mm-item" data-mm-item>';
+        $html .= '<div class="mm-item__head">';
+        $html .= '    <span class="mm-wish__num" data-mm-num>1</span>';
+        $html .= '    <span class="mm-item__label">Item <span data-mm-num>1</span></span>';
+        $html .= '    <button type="button" class="mm-icon-btn" data-mm-remove-item aria-label="Remove item" title="Remove item"><i class="far fa-trash-can"></i></button>';
+        $html .= '</div>';
+        $html .= '<textarea class="mm-item__text" rows="2" maxlength="'.self::WISH_MAX_TEXT.'" placeholder="e.g. Red insulated tumbler, 500ml" data-mm-text>'.esc_textarea(wp_strip_all_tags((string) $text)).'</textarea>';
+        $html .= '<div class="mm-item__error" data-mm-error></div>';
+        $html .= '<div class="mm-links" data-mm-links>';
+        foreach($links as $l) $html .= $this->wishlistLinkHtml($l);
+        $html .= '</div>';
+        $html .= '<div class="mm-item__actions">';
+        $html .= '    <button type="button" class="mm-btn-text" data-mm-add-link><i class="fas fa-link"></i> Add a shop link</button>';
+        $html .= '    <span class="mm-item__find" data-mm-find hidden>Find it on <a class="mm-aff mm-find mm-find--lazada" target="_blank" rel="nofollow sponsored noopener" data-store="lazada" href="#">Lazada</a> <a class="mm-aff mm-find mm-find--shopee" target="_blank" rel="nofollow sponsored noopener" data-store="shopee" href="#">Shopee</a></span>';
+        $html .= '</div>';
+        $html .= '</li>';
+
+        return $html;
+    }
+
+    protected function wishlistLinkHtml($url){
+        $html  = '<div class="mm-link" data-mm-link>';
+        $html .= '    <span class="mm-link__store" data-mm-store>Link</span>';
+        $html .= '    <input type="url" inputmode="url" autocomplete="off" placeholder="Paste a Lazada, Shopee or any shop link" value="'.esc_attr($url).'" data-mm-url>';
+        $html .= '    <button type="button" class="mm-icon-btn" data-mm-remove-link aria-label="Remove link" title="Remove link"><i class="fas fa-xmark"></i></button>';
+        $html .= '</div>';
+
+        return $html;
+    }
+
+    /**
+     * AJAX: saves the wishlist editor. Only for members who entered their password this session.
+     */
+    public function save_wishlist(){
+        $uid = isset($_POST['uid'])?(int) $_POST['uid']:0;
+
+        if(!$uid || get_post_type($uid) != 'users' || !wp_verify_nonce($_POST['nonce'] ?? '', 'mm_wishlist_'.$uid)){
+            wp_send_json_error(array('message' => 'This form has expired. Please close it and try again.'));
+        }
+
+        if(!$this->isVerifiedMember($uid)){
+            wp_send_json_error(array('message' => 'Please enter your password again to save your wishlist.'));
+        }
+
+        $rows = array();
+        $items = (isset($_POST['items']) && is_array($_POST['items']))?wp_unslash($_POST['items']):array();
+
+        foreach($items as $item){
+            $text = trim(sanitize_textarea_field($item['text'] ?? ''));
+            $text = mb_substr($text, 0, self::WISH_MAX_TEXT);
+            $links = array();
+
+            foreach((array) ($item['links'] ?? array()) as $url){
+                $url = trim((string) $url);
+                if($url === '') continue;
+                if(!preg_match('~^https?://~i', $url)) $url = 'https://'.ltrim($url, '/');
+
+                $url = esc_url_raw($url, array('http', 'https'));
+                if($url && filter_var($url, FILTER_VALIDATE_URL)) $links[] = array('link_url' => $url);
+                if(count($links) >= self::WISH_MAX_LINKS) break;
+            }
+
+            if($text === '' && count($links) === 0) continue;
+            if($text === '') $text = 'See link';
+
+            $rows[] = array('wishlist_description' => $text, 'reference_links' => $links);
+            if(count($rows) >= self::WISH_MAX_ITEMS) break;
+        }
+
+        $address = mb_substr(trim(sanitize_textarea_field(wp_unslash($_POST['address'] ?? ''))), 0, 1000);
+
+        update_field('field_5f5c72c5260fc', $rows, $uid);     // my_wishlists
+        update_field('field_617145f7ec732', $address, $uid);  // my_address_and_contact_details
+
+        GiftAI::onSavePost($uid);
+
+        wp_send_json_success(array('message' => 'Wishlist saved!', 'count' => count($rows)));
     }
 
     public function generateSeeMatchElements($uid) {

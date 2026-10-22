@@ -117,6 +117,17 @@ class Affiliate {
     }
 
     /**
+     * Deeplink up to and including "&url=", for building links in JavaScript (append an encoded URL).
+     */
+    public static function linkPrefix( $merchant, $placement = '', $groupId = '' ) {
+        if ( ! isset( self::$merchants[ $merchant ] ) ) return '';
+
+        $link = self::link( self::searchUrl( $merchant, 'x' ), $placement, $groupId );
+
+        return substr( $link, 0, strpos( $link, '&url=' ) + 5 );
+    }
+
+    /**
      * Anchor tag for an affiliate link.
      */
     public static function anchor( $url, $text, $placement = '', $groupId = '', $class = '', $attrs = array() ) {
