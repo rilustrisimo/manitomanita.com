@@ -787,61 +787,60 @@ class Users extends Theme {
         $cardres .= '    </h2>';
         $cardres .= '    </div>';
         $cardres .= '    <div id="collapse'.$userid.'" class="collapse" aria-labelledby="heading'.$userid.'" data-parent="#members-list">';
+        $wishlist = get_field("my_wishlists", $userid);
+        $comments = get_comments(array('post_id' => $userid, 'orderby' => 'comment_date', 'order' => 'DESC')); // newest first
+        $legacyAff = (!$pro)?array('class' => 'aff-link', 'attrs' => array('data-url' => 'https://invl.io/cllz36p')):array('class' => '', 'attrs' => array());
+        if($wishlist) $wishcount++;
+
         $cardres .= '    <div class="card-body">';
-        $cardres .= '        <div class="row">';
-        $cardres .= '            <div class="col-md-6">';
-        $cardres .= '                <h2>Wish<span>List</span></h2>';
-        $cardres .= '                <ul class="wishlist-list">';
-                                        $wishlist = get_field("my_wishlists", $userid);
+        $cardres .= '        <div class="mm-detail">';
 
-                                        if(!$wishlist){
-        $cardres .= '                       <div class="placeholder"><i class="fas fa-gifts"></i> No wishlist provided yet.</div>';
-        $cardres .=                         Affiliate::shopButtonsHtml($groupid, 'members-empty-wishlist');
-                                        }
-                                        
-                                        if($wishlist):
-                                            $wishcount++;
+        /** Wishlist */
+        $cardres .= '            <section class="mm-detail__col">';
+        $cardres .= '                <h2>Wish<span>List</span>'.(($wishlist)?'<em class="mm-detail__count">'.count($wishlist).'</em>':'').'</h2>';
+        if($wishlist):
+            $cardres .= '            <ol class="mm-dwish">';
+            foreach($wishlist as $i => $w):
+                $cardres .= '            <li class="mm-dwish__item">';
+                $cardres .= '                <span class="mm-dwish__num">'.($i+1).'</span>';
+                $cardres .= '                <div class="mm-dwish__body">';
+                $cardres .= '                    <div class="wish-content">'.Affiliate::linkify($w['wishlist_description'], 'members-wishlist', $groupid, $legacyAff['class'], $legacyAff['attrs']).'</div>';
+                if($w['reference_links']):
+                    $cardres .= '                <div class="wish-links">';
+                    foreach($w['reference_links'] as $k => $links):
+                        $cardres .= Affiliate::referenceLink($links['link_url'], $k, 'members-wishlist', $groupid, $legacyAff['class'], $legacyAff['attrs']);
+                    endforeach;
+                    $cardres .= '                </div>';
+                endif;
+                $cardres .= '                </div>';
+                $cardres .= '            </li>';
+            endforeach;
+            $cardres .= '            </ol>';
+        else:
+            $cardres .= '            <div class="mm-detail__empty">';
+            $cardres .= '                <div class="mm-detail__empty-text"><i class="fas fa-gifts"></i><div><strong>No wishlist yet</strong><span>'.esc_html($screenName).' hasn&rsquo;t added any items.</span></div></div>';
+            $cardres .=                  Affiliate::shopButtonsHtml($groupid, 'members-empty-wishlist', '', 'Need gift ideas?');
+            $cardres .= '            </div>';
+        endif;
+        $cardres .= '            </section>';
 
-                                            foreach($wishlist as $w):
+        /** Comments */
+        $cardres .= '            <section class="mm-detail__col">';
+        $cardres .= '                <h2>Comment<span>s</span>'.((count($comments) > 0)?'<em class="mm-detail__count">'.count($comments).'</em>':'').'</h2>';
+        if(count($comments) == 0):
+            $cardres .= '            <div class="mm-detail__empty"><div class="mm-detail__empty-text"><i class="far fa-comment-dots"></i><div><strong>No comments yet</strong><span>Tap <b>Comment</b> to be the first to say something.</span></div></div></div>';
+        else:
+            $cardres .= '            <ul class="mm-dcomments">';
+            foreach($comments as $c):
+                $cardres .= '            <li class="mm-dcomment">';
+                $cardres .= '                <div class="com-content">'.$c->comment_content.'</div>';
+                $cardres .= '                <time class="com-date" datetime="'.esc_attr(date('c', strtotime($c->comment_date))).'">'.date('M j, Y · g:i a', strtotime($c->comment_date)).'</time>';
+                $cardres .= '            </li>';
+            endforeach;
+            $cardres .= '            </ul>';
+        endif;
+        $cardres .= '            </section>';
 
-        $cardres .= '                       <li>';
-        $cardres .= '                        <div class="wish-content">';
-                                                $legacyAff = (!$pro)?array('class' => 'aff-link', 'attrs' => array('data-url' => 'https://invl.io/cllz36p')):array('class' => '', 'attrs' => array());
-        $cardres .=                                 Affiliate::linkify($w['wishlist_description'], 'members-wishlist', $groupid, $legacyAff['class'], $legacyAff['attrs']);
-        $cardres .= '                        </div>';
-        $cardres .= '                        <div class="wish-links">';
-        
-                                                if($w['reference_links']):
-                                                    foreach($w['reference_links'] as $k => $links):
-        $cardres .=                                     Affiliate::referenceLink($links['link_url'], $k, 'members-wishlist', $groupid, $legacyAff['class'], $legacyAff['attrs']);
-                                                    endforeach;
-                                                endif;
-        $cardres .= '                        </div>';
-        $cardres .= '                    </li>';
-
-
-                                            endforeach;
-                                        endif;
-        $cardres .= '                </ul>';
-        $cardres .= '            </div>';
-        $cardres .= '            <div class="col-md-6">';
-        $cardres .= '                <h2>Comment<span>s</span></h2>';
-        $cardres .= '                <ul class="comments-list">';
-        
-                                        $comments = get_comments(array('post_id' => $userid,'orderby'=>'comment_date', 'order'=>'ASC'));
-        
-                                        if(count($comments) == 0){
-        $cardres .= '                       <div class="placeholder"><i class="far fa-comment-dots"></i> Say something for me.</div>';
-                                        }
-
-                                        foreach($comments as $c):
-        $cardres .= '                    <li>';
-        $cardres .= '                        <div class="com-content">'.$c->comment_content.'</div>';
-        $cardres .= '                        <div class="com-date">'.date('F d, Y h:i:sa', strtotime($c->comment_date)).'</div>';
-        $cardres .= '                    </li>';
-                                        endforeach;
-        $cardres .= '                </ul>';
-        $cardres .= '            </div>';
         $cardres .= '        </div>';
         $cardres .= '    </div>';
         $cardres .= '    </div>';

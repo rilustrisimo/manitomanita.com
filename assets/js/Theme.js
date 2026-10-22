@@ -1095,7 +1095,8 @@ var Theme = {
                 e.preventDefault();
 
                 var btn = $(this);
-                var uname = btn.parents('.card').find('h2 button').text();
+                var $nameEl = btn.parents('.card').find('h2 button .mm-member__name'); // not the avatar initial
+                var uname = $.trim(($nameEl.length ? $nameEl : btn.parents('.card').find('h2 button')).text());
                 var unamef = (uname.length > 0)?uname:'Moderator Password';
                 var uid = (btn.hasClass('editgroup-btn') || btn.hasClass('shuffle-btn'))?btn.attr('group-data'):btn.attr('user-data');
                 var box = (btn.hasClass('comment-btn'))?'#comment-box':'#input-password';
