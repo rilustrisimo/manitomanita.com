@@ -8,8 +8,11 @@
  * - Deeplinks: the plain invol.co/aff_m?url= format tracks, but Shopee/Lazada drop the product and
  *   open a generic page (also in their apps). /deeplink/generate returns a link to the exact
  *   product. Generating is limited (~1,000 unique links / 30 days, 60 calls / minute), so each
- *   product URL is generated once in the background, stored, and reused; until then (or when a
+ *   product is generated once in the background, stored, and reused; until then (or when a
  *   store refuses the product) the plain tracked link is used.
+ * - One entry per product: URLs are reduced to a product fingerprint (tracking parameters removed,
+ *   e.g. shopee:{shop}:{item}, lazada:{item}, shein:{id}) and short links (shp.ee, s.lazada...) are
+ *   resolved to the product page first, so the same product shared differently uses one deeplink.
  *
  * Config (wp-config.php):
  *   define( 'INVOLVE_API_KEY', '...' );
@@ -33,7 +36,7 @@ defined( 'ABSPATH' ) || die();
 class Involve {
     const API          = 'https://api.involve.asia/api/';
     const OFFERS_OPT   = 'mm_involve_offers';    // ['time' => int, 'map' => [domain => offer]]
-    const LINKS_OPT    = 'mm_involve_deeplinks'; // [md5(url) => ['l' => link] | ['e' => error], 't' => time]
+    const LINKS_OPT    = 'mm_involve_deeplinks'; // [md5(fingerprint) => ['l' => link] | ['e' => error] | ['a' => alias key], 't' => time]
     const QUEUE_OPT    = 'mm_involve_queue';     // [md5(url) => ['url' => ..., 'offer' => api offer id]]
     const SYNC_HOOK    = 'mm_involve_sync_offers';
     const WORK_HOOK    = 'mm_involve_deeplinks';
@@ -140,18 +143,107 @@ class Involve {
     public static function deeplink( $url, $apiOfferId ) {
         if ( ! $apiOfferId ) return '';
 
-        $key = md5( $url );
+        $url = self::cleanUrl( $url );
+        $key = self::key( $url );
 
         if ( self::$links === null ) self::$links = (array) get_option( self::LINKS_OPT, array() );
 
-        if ( isset( self::$links[ $key ] ) ) {
-            $entry = self::$links[ $key ];
+        $entry = self::$links[ $key ] ?? null;
 
+        if ( isset( $entry['a'] ) ) $entry = self::$links[ $entry['a'] ] ?? null; // short link => product
+
+        if ( $entry ) {
             if ( ! empty( $entry['l'] ) ) return $entry['l'];
             if ( ( $entry['t'] ?? 0 ) > time() - self::RETRY_FAILED ) return '';
         }
 
         self::$queued[ $key ] = array( 'url' => $url, 'offer' => (int) $apiOfferId );
+
+        return '';
+    }
+
+    /* ------------------------------------------------------- Product fingerprints */
+
+    const TRACKING_PARAMS = '/^(utm_|spm$|scm$|sp_atk$|xptdk$|smtt$|mmp_pid$|uls_trackid$|af_|gads_t_sig$|fbclid$|gclid$|ttclid$|clickTrackInfo$|from$|share|laz_|trafficFrom$|exlaid$|sub_|aff_|deep_and_deferred$|dsource$|search$|ref$|src_|url_from$|onelink)/i';
+
+    /**
+     * https, lowercase host, no fragment. Store product pages lose their whole query string;
+     * other URLs only lose known tracking parameters.
+     */
+    public static function cleanUrl( $url ) {
+        $url = trim( (string) $url );
+        if ( ! preg_match( '~^https?://~i', $url ) ) $url = 'https://' . ltrim( $url, '/' );
+
+        $p = parse_url( $url );
+        if ( empty( $p['host'] ) ) return $url;
+
+        $host  = strtolower( $p['host'] );
+        $path  = $p['path'] ?? '/';
+        $query = '';
+
+        if ( ! self::productId( $host, $path ) && ! empty( $p['query'] ) ) {
+            parse_str( $p['query'], $args );
+            foreach ( array_keys( $args ) as $k ) {
+                if ( preg_match( self::TRACKING_PARAMS, (string) $k ) ) unset( $args[ $k ] );
+            }
+            $query = $args ? '?' . http_build_query( $args ) : '';
+        }
+
+        return 'https://' . $host . $path . $query;
+    }
+
+    /**
+     * Store-specific product id ("shopee:123:456", "lazada:789", "shein:111"), or ''.
+     */
+    public static function productId( $host, $path ) {
+        $domain = self::registrableDomain( $host );
+
+        if ( $domain === 'shopee.ph' ) {
+            if ( preg_match( '~-i\.(\d+)\.(\d+)~', $path, $m ) || preg_match( '~/product/(\d+)/(\d+)~', $path, $m ) ) return 'shopee:' . $m[1] . ':' . $m[2];
+        } elseif ( $domain === 'lazada.com.ph' ) {
+            if ( preg_match( '~/products/.*?-i(\d+)(?:-s\d+)?\.html~', $path, $m ) || preg_match( '~/products/i(\d+)~', $path, $m ) ) return 'lazada:' . $m[1];
+        } elseif ( $domain === 'shein.com' ) {
+            if ( preg_match( '~-p-(\d+)~', $path, $m ) ) return 'shein:' . $m[1];
+        }
+
+        return '';
+    }
+
+    protected static function key( $cleanUrl ) {
+        $p = parse_url( $cleanUrl );
+        $id = self::productId( $p['host'] ?? '', $p['path'] ?? '' );
+
+        return md5( $id !== '' ? $id : $cleanUrl );
+    }
+
+    public static function isShortLink( $url ) {
+        $host = strtolower( (string) parse_url( $url, PHP_URL_HOST ) );
+
+        return in_array( $host, array( 'shp.ee', 'shope.ee', 's.shopee.ph', 's.lazada.com.ph', 'c.lazada.com.ph', 'shein.top', 'onelink.shein.com' ), true );
+    }
+
+    /**
+     * Follows a short link's redirects (desktop browser UA, which gets a plain 301) to the page.
+     */
+    public static function resolve( $url ) {
+        for ( $hop = 0; $hop < 6; $hop++ ) {
+            $r = wp_remote_get( $url, array(
+                'timeout'     => 10,
+                'redirection' => 0,
+                'user-agent'  => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15',
+            ) );
+
+            if ( is_wp_error( $r ) ) return '';
+
+            $location = wp_remote_retrieve_header( $r, 'location' );
+            if ( ! $location ) return self::isShortLink( $url ) ? '' : $url;
+
+            if ( strpos( $location, '//' ) === 0 ) $location = 'https:' . $location;
+            elseif ( strpos( $location, '/' ) === 0 ) $location = 'https://' . parse_url( $url, PHP_URL_HOST ) . $location;
+
+            $url = $location;
+            if ( ! self::isShortLink( $url ) ) return $url;
+        }
 
         return '';
     }
@@ -196,7 +288,27 @@ class Involve {
 
             unset( $queue[ $key ] );
 
-            if ( ! empty( $links[ $key ]['l'] ) ) continue;
+            if ( ! empty( $links[ $key ]['l'] ) || isset( $links[ $key ]['a'] ) ) continue;
+
+            $url = $job['url'];
+            $saveKey = $key;
+
+            // Short link: find the product page first; reuse its deeplink if we already have one.
+            if ( self::isShortLink( $url ) ) {
+                $resolved = self::resolve( $url );
+
+                if ( ! $resolved ) {
+                    $links[ $key ] = array( 'e' => 'short link could not be resolved', 't' => time() );
+                    continue;
+                }
+
+                $url = self::cleanUrl( $resolved );
+                $saveKey = self::key( $url );
+                $links[ $key ] = array( 'a' => $saveKey, 't' => time() );
+
+                if ( ! empty( $links[ $saveKey ]['l'] ) ) continue;
+                if ( isset( $links[ $saveKey ]['e'] ) && ( $links[ $saveKey ]['t'] ?? 0 ) > time() - self::RETRY_FAILED ) continue;
+            }
 
             if ( $made >= self::MONTH_LIMIT ) {
                 error_log( 'Involve: monthly deeplink budget reached; using standard tracking links.' );
@@ -206,17 +318,17 @@ class Involve {
 
             $r = self::post( 'deeplink/generate', array(
                 'offer_id' => $job['offer'],
-                'url'      => $job['url'],
+                'url'      => $url,
                 'aff_sub'  => 'deeplink',
             ), $token );
 
             $link = ( $r && ( $r['status'] ?? '' ) === 'success' ) ? (string) ( $r['data']['tracking_link'] ?? '' ) : '';
 
             if ( $link && preg_match( '~^https://~', $link ) ) {
-                $links[ $key ] = array( 'l' => esc_url_raw( $link ), 't' => time() );
+                $links[ $saveKey ] = array( 'l' => esc_url_raw( $link ), 't' => time() );
                 $made++;
             } else {
-                $links[ $key ] = array( 'e' => substr( (string) ( $r['message'] ?? 'failed' ), 0, 120 ), 't' => time() );
+                $links[ $saveKey ] = array( 'e' => substr( (string) ( $r['message'] ?? 'failed' ), 0, 120 ), 't' => time() );
             }
 
             $done++;
