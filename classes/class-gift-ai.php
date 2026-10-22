@@ -224,7 +224,7 @@ class GiftAI {
 
             if ( $label === '' || $keyword === '' ) continue;
 
-            $ideas[] = array( 'label' => $label, 'keyword' => $keyword, 'why' => $why, 'icon' => 'fas fa-magic' );
+            $ideas[] = array( 'label' => $label, 'keyword' => $keyword, 'why' => $why, 'icon' => 'fas fa-wand-magic-sparkles' );
 
             if ( count( $ideas ) >= self::MAX_IDEAS ) break;
         }

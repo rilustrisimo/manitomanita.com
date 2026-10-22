@@ -132,8 +132,6 @@ class Users extends Theme {
         echo '                <h2><i class="far fa-user"></i> '.$pairName.'</h2>';
         echo '                <h2><i class="fas fa-gifts"></i> WISH<span>LIST</span></h2>';
                                 $wishlist = get_field('my_wishlists', $pair);
-                                $shopKeyword = ($wishlist)?Affiliate::keywordsFrom($wishlist[0]['wishlist_description']):'';
-        echo                    Affiliate::shopButtonsHtml($gid, 'match-shop-btn', $shopKeyword, '<i class="fas fa-gift"></i> Shop for '.esc_html($pairName));
         echo '                  <ul class="wishlist-list">';
                                 if(!$wishlist){
                                     echo '<div class="placeholder">No wishlist provided yet.</div>';
@@ -153,9 +151,12 @@ class Users extends Theme {
                                 endforeach; 
                                 endif;
         echo '                  </ul>';
+                                if($wishlist){
+                                    echo Affiliate::shopButtonsHtml($gid, 'match-shop-btn', Affiliate::keywordsFrom($wishlist[0]['wishlist_description']), 'Shop for '.$pairName);
+                                }
                                 $aiIdeas = GiftAI::ideasFor($pair);
         echo                    ($aiIdeas)
-                                    ? Affiliate::giftIdeasHtml($gid, 'ai-gift-ideas', false, $aiIdeas, 'Gift ideas for '.esc_html($pairName))
+                                    ? Affiliate::giftIdeasHtml($gid, 'ai-gift-ideas', false, $aiIdeas, 'Picked for '.esc_html($pairName).' from their wishlist')
                                     : Affiliate::giftIdeasHtml($gid, 'match-gift-ideas');
         echo '                <h2><i class="fas fa-gifts"></i> ADDRESS <span>AND</span> CONTACTS</h2>';
         echo                  '<div style="padding: 32px;">'.get_field('my_address_and_contact_details', $pair).'</div>';

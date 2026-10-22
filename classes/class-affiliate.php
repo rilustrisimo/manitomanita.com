@@ -52,6 +52,16 @@ class Affiliate {
         array('label' => 'Board & card games','icon' => 'fas fa-dice',          'keyword' => 'party card game'),
     );
 
+    public static function init() {
+        add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueueStyles' ), 20 );
+    }
+
+    public static function enqueueStyles() {
+        $file = '/assets/csslib/mm-affiliate.css';
+
+        wp_enqueue_style( 'mm-affiliate', PARENT_URL . $file, array(), (string) @filemtime( PARENT_DIR . $file ) );
+    }
+
     /**
      * Returns the merchant key for a URL, or false.
      */
@@ -185,76 +195,90 @@ class Affiliate {
     }
 
     /**
-     * "Gift ideas within ₱X" block.
+     * "Gift ideas" section: a card per idea with Lazada / Shopee buttons.
      *
      * @param int    $groupId   Group post ID.
      * @param string $placement aff_sub value.
      * @param bool   $forEmail  Inline-styled table markup for email clients.
      * @param array  $ideas     Ideas to show (e.g. from GiftAI); defaults to the Gift Ideas list.
-     * @param string $title     Heading text; " within ₱X" is appended.
+     * @param string $subtitle  Line under the heading; defaults to the budget hint.
      */
-    public static function giftIdeasHtml( $groupId, $placement, $forEmail = false, $ideas = null, $title = null ) {
-        $max   = self::budget( $groupId );
-        $title = $title ? $title : 'Gift ideas';
-        $title .= ( $max > 0 ) ? ' within &#8369;' . number_format( $max ) : '';
-        $ideas = is_array( $ideas ) ? $ideas : self::giftIdeas();
+    public static function giftIdeasHtml( $groupId, $placement, $forEmail = false, $ideas = null, $subtitle = null ) {
+        $max      = self::budget( $groupId );
+        $within   = ( $max > 0 ) ? 'Within &#8369;' . number_format( $max ) : 'For any budget';
+        $subtitle = $subtitle ? $subtitle . ' &middot; ' . strtolower( $within ) : $within . ' &middot; tap a store to browse';
+        $ideas    = is_array( $ideas ) ? $ideas : self::giftIdeas();
 
         if ( $forEmail ) {
-            $btn  = 'display:inline-block;padding:6px 12px;margin:2px;border-radius:4px;color:#ffffff;text-decoration:none;font-size:13px;';
-            $html = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;border-top:1px solid #eeeeee;font-family:Arial,sans-serif;">';
-            $html .= '<tr><td colspan="2" style="padding:16px 0 8px;font-size:18px;font-weight:bold;color:#333333;">' . $title . '</td></tr>';
+            $btn  = 'display:inline-block;padding:7px 14px;margin:0 0 0 6px;border-radius:999px;color:#ffffff;text-decoration:none;font-size:13px;font-weight:bold;';
+            $html = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;font-family:Arial,Helvetica,sans-serif;">';
+            $html .= '<tr><td colspan="2" style="padding:0 0 4px;font-size:18px;font-weight:bold;color:#1b1b1b;letter-spacing:.5px;">GIFT <span style="color:#3ec7c2;font-weight:normal;">IDEAS</span></td></tr>';
+            $html .= '<tr><td colspan="2" style="padding:0 0 12px;font-size:13px;color:#6d6d6d;">' . $subtitle . '</td></tr>';
 
             foreach ( $ideas as $idea ) {
                 $html .= '<tr>';
-                $html .= '<td style="padding:6px 0;font-size:14px;color:#333333;">' . esc_html( $idea['label'] ) . '</td>';
-                $html .= '<td style="padding:6px 0;text-align:right;white-space:nowrap;">';
+                $html .= '<td style="padding:10px 0;border-top:1px solid #eeeeee;font-size:15px;color:#1b1b1b;">' . esc_html( $idea['label'] ) . '</td>';
+                $html .= '<td style="padding:10px 0;border-top:1px solid #eeeeee;text-align:right;white-space:nowrap;">';
                 $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'lazada', $idea['keyword'], $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#0f146d;">Lazada</a>';
                 $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'shopee', $idea['keyword'], $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#ee4d2d;">Shopee</a>';
                 $html .= '</td></tr>';
             }
 
-            $html .= '<tr><td colspan="2" style="padding-top:8px;font-size:11px;color:#999999;">We may earn a small commission from these links.</td></tr>';
             $html .= '</table>';
 
             return $html;
         }
 
-        $html  = '<div class="gift-ideas aff-cta-optional">';
-        $html .= '<h2><i class="fas fa-lightbulb"></i> ' . $title . '</h2>';
-        $html .= '<ul class="gift-ideas__list">';
+        $html  = '<div class="mm-gifts aff-cta-optional">';
+        $html .= '<h2><i class="fas fa-lightbulb"></i> GIFT<span>IDEAS</span></h2>';
+        $html .= '<p class="mm-gifts__sub">' . $subtitle . '</p>';
+        $html .= '<div class="mm-gifts__grid">';
 
         foreach ( $ideas as $idea ) {
-            $icon  = ! empty( $idea['icon'] ) ? '<i class="' . esc_attr( $idea['icon'] ) . '"></i> ' : '';
-            $html .= '<li class="gift-ideas__item">';
-            $html .= '<span class="gift-ideas__label">' . $icon . esc_html( $idea['label'] );
-            $html .= ! empty( $idea['why'] ) ? '<small class="gift-ideas__why">' . esc_html( $idea['why'] ) . '</small>' : '';
-            $html .= '</span>';
-            $html .= '<span class="gift-ideas__btns">';
-            $html .= self::anchor( self::searchUrl( 'lazada', $idea['keyword'], $max ), 'Lazada', $placement, $groupId, 'gift-btn gift-btn--lazada' );
-            $html .= self::anchor( self::searchUrl( 'shopee', $idea['keyword'], $max ), 'Shopee', $placement, $groupId, 'gift-btn gift-btn--shopee' );
-            $html .= '</span>';
-            $html .= '</li>';
+            $icon  = ! empty( $idea['icon'] ) ? $idea['icon'] : 'fas fa-gift';
+            $html .= '<div class="mm-gift">';
+            $html .= '<div class="mm-gift__head">';
+            $html .= '<span class="mm-gift__icon"><i class="' . esc_attr( $icon ) . '"></i></span>';
+            $html .= '<div class="mm-gift__text">';
+            $html .= '<div class="mm-gift__label">' . esc_html( $idea['label'] ) . '</div>';
+            $html .= ! empty( $idea['why'] ) ? '<div class="mm-gift__why">' . esc_html( $idea['why'] ) . '</div>' : '';
+            $html .= '</div>';
+            $html .= '</div>';
+            $html .= '<div class="mm-gift__btns">';
+            $html .= self::anchor( self::searchUrl( 'lazada', $idea['keyword'], $max ), '<i class="fas fa-cart-shopping"></i> Lazada', $placement, $groupId, 'mm-store mm-store--lazada' );
+            $html .= self::anchor( self::searchUrl( 'shopee', $idea['keyword'], $max ), '<i class="fas fa-bag-shopping"></i> Shopee', $placement, $groupId, 'mm-store mm-store--shopee' );
+            $html .= '</div>';
+            $html .= '</div>';
         }
 
-        $html .= '</ul>';
-        $html .= '<div class="aff-disclosure">We may earn a small commission from these links.</div>';
+        $html .= '</div>';
         $html .= '</div>';
 
         return $html;
     }
 
     /**
-     * Compact "Browse gifts within ₱X" buttons (members list, shop-for buttons).
+     * Compact call-to-action strip with Lazada / Shopee search buttons.
+     *
+     * @param string $title   e.g. "Shop for Ana".
+     * @param string $keyword Search query; when empty the strip offers general gifts.
      */
-    public static function shopButtonsHtml( $groupId, $placement, $keyword = '', $prefix = 'Browse gifts' ) {
+    public static function shopButtonsHtml( $groupId, $placement, $keyword = '', $title = 'Browse gifts' ) {
         $max     = self::budget( $groupId );
-        $keyword = trim( $keyword ) !== '' ? $keyword : 'gift';
+        $keyword = trim( $keyword );
         $within  = ( $max > 0 ) ? ' within &#8369;' . number_format( $max ) : '';
+        $hint    = ( $keyword !== '' ) ? 'Search &ldquo;' . esc_html( $keyword ) . '&rdquo;' . $within : 'Gift ideas' . $within;
+        $query   = ( $keyword !== '' ) ? $keyword : 'gift';
 
-        $html  = '<div class="shop-for aff-cta-optional">';
-        $html .= '<span class="shop-for__label">' . $prefix . $within . ':</span> ';
-        $html .= self::anchor( self::searchUrl( 'lazada', $keyword, $max ), '<i class="fas fa-shopping-cart"></i> Lazada', $placement, $groupId, 'gift-btn gift-btn--lazada' );
-        $html .= self::anchor( self::searchUrl( 'shopee', $keyword, $max ), '<i class="fas fa-shopping-bag"></i> Shopee', $placement, $groupId, 'gift-btn gift-btn--shopee' );
+        $html  = '<div class="mm-shop aff-cta-optional">';
+        $html .= '<div class="mm-shop__text">';
+        $html .= '<span class="mm-shop__icon"><i class="fas fa-gift"></i></span>';
+        $html .= '<span><strong>' . esc_html( $title ) . '</strong><small>' . $hint . '</small></span>';
+        $html .= '</div>';
+        $html .= '<div class="mm-shop__btns">';
+        $html .= self::anchor( self::searchUrl( 'lazada', $query, $max ), '<i class="fas fa-cart-shopping"></i> Lazada', $placement, $groupId, 'mm-store mm-store--lazada' );
+        $html .= self::anchor( self::searchUrl( 'shopee', $query, $max ), '<i class="fas fa-bag-shopping"></i> Shopee', $placement, $groupId, 'mm-store mm-store--shopee' );
+        $html .= '</div>';
         $html .= '</div>';
 
         return $html;
@@ -281,3 +305,5 @@ class Affiliate {
         return preg_match( '~^https?://~i', $url ) ? $url : 'https://' . ltrim( $url, '/' );
     }
 }
+
+Affiliate::init();
