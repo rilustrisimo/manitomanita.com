@@ -67,8 +67,122 @@ class Groups extends Theme {
          * Place filters here
          */
 
-        add_filter('pre_get_document_title', array($this, 'replace_group_title'), 50);
         add_filter('body_class', array($this, 'my_custom_body_class'));
+
+        // Per-group title, description and sharing tags on the group dashboard. Registered once;
+        // priority beats All in One SEO, which sets the document title at 99999.
+        static $seoHooked = false;
+
+        if(!$seoHooked){
+            $seoHooked = true;
+            add_filter('pre_get_document_title', array($this, 'replace_group_title'), 100000);
+            add_filter('aioseo_title', array($this, 'replace_group_title'));
+            add_filter('aioseo_description', array($this, 'groupMetaDescription'));
+            add_filter('aioseo_facebook_tags', array($this, 'groupSocialTags'));
+            add_filter('aioseo_twitter_tags', array($this, 'groupSocialTags'));
+            add_filter('aioseo_robots_meta', array($this, 'groupRobots'));
+            add_filter('wp_robots', array($this, 'groupWpRobots'));
+        }
+    }
+
+    /**
+     * Title/description for the group dashboard. The group's name and details are only used
+     * when the link's group password is valid; otherwise a generic title is returned.
+     *
+     * @return array|false ['title', 'description', 'url'] on the dashboard, false elsewhere.
+     */
+    public function groupMeta(){
+        static $meta = null;
+
+        if($meta !== null) return $meta;
+        if(!isset($_GET['gid'])) return $meta = false;
+
+        $gid = (int) $_GET['gid'];
+        $valid = $gid && get_post_type($gid) == 'groups' && $this->checkGroupCredentials();
+
+        if(!$valid){
+            return $meta = array(
+                'title'       => 'Group Dashboard | Manito Manita',
+                'description' => 'Manito Manita makes Secret Santa easy: join a group, add your wishlist and see who you&rsquo;ll give a gift to.',
+                'url'         => '',
+            );
+        }
+
+        // Escaped here: All in One SEO prints the title into <title> as-is.
+        $name = esc_html(trim(wp_strip_all_tags((string) get_field('group_name', $gid))));
+        $date = get_field('gift_exchange_date', $gid);
+        $date = ($date && ($d = DateTime::createFromFormat('m/d/Y', $date)))?$d->format('F j, Y'):'';
+        $budget = (int) preg_replace('/[^0-9]/', '', (string) get_field('spending_minimum', $gid));
+        $host = esc_html(trim(wp_strip_all_tags((string) get_field('your_name', $gid))));
+
+        $details = array();
+        if($date) $details[] = 'Exchange on '.$date;
+        if($budget > 0) $details[] = '&#8369;'.number_format($budget).' minimum';
+
+        $description = 'You&rsquo;re invited to '.$name.(($host)?', hosted by '.$host:'').' on Manito Manita. '
+                     .(($details)?implode(' · ', $details).'. ':'')
+                     .'Join the group, add your wishlist and see who you&rsquo;ll give a gift to.';
+
+        return $meta = array(
+            'title'       => $name.' · Secret Santa Group | Manito Manita',
+            'description' => $description,
+            'url'         => add_query_arg(array('gid' => $gid, 'pw' => rawurlencode((string) $_GET['pw'])), get_permalink()),
+        );
+    }
+
+    public function groupMetaDescription($description){
+        $meta = $this->groupMeta();
+
+        return ($meta)?$meta['description']:$description;
+    }
+
+    /**
+     * og:/twitter: tags so link previews (Messenger, Facebook, Viber) show the group.
+     */
+    public function groupSocialTags($tags){
+        $meta = $this->groupMeta();
+
+        if(!$meta || !is_array($tags)) return $tags;
+
+        $title = html_entity_decode($meta['title'], ENT_QUOTES, 'UTF-8');
+        $description = html_entity_decode($meta['description'], ENT_QUOTES, 'UTF-8');
+
+        // AIOSEO escapes these when printing, so pass plain text.
+        foreach(array('og:title', 'twitter:title') as $k){
+            if(array_key_exists($k, $tags)) $tags[$k] = $title;
+        }
+
+        foreach(array('og:description', 'twitter:description') as $k){
+            if(array_key_exists($k, $tags)) $tags[$k] = $description;
+        }
+
+        if(array_key_exists('og:url', $tags) && $meta['url']) $tags['og:url'] = $meta['url'];
+
+        return $tags;
+    }
+
+    /**
+     * Keep group dashboards out of search results: their links contain the group password
+     * and the page lists members and wishlists.
+     */
+    public function groupRobots($robots){
+        if(!$this->groupMeta() || !is_array($robots)) return $robots;
+
+        $robots['noindex'] = 'noindex';
+        $robots['nofollow'] = 'nofollow';
+        unset($robots['index'], $robots['follow']);
+
+        return $robots;
+    }
+
+    public function groupWpRobots($robots){
+        if(!$this->groupMeta()) return $robots;
+
+        $robots['noindex'] = true;
+        $robots['nofollow'] = true;
+        unset($robots['index'], $robots['follow']);
+
+        return $robots;
     }
 
     // Add a custom class to the body
@@ -495,17 +609,9 @@ class Groups extends Theme {
 
     
     public function replace_group_title($title){
-        if(!isset($_GET['gid'])){
-            return false;
-        }
+        $meta = $this->groupMeta();
 
-        if($this->getGroupId()){
-            $title = 'Group Dashboard » Manito Manita » ' . get_field('group_name', $this->getGroupId());
-        }else{
-            $title = 'Group Dashboard » Manito Manita';
-        }
-
-        return $title;
+        return ($meta)?$meta['title']:$title;
     }
 
     public function randString($length) {
