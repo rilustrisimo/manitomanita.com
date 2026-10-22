@@ -413,7 +413,7 @@ class Users extends Theme {
             echo '<ul class="mm-comments">';
             foreach($comments as $c):
                 echo '<li class="mm-comment">';
-                echo '    <div class="mm-comment__text">'.$c->comment_content.'</div>';
+                echo '    <div class="mm-comment__text">'.Affiliate::linkifyText($c->comment_content, 'match-comment', $gid).'</div>';
                 echo '    <time class="mm-comment__date">'.date('M j, Y · g:i a', strtotime($c->comment_date)).'</time>';
                 echo '</li>';
             endforeach;
@@ -833,7 +833,7 @@ class Users extends Theme {
             $cardres .= '            <ul class="mm-dcomments">';
             foreach($comments as $c):
                 $cardres .= '            <li class="mm-dcomment">';
-                $cardres .= '                <div class="com-content">'.$c->comment_content.'</div>';
+                $cardres .= '                <div class="com-content">'.Affiliate::linkifyText($c->comment_content, 'members-comment', $groupid).'</div>';
                 $cardres .= '                <time class="com-date" datetime="'.esc_attr(date('c', strtotime($c->comment_date))).'">'.date('M j, Y · g:i a', strtotime($c->comment_date)).'</time>';
                 $cardres .= '            </li>';
             endforeach;

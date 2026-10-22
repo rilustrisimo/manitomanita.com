@@ -146,6 +146,24 @@ class Affiliate {
     }
 
     /**
+     * Plain user text (e.g. comments) to safe HTML: text escaped and shown as written, line breaks kept,
+     * and URLs turned into links (affiliate links for supported stores).
+     */
+    public static function linkifyText( $text, $placement = '', $groupId = '' ) {
+        // http(s):// or www. links, plus bare store links like "s.lazada.com.ph/..." or "shp.ee/...".
+        $pattern = "~((?:https?://|www\.|(?<![\w@./-])(?:[a-z0-9-]+\.)*(?:lazada\.com\.ph|shopee\.ph|shp\.ee|shope\.ee)/)[^\s<]+?)(?=[.,:;!?)\]]*(?:\s|$))~i";
+        // The text is shown exactly as written (escaped, never stripped); only link destinations change.
+        $parts   = preg_split( $pattern, (string) $text, -1, PREG_SPLIT_DELIM_CAPTURE );
+        $html    = '';
+
+        foreach ( $parts as $i => $part ) {
+            $html .= ( $i % 2 === 1 ) ? self::anchor( $part, esc_html( $part ), $placement, $groupId ) : esc_html( $part );
+        }
+
+        return nl2br( $html );
+    }
+
+    /**
      * Price-filtered merchant search URL (not yet an affiliate link).
      */
     public static function searchUrl( $merchant, $keyword, $max = 0 ) {
