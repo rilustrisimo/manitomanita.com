@@ -72,7 +72,8 @@ var Theme = {
         }
     
         // Click event for anchor tags with class 'aff-link'
-        $('a.aff-link').on('click', function(event) {
+        // Delegated and namespaced so repeated calls (every popup / cards reload) don't stack handlers.
+        $(document).off('click.mmAffLink').on('click.mmAffLink', 'a.aff-link', function(event) {
             event.preventDefault(); // Prevent default anchor behavior
     
             let href = $(this).attr('href');
@@ -137,7 +138,7 @@ var Theme = {
                 notice.show();
                 $('.header-details').show();
 
-                $('.popup').find('.fancybox-button').appendTo('.popup__title');
+                Theme.moveCloseButton($, current);
                 $('input[name="user-data"]').val($('input#groupid-val').val());
 
                 Theme.ProInitPasswordScripts($);
@@ -1070,18 +1071,18 @@ var Theme = {
 
     initDashboardScripts: function($){
         if($('div.dashboard').length > 0){
-            $('.clip input').click(function(){
+            $('.clip input').off('click.mmDash').on('click.mmDash', function(){
                 Theme.copyToClipboard($, this);
             });
 
-            $('.card-header h2').click(function(e){
+            $('.card-header h2').off('click.mmDash').on('click.mmDash', function(e){
                 if (e.target !== this)
                     return;
                 
                 $(this).find('button').trigger('click');
             });
 
-            $('.expand-deets').click(function(e){
+            $('.expand-deets').off('click.mmDash').on('click.mmDash', function(e){
                 e.preventDefault();
 
                 $(this).parents('.card-header').find('button').trigger('click');
@@ -1089,7 +1090,7 @@ var Theme = {
 
             /**** user action buttons */
 
-            $('.user-action').click(function(e){
+            $('.user-action').off('click.mmDash').on('click.mmDash', function(e){
                 e.preventDefault();
 
                 var btn = $(this);
@@ -1115,7 +1116,7 @@ var Theme = {
                     },
                     afterShow : function( instance, current ) {
                         $('.header-details').html(unamef);
-                        $('.popup').find('.fancybox-button').appendTo('.popup__title');
+                        Theme.moveCloseButton($, current);
                         $('input[name="user-data"]').val(uid);
                         notice.html('<a href="javascript:;" id="reset-pass">Forgot Password?</a>.');
                         notice.show();
@@ -1251,6 +1252,22 @@ var Theme = {
      * Hides optional affiliate CTAs (.aff-cta-optional: the members-list 'Browse gifts' strips) for 24h after the visitor clicks one of our
      * affiliate links (.mm-aff). UX only: the merchant's tracking cookie can't be read from this site.
      */
+    /**
+     * Moves fancybox's close button into the opened popup's title bar.
+     * Only touches that popup, and keeps a single button there; the old version appended every close
+     * button on the page into every .popup__title, cloning them ~6x per modal open until the page froze.
+     */
+    moveCloseButton: function($, current){
+        var $content = (current && current.$content) ? current.$content : $(),
+            $title = $content.find('.popup__title').first(),
+            $btn = (current && current.$smallBtn && current.$smallBtn.length) ? current.$smallBtn : $content.children('.fancybox-button--close').last();
+
+        if (!$title.length || !$btn.length) return;
+
+        $title.find('.fancybox-button').not($btn).remove();
+        $btn.appendTo($title);
+    },
+
     initAffiliateCap:function($){
         var key = 'mm_aff_last_click',
             day = 24 * 60 * 60 * 1000;
@@ -1309,7 +1326,7 @@ var Theme = {
                 "</button>",
             },
             afterShow : function( instance, current ) {
-                $('.popup').find('.fancybox-button').appendTo('.popup__title');
+                Theme.moveCloseButton($, current);
             },
             beforeShow : function( instance, current ) {
                 $.ajax ({
@@ -1620,14 +1637,14 @@ var Theme = {
     },
 
     acfFormScripts: function($){
-        $('.acf-form input, .acf-form textarea').focus(function(){
+        $('.acf-form input, .acf-form textarea').off('focus.mmAcf').on('focus.mmAcf', function(){
             var l = $(this).parents('.acf-field').find('.acf-label');
             l.css('top', '13px');
 
             $(this).parents('.acf-field').find('.acf-label p').show();
         });
 
-        $('.acf-label').click(function(e){
+        $('.acf-label').off('click.mmAcf').on('click.mmAcf', function(e){
             e.preventDefault();
             var l = $(this);
             l.css('top', '13px');
@@ -1635,7 +1652,7 @@ var Theme = {
             l.parent().find('input').focus();
         });
 
-        $('.acf-form input, .acf-form textarea').keyup(function(){
+        $('.acf-form input, .acf-form textarea').off('keyup.mmAcf').on('keyup.mmAcf', function(){
             $(this).trigger('focus');
         });
     },
@@ -1661,7 +1678,7 @@ var Theme = {
                 "</button>",
             },
             afterShow : function( instance, current ) {
-                $('.popup').find('.fancybox-button').appendTo('.popup__title');
+                Theme.moveCloseButton($, current);
             }
         });
 
