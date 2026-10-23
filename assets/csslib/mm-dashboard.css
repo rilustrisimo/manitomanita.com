@@ -1401,9 +1401,10 @@
 
 /* ---------- Member cards: quick actions + popup (no expanding) ---------- */
 
-#members-list#members-list .card.mm-member {
+#members-list#members-list .card.mm-member,
+#members-list#members-list #cards-container .card.mm-member:last-child {
     position: relative;
-    padding-right: 48px !important;
+    padding-right: 48px !important; /* room for the arrow; the 2nd selector beats the :last-child rule above */
     cursor: pointer;
 }
 
@@ -1615,7 +1616,8 @@
 }
 
 @media (max-width: 767px) {
-    #members-list#members-list .card.mm-member {
+    #members-list#members-list .card.mm-member,
+    #members-list#members-list #cards-container .card.mm-member:last-child {
         padding-right: 14px !important;
     }
 
