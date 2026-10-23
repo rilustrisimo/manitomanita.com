@@ -84,6 +84,11 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
                             <?php else: ?>
                             <div class="mm-dash-status"><i class="far fa-clock"></i><div><strong>Waiting for names to be drawn.</strong> Find your name below and add your wishlist. <em>See Match</em> unlocks once the moderator draws names.</div></div>
                             <?php endif; ?>
+                            <div class="mm-member-search" data-mm-search hidden>
+                                <label class="mm-member-search__field"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" placeholder="Find your name" aria-label="Find your name in the member list" autocomplete="off" data-mm-search-input></label>
+                                <div class="mm-member-search__count" data-mm-search-count aria-live="polite"></div>
+                            </div>
+                            <div class="mm-member-search__empty" data-mm-search-empty hidden><i class="far fa-face-frown" aria-hidden="true"></i> No member matches &ldquo;<span data-mm-search-term></span>&rdquo;. Check the spelling, or ask your group moderator.</div>
                             <div class="accordion" id="members-list">
                                 <!-- SAMPLE CARD -->
                                 <div class="card sample-card" style="display:none;">
@@ -207,6 +212,11 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
             <div class="com-submit acf-form-submit"><input type="submit" name="submit" value="Submit" class="button"></div>
         </form>
 	</div>
+</div>
+<div id="member-popup" class="popup" role="dialog" aria-label="Member details">
+    <div class="popup__title">MEMBER<span>DETAILS</span></div>
+    <div class="popup__divider"></div>
+    <div class="popup__inner" data-mm-member-popup></div>
 </div>
 <div id="who-joined-box" class="popup">
 	<div class="popup__title">Who<span>Joined</span></div>

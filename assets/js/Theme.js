@@ -1058,6 +1058,8 @@ var Theme = {
                     $('#cards-container').removeClass('populating');
 
                     Theme.afflinkFunction($);
+                    Theme.initMemberSearch($);
+                    Theme.initMemberCards($);
                     /*
                     if(Theme.batchcount <= 0) {
                         Theme.initDashboardScripts($);
@@ -1303,6 +1305,119 @@ var Theme = {
         $(document).off('afterClose.mmPw').on('afterClose.mmPw', function(){
             $('input[data-mm-pw]').attr('type', 'password');
             $('.mm-pw-toggle').text('Show').attr({ 'aria-pressed': 'false', 'aria-label': 'Show password' });
+        });
+    },
+
+    /**
+     * 'Find your name' filter above the member list. Shown for groups of SEARCH_MIN+ members.
+     * Called after every member-list (re)load; keeps the current search term.
+     */
+    initMemberSearch: function($){
+        var SEARCH_MIN = 6,
+            $box = $('[data-mm-search]'),
+            $input = $box.find('[data-mm-search-input]'),
+            $count = $box.find('[data-mm-search-count]'),
+            $empty = $('[data-mm-search-empty]'),
+            $cards = $('#cards-container > .card'),
+            fold = function(str){
+                str = String(str || '').toLowerCase();
+                return str.normalize ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : str;
+            },
+            apply = function(){
+                var term = fold($.trim($input.val())), shown = 0;
+
+                $cards.each(function(){
+                    var $card = $(this),
+                        name = fold($card.find('.mm-member__name').text() || $card.find('.card-header h2 button').text()),
+                        match = term === '' || name.indexOf(term) !== -1;
+
+                    $card.toggleClass('is-filtered', !match);
+                    if (match) shown++;
+                });
+
+                $count.text(term === '' ? $cards.length + ' members' : shown + ' of ' + $cards.length);
+                $empty.prop('hidden', shown > 0);
+                $empty.find('[data-mm-search-term]').text($.trim($input.val()));
+            };
+
+        if (!$box.length) return;
+
+        $box.prop('hidden', $cards.length < SEARCH_MIN);
+        if ($cards.length < SEARCH_MIN) { $cards.removeClass('is-filtered'); $empty.prop('hidden', true); return; }
+
+        $input.off('input.mmSearch search.mmSearch').on('input.mmSearch search.mmSearch', apply);
+        apply();
+    },
+
+    /**
+     * Member cards: tapping a card or 'View wishlist' opens #member-popup with that member's
+     * wishlist, comments and all actions. The popup's action buttons pass the tap on to the card's
+     * own buttons (password prompt, comment box, leave confirmation stay exactly as before).
+     */
+    initMemberCards: function($){
+        var lastOpen = 0;
+
+        function openMember($card){
+            if (Date.now() - lastOpen < 400) return; // the theme re-triggers the name button on header clicks
+            lastOpen = Date.now();
+
+            var $inner = $('[data-mm-member-popup]'),
+                name = $.trim($card.find('.mm-member__name').text()),
+                meta = $.trim($card.find('.mm-member__meta').text()),
+                $match = $card.find('.mm-match-btn'),
+                $leave = $card.find('.mm-leave-btn'),
+                pending = null;
+
+            var action = function(kind, label, icon, $target, extraClass){
+                var disabled = !$target.length || $target.is('[disabled]');
+                return $('<button type="button" class="mm-pop-action ' + (extraClass || '') + '"></button>')
+                    .prop('disabled', disabled)
+                    .attr('title', disabled ? ($target.attr('title') || '') : '')
+                    .attr('data-kind', kind)
+                    .html('<i class="' + icon + '" aria-hidden="true"></i> ' + label);
+            };
+
+            var $head = $('<div class="mm-pop-head"></div>')
+                .append($card.find('.mm-avatar').first().clone())
+                .append($('<div class="mm-pop-head__text"></div>')
+                    .append($('<div class="mm-pop-head__name"></div>').text(name))
+                    .append($('<div class="mm-pop-head__meta"></div>').text(meta)));
+
+            var $actions = $('<div class="mm-pop-actions"></div>')
+                .append(action('wish', 'Edit Wishlist', 'fas fa-gift', $card.find('.wish-btn'), 'is-dark'))
+                .append(action('match', 'See Match', 'fas fa-user-friends', $match, 'is-accent'))
+                .append(action('comment', 'Comment', 'far fa-comment', $card.find('.comment-btn')))
+                .append(action('leave', 'Leave Group', 'fas fa-sign-out-alt', $leave, 'is-quiet'));
+
+            $inner.empty().append($head, $actions, $card.find('.mm-member-details').children().clone());
+
+            $inner.off('click.mmPop').on('click.mmPop', '.mm-pop-action:not(:disabled)', function(){
+                var kind = $(this).data('kind');
+                pending = { wish: $card.find('.wish-btn'), match: $match, comment: $card.find('.comment-btn'), leave: $leave }[kind];
+                $.fancybox.close();
+            });
+
+            $.fancybox.open({
+                src: '#member-popup',
+                type: 'inline',
+                animationDuration: 400,
+                animationEffect: 'slide-in-out',
+                btnTpl: { smallBtn: '<button data-fancybox-close class="fancybox-button fancybox-button--close" title="{{CLOSE}}"><i class="fas fa-times"></i></button>' },
+                afterShow: function(instance, current){ Theme.moveCloseButton($, current); },
+                afterClose: function(){
+                    if (pending && pending.length) { var $t = pending; pending = null; setTimeout(function(){ $t.trigger('click'); }, 50); }
+                }
+            });
+        }
+
+        $(document).off('click.mmCard').on('click.mmCard', '#cards-container .mm-member', function(e){
+            var $t = $(e.target);
+
+            // Quick actions keep their own behaviour; other links (e.g. shop links) too.
+            if ($t.closest('a, input, .user-action-btns > :not(.mm-view-btn)').length) return;
+
+            e.preventDefault();
+            openMember($(this));
         });
     },
 

@@ -773,28 +773,30 @@ class Users extends Theme {
 
         foreach($userids as $userid):
 
-        $cardres .= '<div class="card">';
-        $cardres .= '    <div class="card-header" id="heading'.$userid.'">';
-        $cardres .= '    <h2 class="mb-0">';
-        $cardres .= '        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse'.$userid.'" aria-expanded="false" aria-controls="collapse'.$userid.'">';
         $screenName = (string) get_field('screen_name', $userid);
-        $cardres .= '        <span class="mm-avatar" aria-hidden="true">'.esc_html(mb_strtoupper(mb_substr(trim($screenName), 0, 1))).'</span><span class="mm-member__name">'.$screenName.'</span> <i class="fas fa-chevron-circle-right"></i>';
-        $cardres .= '        </button>';
-        $cardres .= '        <div class="action-btns">';
-        $cardres .= '            <a href="#" class="expand-deets"><i class="fas fa-stream"></i> View details</a>';
-        $cardres .= '            <a href="#" class="user-action comment-btn" user-data="'.$userid.'"><i class="far fa-comment"></i> Comment</a>';
-        $cardres .= '        </div>';
-        $cardres .= '        ';
-        $cardres .= '    </h2>';
-        $cardres .= '    </div>';
-        $cardres .= '    <div id="collapse'.$userid.'" class="collapse" aria-labelledby="heading'.$userid.'" data-parent="#members-list">';
         $wishlist = get_field("my_wishlists", $userid);
         $comments = get_comments(array('post_id' => $userid, 'orderby' => 'comment_date', 'order' => 'DESC')); // newest first
         // Same plain affiliate link for pro and non-pro groups (the old non-pro second redirect to invl.io is gone).
         $legacyAff = array('class' => '', 'attrs' => array());
         if($wishlist) $wishcount++;
 
-        $cardres .= '    <div class="card-body">';
+        $wishTotal = ($wishlist)?count($wishlist):0;
+        $meta = ($wishTotal)?$wishTotal.' '.(($wishTotal == 1)?'wish':'wishes'):'No wishlist yet';
+        if(count($comments) > 0) $meta .= ' · '.count($comments).' '.((count($comments) == 1)?'comment':'comments');
+
+        // One card per member: quick actions + "View wishlist" (opens the member popup, Theme.initMemberCards).
+        $cardres .= '<div class="card mm-member" data-mm-member="'.$userid.'">';
+        $cardres .= '    <div class="card-header" id="heading'.$userid.'">';
+        $cardres .= '    <h2 class="mb-0">';
+        $cardres .= '        <button class="btn btn-link mm-member-open" type="button" aria-haspopup="dialog">';
+        $cardres .= '            <span class="mm-avatar" aria-hidden="true">'.esc_html(mb_strtoupper(mb_substr(trim($screenName), 0, 1))).'</span>';
+        $cardres .= '            <span class="mm-member__text"><span class="mm-member__name">'.$screenName.'</span><span class="mm-member__meta">'.$meta.'</span></span>';
+        $cardres .= '        </button>';
+        $cardres .= '    </h2>';
+        $cardres .= '    </div>';
+
+        /** Details shown in the member popup */
+        $cardres .= '    <div class="mm-member-details" hidden>';
         $cardres .= '        <div class="mm-detail">';
 
         /** Wishlist */
@@ -845,18 +847,19 @@ class Users extends Theme {
 
         $cardres .= '        </div>';
         $cardres .= '    </div>';
-        $cardres .= '    </div>';
+
+        $matched = get_field('matched', $groupid);
+        $matchattr  = (!$matched)?'disabled class="mm-match-btn" title="Available once the moderator draws names"':'class="user-action match-btn mm-match-btn" user-data="'.$userid.'" data-action="see-match"';
+        $matchattr2 = ($matched)?'disabled class="mm-leave-btn mm-popup-only" title="Members can\'t leave after names are drawn"':'class="user-action leave-btn mm-leave-btn mm-popup-only" user-data="'.$userid.'" data-action="leave-group"';
 
         $cardres .= '    <div class="user-action-btns">';
         $cardres .= '        <a href="#" class="user-action wish-btn" user-data="'.$userid.'" data-action="edit-wishlist"><i class="fas fa-gift"></i> Edit Wishlist</a>';
-        
-                        $matchattr =  (!get_field('matched', $groupid))?'disabled title="Available once the moderator draws names"':'class="user-action match-btn" user-data="'.$userid.'" data-action="see-match"'; 
-
-                        $matchattr2 = (get_field('matched', $groupid))?'disabled title="Members can\'t leave after names are drawn"':'class="user-action leave-btn" user-data="'.$userid.'" data-action="leave-group"';
-
         $cardres .= '        <a href="javascript:;" '.$matchattr.'><i class="fas fa-user-friends"></i> See Match</a>';
+        $cardres .= '        <button type="button" class="mm-view-btn"><i class="far fa-eye"></i> View wishlist</button>';
+        $cardres .= '        <a href="#" class="user-action comment-btn mm-popup-only" user-data="'.$userid.'"><i class="far fa-comment"></i> Comment</a>';
         $cardres .= '        <a href="javascript:;" '.$matchattr2.'><i class="fas fa-sign-out-alt"></i> Leave Group</a>';
         $cardres .= '    </div>';
+        $cardres .= '    <span class="mm-member__chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>';
         $cardres .= '</div>';
 
         $whojoined .= '<div class="card">'.get_field('name', $userid).'</div>';
