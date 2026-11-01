@@ -1020,3 +1020,143 @@
 #mm-info h2 {
     margin-top: 6px;
 }
+
+/* ---------- Confirm sheet: icon, what-happens list, credit meter, "I understand" ---------- */
+.mm-confirm__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 4px;
+    border-radius: 50%;
+    background: rgba(62, 199, 194, .14);
+    color: #2a9d99;
+    font-size: 20px;
+}
+
+.mm-confirm__icon.is-danger {
+    background: rgba(196, 43, 49, .1);
+    color: #c42b31;
+}
+
+.mm-confirm .mm-confirm__body p.mm-upsell__lead {
+    margin-bottom: 10px;
+}
+
+.mm-upsell ul.mm-confirm__points {
+    margin: 4px 0 12px;
+    padding: 0;
+    list-style: none;
+}
+
+.mm-upsell ul.mm-confirm__points li {
+    position: relative;
+    padding: 5px 0 5px 22px;
+    color: #3a3a3a;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.mm-upsell ul.mm-confirm__points li::before {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 12px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #3ec7c2;
+}
+
+.mm-confirm .mm-confirm__icon.is-danger ~ .mm-confirm__body ul.mm-confirm__points li::before {
+    background: #c42b31;
+}
+
+/* Credit meter */
+.mm-credit {
+    margin: 4px 0 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #1b1b1b;
+    color: rgba(255, 255, 255, .75);
+    font-size: 13px;
+}
+
+.mm-credit__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.mm-credit__row b {
+    color: #D4AF37;
+}
+
+.mm-credit__dots {
+    display: flex;
+    gap: 6px;
+    margin: 10px 0 8px;
+}
+
+.mm-credit__dots i {
+    width: 22px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .15);
+}
+
+.mm-credit__dots i.is-on {
+    background: #D4AF37;
+}
+
+.mm-credit__dots i.is-use {
+    background: #D4AF37;
+    opacity: .35;
+    animation: mmCreditBlink 1.2s ease-in-out infinite;
+}
+
+@keyframes mmCreditBlink {
+    50% { opacity: .9; }
+}
+
+.mm-credit p {
+    margin: 0;
+    color: rgba(255, 255, 255, .7);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.mm-credit p.mm-credit__warn {
+    color: #f3d27a;
+}
+
+/* "I understand" checkbox */
+.mm-confirm__check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 6px 0 0;
+    padding: 12px 14px;
+    border: 1px solid #ececec;
+    border-radius: 12px;
+    color: #1b1b1b;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    cursor: pointer;
+}
+
+.mm-confirm__check input {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin: 1px 0 0;
+    accent-color: #1b1b1b;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mm-credit__dots i.is-use {
+        animation: none;
+    }
+}

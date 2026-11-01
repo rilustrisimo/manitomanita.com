@@ -297,7 +297,13 @@ var Theme = {
                     who = $(this).find('small').text();
                 Theme.confirmSheet({
                     title: type === 'wishlist' ? 'Remind members to add a wishlist?' : 'Remind members to open their match?',
-                    body: Theme.esc(who) + '. They\u2019ll get a friendly email with a button to the group. You can send this once a day.',
+                    points: [
+                        Theme.esc(who) + '.',
+                        'Each gets one friendly email with a button to the group, sent from Manito Manita on your behalf.',
+                        'Members who never confirmed their email are skipped.',
+                        'You can send this reminder <b>once a day</b>.'
+                    ],
+                    icon: 'fa-solid fa-envelope',
                     confirm: 'Send reminder',
                     onConfirm: function(done){
                         Theme.proApi('nudge', { group_id: gid, type: type }).then(function(r){
@@ -312,29 +318,84 @@ var Theme = {
                 });
             }
             if (btn === 'matches') Theme.proMatches($, gid);
-            if (btn === 'export') Theme.proExport($, gid, panel.attr('data-group-name') || 'group');
+            if (btn === 'export') {
+                Theme.confirmSheet({
+                    title: 'Download the group spreadsheet?',
+                    points: [
+                        'Includes names, emails, <b>matches</b>, wishlists and <b>home addresses / contact details</b>.',
+                        'Keep the file private and don\u2019t share it in group chats.',
+                        'Delete it once the gift exchange is over.'
+                    ],
+                    check: 'I\u2019ll keep members\u2019 personal details private',
+                    icon: 'fa-solid fa-file-arrow-down',
+                    confirm: 'Download spreadsheet',
+                    onConfirm: function(done){ done(); Theme.proExport($, gid, panel.attr('data-group-name') || 'group'); }
+                });
+            }
 
             if (btn === 'shuffle') {
                 var unconfirmed = parseInt(panel.attr('data-unconfirmed'), 10) || 0;
+                var pts = [
+                    'Everyone gets their match <b>by email right away</b>.',
+                    '<b>No one can join</b> after the shuffle unless you unshuffle (' + credits + ' ' + (credits === 1 ? 'credit' : 'credits') + ' left).',
+                    'Exclusions you set are respected.'
+                ];
+                if (unconfirmed) pts.push('<b>' + unconfirmed + ' ' + (unconfirmed === 1 ? 'member hasn\u2019t' : 'members haven\u2019t') + ' confirmed their email</b> and may not receive it (they can still see it on the group page).');
                 Theme.confirmSheet({
-                    title: 'Draw names now?',
-                    body: 'Everyone will get their match by email. Make sure all members have joined first, because no one can join after the draw.' +
-                        (unconfirmed ? '<br><b>' + unconfirmed + ' ' + (unconfirmed === 1 ? 'member hasn\u2019t' : 'members haven\u2019t') + ' confirmed their email</b>, so they may not receive their match. They can still see it on the group page.' : ''),
-                    confirm: 'Draw names',
+                    title: 'Shuffle the group now?',
+                    points: pts,
+                    check: 'Everyone who should be in the group has joined',
+                    icon: 'fa-solid fa-shuffle',
+                    confirm: 'Shuffle now',
                     onConfirm: function(done){ done(); Theme.initMatching($, gid); }
                 });
             }
 
-            if (btn === 'redo') {
+            if (btn === 'unshuffle') {
                 Theme.confirmSheet({
-                    title: 'Redo the draw?',
-                    body: 'Everyone gets a new match and a new email. Make sure no one has bought a gift for their current match yet.<br><b>Uses 1 of ' + credits + ' ' + (credits === 1 ? 'redo' : 'redos') + '.</b>',
-                    confirm: 'Redo the draw',
+                    title: 'Unshuffle the group?',
+                    points: [
+                        '<b>Everyone\u2019s current match is cancelled.</b>',
+                        'The group opens again so <b>more people can join</b>.',
+                        'Members get an email telling them <b>not to buy a gift yet</b>.',
+                        'Gift status is cleared. Shuffle again when everyone is in.'
+                    ],
+                    credit: credits,
+                    check: 'I understand everyone\u2019s match will be cancelled',
+                    icon: 'fa-solid fa-rotate-left',
+                    confirm: 'Unshuffle (use 1 credit)',
                     danger: true,
                     onConfirm: function(done){
                         Theme.proApi('unshuffle-group', { group_id: gid }).then(function(){
                             done();
-                            Theme.initMatching($, gid); // draws again and reloads the dashboard
+                            Theme.toast('Group unshuffled. New members can join now.');
+                            setTimeout(function(){ $('#reload').submit(); }, 900); // Join opens again
+                        }).catch(function(err){
+                            done();
+                            Theme.toast(err.message, 'error');
+                        });
+                    }
+                });
+            }
+
+            if (btn === 'reshuffle') {
+                Theme.confirmSheet({
+                    title: 'Reshuffle now?',
+                    points: [
+                        '<b>Same members, new matches</b> for everyone.',
+                        'Everyone gets their new match <b>by email right away</b>.',
+                        'Anyone who already bought a gift for their current match will need a new one.',
+                        'The group stays closed to new members (use Unshuffle for that).'
+                    ],
+                    credit: credits,
+                    check: 'No one has bought a gift for their current match yet',
+                    icon: 'fa-solid fa-shuffle',
+                    confirm: 'Reshuffle (use 1 credit)',
+                    danger: true,
+                    onConfirm: function(done){
+                        Theme.proApi('unshuffle-group', { group_id: gid, notify: false }).then(function(){
+                            done();
+                            Theme.initMatching($, gid); // shuffles again and reloads the dashboard
                         }).catch(function(err){
                             done();
                             Theme.toast(err.message, 'error');
@@ -346,6 +407,7 @@ var Theme = {
             if (btn === 'add-credits') {
                 $('#pro-credits').css('display', 'flex');
                 Theme.popClose($);
+                Theme.track('view_promotion', { creative_slot: 'credits', promotion_name: 'unshuffle_credits' });
             }
         });
 
@@ -391,28 +453,71 @@ var Theme = {
     },
 
     /**
-     * Confirm dialog: { title, body (HTML, escape user data), confirm, danger, onConfirm(done) }.
+     * Confirm dialog. o = {
+     *   title, body (HTML, escape user data), points: [HTML,...] (what will happen),
+     *   credit: number of unshuffle credits before this action (shows the meter),
+     *   check: 'I understand...' (must be ticked before confirming), confirm, danger, icon, onConfirm(done)
+     * }
      */
     confirmSheet: function(o){
         var $ = jQuery;
         $('#mm-confirm').remove();
 
         var box = $('<div id="mm-confirm" class="pop-container mm-upsell mm-confirm" role="alertdialog" aria-modal="true">' +
-            '<div class="pop-container__inner mm-upsell__inner"><h2></h2><p class="mm-upsell__lead"></p>' +
+            '<div class="pop-container__inner mm-upsell__inner"><div class="mm-confirm__icon"><i></i></div><h2></h2><div class="mm-confirm__body"></div>' +
             '<div class="mm-upsell__actions"><button type="button" class="mm-upsell__btn mm-confirm__ok"></button>' +
             '<button type="button" class="mm-upsell__btn mm-upsell__btn--ghost mm-confirm__no">Cancel</button></div></div></div>');
 
+        var body = box.find('.mm-confirm__body'), ok = box.find('.mm-confirm__ok');
+
+        box.find('.mm-confirm__icon').toggleClass('is-danger', !!o.danger)
+            .find('i').attr('class', o.icon || (o.danger ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-question'));
         box.find('h2').text(o.title);
-        box.find('.mm-upsell__lead').html(o.body);
-        box.find('.mm-confirm__ok').text(o.confirm || 'Continue').addClass(o.danger ? 'mm-upsell__btn--danger' : 'mm-upsell__btn--dark');
+
+        if (o.body) body.append($('<p class="mm-upsell__lead"></p>').html(o.body));
+        if (o.points && o.points.length) {
+            var ul = $('<ul class="mm-confirm__points"></ul>');
+            o.points.forEach(function(p){ ul.append($('<li></li>').html(p)); });
+            body.append(ul);
+        }
+        if (typeof o.credit === 'number') body.append(Theme.creditMeter(o.credit));
+        if (o.check) {
+            body.append('<label class="mm-confirm__check"><input type="checkbox"> <span></span></label>');
+            body.find('.mm-confirm__check span').text(o.check);
+        }
+
+        ok.text(o.confirm || 'Continue').addClass(o.danger ? 'mm-upsell__btn--danger' : 'mm-upsell__btn--dark');
+        if (o.check) {
+            ok.prop('disabled', true);
+            body.find('.mm-confirm__check input').on('change', function(){ ok.prop('disabled', !this.checked); });
+        }
 
         box.appendTo('body').css('display', 'flex');
+        if (window.FontAwesome && FontAwesome.dom && FontAwesome.dom.i2svg) FontAwesome.dom.i2svg({ node: box[0] });
+
         box.on('click', function(e){ if (e.target === this) box.remove(); });
         box.find('.mm-confirm__no').on('click', function(){ box.remove(); });
-        box.find('.mm-confirm__ok').on('click', function(){
+        ok.on('click', function(){
             $(this).prop('disabled', true).text('Please wait\u2026');
             o.onConfirm(function(){ box.remove(); });
-        }).trigger('focus');
+        });
+        (o.check ? box.find('.mm-confirm__no') : ok).trigger('focus');
+    },
+
+    /**
+     * "Unshuffle credits 3 -> 2" meter for confirm sheets.
+     */
+    creditMeter: function(left){
+        var after = Math.max(0, left - 1), dots = '';
+        for (var i = 0; i < Math.max(left, 3); i++) dots += '<i class="' + (i < after ? 'is-on' : (i < left ? 'is-use' : '')) + '"></i>';
+
+        return '<div class="mm-credit">' +
+            '<div class="mm-credit__row"><span>Unshuffle credits</span><b>' + left + ' &rarr; ' + after + ' left</b></div>' +
+            '<div class="mm-credit__dots">' + dots + '</div>' +
+            (after === 0
+                ? '<p class="mm-credit__warn">This is your <b>last unshuffle</b>. After this you can add 3 more for &#8369;99.</p>'
+                : '<p>This uses <b>1 credit</b>. Credits don\u2019t expire.</p>') +
+            '</div>';
     },
 
     proApi: function(path, body){
@@ -478,7 +583,7 @@ var Theme = {
                 '<div class="mm-prov__bar"><label class="mm-prov__search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" autocomplete="off"></label>' +
                 '<button type="button" class="mm-prov__mini" data-copy-emails><i class="fa-regular fa-copy"></i> Copy emails</button></div>' +
                 '<p class="mm-prov__meta">' + d.users.length + ' ' + (d.users.length === 1 ? 'member' : 'members') +
-                (matched ? ' &middot; members can&rsquo;t be removed after names are drawn' : '') + '</p>' +
+                (matched ? ' &middot; members can&rsquo;t be removed after the shuffle (unshuffle first)' : '') + '</p>' +
                 '<ul class="mm-prov__list">' + (rows || '<li class="mm-prov__empty">No members yet. Share the group link to invite people.</li>') + '</ul>' +
                 '<p class="mm-prov__none" hidden>No member matches that search.</p>'
             );
@@ -504,7 +609,12 @@ var Theme = {
                 var row = $(this).closest('.mm-prov__row'), id = $(this).attr('data-remove'), label = $(this).attr('data-label');
                 Theme.confirmSheet({
                     title: 'Remove ' + label + '?',
-                    body: 'They will be removed from the group and won&rsquo;t be part of the draw. This can&rsquo;t be undone.',
+                    points: [
+                        'They\u2019re removed from the group and <b>won\u2019t be part of the shuffle</b>.',
+                        'Their wishlist and comments are removed with them.',
+                        '<b>This can\u2019t be undone.</b> They can join again with the group link.'
+                    ],
+                    check: 'Remove ' + label + ' from the group',
                     confirm: 'Remove member',
                     danger: true,
                     onConfirm: function(done){
@@ -525,7 +635,7 @@ var Theme = {
         });
     },
 
-    /* ---------- Exclusions (who can't draw whom) ---------- */
+    /* ---------- Exclusions (who can't get whom) ---------- */
 
     proExclusions: function($, gid){
         var body = Theme.proView($, 'Exclusions', Theme.proLoading);
@@ -540,18 +650,18 @@ var Theme = {
             d.rules.forEach(function(r){
                 rules += '<li class="mm-prov__row mm-prov__match">' +
                     '<span><strong>' + esc(r[0].name) + '</strong><small>' + esc(r[0].screen) + '</small></span>' +
-                    '<i class="fa-solid fa-arrows-left-right" aria-label="won\u2019t draw"></i>' +
+                    '<i class="fa-solid fa-arrows-left-right" aria-label="won\u2019t get each other"></i>' +
                     '<span><strong>' + esc(r[1].name) + '</strong><small>' + esc(r[1].screen) + '</small></span>' +
                     '<button type="button" class="mm-prov__mini mm-prov__mini--danger" data-a="' + r[0].ID + '" data-b="' + r[1].ID + '" aria-label="Remove rule"><i class="fa-solid fa-xmark"></i></button></li>';
             });
 
             body.html(
-                '<p class="mm-prov__meta">Pick two people who shouldn\u2019t draw each other, like couples or family. It works both ways.' +
-                (d.matched ? ' <b>Names are already drawn:</b> rules apply the next time you redo the draw.' : '') + '</p>' +
+                '<p class="mm-prov__meta">Pick two people who shouldn\u2019t get each other, like couples or family. It works both ways.' +
+                (d.matched ? ' <b>Already shuffled:</b> rules apply the next time you shuffle (after an unshuffle).' : '') + '</p>' +
                 '<div class="mm-prov__pair"><select data-ex-a>' + opts + '</select><span>&amp;</span><select data-ex-b>' + opts + '</select></div>' +
                 '<button type="button" class="mm-upsell__btn mm-upsell__btn--dark" data-ex-add>Add rule</button>' +
                 '<h4 class="mm-prot__group">' + d.rules.length + ' ' + (d.rules.length === 1 ? 'rule' : 'rules') + '</h4>' +
-                (rules ? '<ul class="mm-prov__list">' + rules + '</ul>' : '<p class="mm-prov__empty">No rules yet. Everyone can draw anyone (except themselves).</p>')
+                (rules ? '<ul class="mm-prov__list">' + rules + '</ul>' : '<p class="mm-prov__empty">No rules yet. Anyone can get anyone (except themselves).</p>')
             );
 
             body.find('[data-ex-add]').on('click', function(){
@@ -569,10 +679,22 @@ var Theme = {
             });
 
             body.find('[data-a]').on('click', function(){
-                Theme.proApi('exclusions', { group_id: gid, op: 'remove', a: $(this).attr('data-a'), b: $(this).attr('data-b') }).then(function(r){
-                    render(r);
-                    Theme.toast('Rule removed');
-                }).catch(function(err){ Theme.toast(err.message, 'error'); });
+                var a = $(this).attr('data-a'), b = $(this).attr('data-b'),
+                    names = $(this).closest('.mm-prov__row').find('strong').map(function(){ return $(this).text(); }).get();
+                Theme.confirmSheet({
+                    title: 'Remove this rule?',
+                    body: Theme.esc(names[0] || '') + ' and ' + Theme.esc(names[1] || '') + ' could get each other in the next shuffle.',
+                    icon: 'fa-solid fa-user-slash',
+                    confirm: 'Remove rule',
+                    danger: true,
+                    onConfirm: function(done){
+                        Theme.proApi('exclusions', { group_id: gid, op: 'remove', a: a, b: b }).then(function(r){
+                            done();
+                            render(r);
+                            Theme.toast('Rule removed');
+                        }).catch(function(err){ done(); Theme.toast(err.message, 'error'); });
+                    }
+                });
             });
         }
 
@@ -581,43 +703,68 @@ var Theme = {
         });
     },
 
-    /* ---------- Auto-draw (scheduled) ---------- */
+    /* ---------- Auto-shuffle (scheduled) ---------- */
 
     proAutoDraw: function($, gid){
-        var body = Theme.proView($, 'Auto-draw', Theme.proLoading);
+        var body = Theme.proView($, 'Auto-shuffle', Theme.proLoading);
 
         function render(d){
             var now = new Date(Date.now() + 60 * 60 * 1000), pad = function(n){ return (n < 10 ? '0' : '') + n; },
                 min = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':00';
 
             body.html(
-                '<p class="mm-prov__meta">Pick when names should be drawn. Everyone gets their match by email at that time, and you get a confirmation. ' +
+                '<p class="mm-prov__meta">Pick when the group should be shuffled. Everyone gets their match by email at that time, and you get a confirmation. ' +
                 'Members can keep joining until then.</p>' +
                 (d.label ? '<div class="mm-prov__sched"><i class="fa-solid fa-calendar-check"></i><span>Scheduled for <b>' + Theme.esc(d.label) + '</b></span></div>' : '') +
-                '<label class="mm-prov__field">Draw names on<input type="datetime-local" data-ad-at min="' + min + '" value="' + Theme.esc(d.at || '') + '"></label>' +
-                '<button type="button" class="mm-upsell__btn mm-upsell__btn--dark" data-ad-save>' + (d.label ? 'Update schedule' : 'Schedule auto-draw') + '</button>' +
-                (d.label ? '<button type="button" class="mm-upsell__btn mm-upsell__btn--ghost mm-prov__gap" data-ad-clear>Cancel auto-draw</button>' : '') +
+                '<label class="mm-prov__field">Shuffle on<input type="datetime-local" data-ad-at min="' + min + '" value="' + Theme.esc(d.at || '') + '"></label>' +
+                '<button type="button" class="mm-upsell__btn mm-upsell__btn--dark" data-ad-save>' + (d.label ? 'Update schedule' : 'Schedule auto-shuffle') + '</button>' +
+                (d.label ? '<button type="button" class="mm-upsell__btn mm-upsell__btn--ghost mm-prov__gap" data-ad-clear>Cancel auto-shuffle</button>' : '') +
                 '<p class="mm-prov__meta mm-prov__gap">Needs at least 3 members at that time (now ' + d.members + '). Times are Philippine time.</p>'
             );
 
             body.find('[data-ad-save]').on('click', function(){
-                var at = body.find('[data-ad-at]').val(), btn = $(this);
+                var at = body.find('[data-ad-at]').val();
                 if (!at) { Theme.toast('Pick a date and time', 'error'); return; }
-                btn.prop('disabled', true).text('Saving\u2026');
-                Theme.proApi('autodraw', { group_id: gid, op: 'set', at: at }).then(function(r){
-                    render(r);
-                    Theme.toast('Auto-draw scheduled');
-                }).catch(function(err){
-                    btn.prop('disabled', false).text('Schedule auto-draw');
-                    Theme.toast(err.message, 'error');
+
+                var when = new Date(at).toLocaleString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                Theme.confirmSheet({
+                    title: 'Schedule the auto-shuffle?',
+                    points: [
+                        'On <b>' + Theme.esc(when) + '</b> the group is shuffled automatically.',
+                        'Everyone gets their match by email and <b>no one can join after that</b>.',
+                        'It needs at least 3 members then. You\u2019ll get an email with the result.',
+                        'You can change or cancel it any time before then.'
+                    ],
+                    icon: 'fa-solid fa-calendar-check',
+                    confirm: 'Schedule',
+                    onConfirm: function(done){
+                        Theme.proApi('autodraw', { group_id: gid, op: 'set', at: at }).then(function(r){
+                            done();
+                            render(r);
+                            Theme.toast('Auto-shuffle scheduled');
+                        }).catch(function(err){
+                            done();
+                            Theme.toast(err.message, 'error');
+                        });
+                    }
                 });
             });
 
             body.find('[data-ad-clear]').on('click', function(){
-                Theme.proApi('autodraw', { group_id: gid, op: 'clear' }).then(function(r){
-                    render(r);
-                    Theme.toast('Auto-draw cancelled');
-                }).catch(function(err){ Theme.toast(err.message, 'error'); });
+                Theme.confirmSheet({
+                    title: 'Cancel the auto-shuffle?',
+                    body: 'The group won\u2019t be shuffled automatically. You can shuffle it yourself from PRO Actions, or schedule a new time.',
+                    icon: 'fa-solid fa-calendar-xmark',
+                    confirm: 'Cancel auto-shuffle',
+                    danger: true,
+                    onConfirm: function(done){
+                        Theme.proApi('autodraw', { group_id: gid, op: 'clear' }).then(function(r){
+                            done();
+                            render(r);
+                            Theme.toast('Auto-shuffle cancelled');
+                        }).catch(function(err){ done(); Theme.toast(err.message, 'error'); });
+                    }
+                });
             });
         }
 
@@ -687,6 +834,20 @@ var Theme = {
             '<button type="button" class="mm-upsell__btn mm-upsell__btn--dark" data-reveal-matches>Reveal matches</button></div>');
 
         body.find('[data-reveal-matches]').on('click', function(){
+            Theme.confirmSheet({
+                title: 'Reveal all matches?',
+                points: [
+                    'Shows <b>who is buying for whom</b> for everyone in the group.',
+                    'If you\u2019re also playing, <b>this spoils your own surprise</b>.',
+                    'Make sure no one is looking at your screen.'
+                ],
+                icon: 'fa-solid fa-eye',
+                confirm: 'Reveal matches',
+                onConfirm: function(done){ done(); revealMatches(); }
+            });
+        });
+
+        function revealMatches(){
             body.html(Theme.proLoading);
 
             Theme.proApi('members', { group_id: gid }).then(function(d){
@@ -724,7 +885,7 @@ var Theme = {
             }).catch(function(err){
                 body.html('<p class="mm-prov__error">' + Theme.esc(err.message) + '</p>');
             });
-        });
+        }
     },
 
     /* ---------- Export ---------- */
@@ -814,15 +975,15 @@ var Theme = {
         if (!sheet.length) return;
 
         var copy = {
-            header:  ['Extra tools for your group\u2019s organizer', 'Fix mistakes, redo the draw and keep everything organized.'],
-            welcome: ['Extra tools for your group\u2019s organizer', 'Fix mistakes, redo the draw and keep everything organized.'],
-            redo:    ['Someone left or joined late?', 'Redo the draw so everyone gets a fresh match. 3 redos included.'],
-            fix:     ['Fix your member list before drawing', 'Remove duplicates and correct misspelled names or emails.'],
-            exclude: ['Keep couples from drawing each other', 'Add exclusions so couples or family members never get each other in the draw.'],
+            header:    ['Extra tools for your group\u2019s organizer', 'Fix mistakes, let late joiners in and keep everything organized.'],
+            welcome:   ['Extra tools for your group\u2019s organizer', 'Fix mistakes, let late joiners in and keep everything organized.'],
+            unshuffle: ['More people want to join?', 'Unshuffle the group to let them in, then shuffle again. 3 unshuffles included.'],
+            fix:       ['Fix your member list before shuffling', 'Remove duplicates and correct misspelled names or emails.'],
+            exclude:   ['Keep couples from getting each other', 'Add exclusions so couples or family members never get each other in the shuffle.'],
             gift:    ['Gift PRO to your group', 'Remove ads for everyone and unlock the organizer tools. One payment covers the whole group.']
         }[reason] || null;
 
-        if (!copy) { reason = 'header'; copy = ['Extra tools for your group\u2019s organizer', 'Fix mistakes, redo the draw and keep everything organized.']; }
+        if (!copy) { reason = 'header'; copy = ['Extra tools for your group\u2019s organizer', 'Fix mistakes, let late joiners in and keep everything organized.']; }
 
         sheet.find('[data-mm-upsell-title]').text(copy[0]);
         sheet.find('[data-mm-upsell-lead]').text(copy[1]);
@@ -1277,7 +1438,20 @@ var Theme = {
                             Theme.userid = userid.val(); //set global user id
 
                             if(Theme.action == "shuffle-group"){
-                                Theme.initMatching($, Theme.userid);
+                                Theme.removeOverlay($);
+                                var isPro = $('body').hasClass('pro-version');
+                                Theme.confirmSheet({
+                                    title: 'Shuffle the group now?',
+                                    points: [
+                                        'Everyone gets their match <b>by email right away</b>.',
+                                        '<b>No one can join</b> after the shuffle.',
+                                        isPro ? 'You can unshuffle later from PRO Actions (uses 1 credit).' : '<b>Free groups can\u2019t undo a shuffle.</b> If late joiners might come, upgrade to PRO to be able to unshuffle.'
+                                    ],
+                                    check: 'Everyone who should be in the group has joined',
+                                    confirm: 'Shuffle now',
+                                    icon: 'fa-solid fa-shuffle',
+                                    onConfirm: function(done){ done(); Theme.initMatching($, Theme.userid); }
+                                });
                             }else{
                                 Theme.initCustomPopup($);
                                 Theme.removeOverlay($);
@@ -1655,7 +1829,7 @@ var Theme = {
             input = box.find('[data-mm-joined-search]'),
             empty = box.find('[data-mm-joined-empty]');
 
-        box.find('[data-mm-joined-count]').html('<strong>' + n + '</strong> ' + (n === 1 ? 'member' : 'members') + ' joined &middot; names have been drawn');
+        box.find('[data-mm-joined-count]').html('<strong>' + n + '</strong> ' + (n === 1 ? 'member' : 'members') + ' joined &middot; the group has been shuffled');
         search.prop('hidden', n <= 6);
 
         input.off('input.mmJoined').on('input.mmJoined', function(){
@@ -1686,7 +1860,7 @@ var Theme = {
             }, 500);
         } else if (/[?&]mm_confirmed=late/.test(q)) {
             setTimeout(function(){
-                Theme.infoSheet($, 'Names were already drawn', 'Your email is confirmed, but the organizer drew names before you confirmed, so you couldn\u2019t be added. Ask the organizer: with PRO they can redo the draw to include you.', 'fa-solid fa-circle-info');
+                Theme.infoSheet($, 'The group was already shuffled', 'Your email is confirmed, but the group was shuffled before you confirmed, so you couldn\u2019t be added yet. Ask the organizer to <b>unshuffle</b> the group, then tap the link in your email again.', 'fa-solid fa-circle-info');
             }, 500);
         }
 

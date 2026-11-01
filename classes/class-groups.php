@@ -259,7 +259,7 @@ class Groups extends Theme {
     }
 
     /**
-     * REST: kicking is for a member of the moderator's own PRO group, before names are drawn.
+     * REST: kicking is for a member of the moderator's own PRO group, before the group is shuffled.
      */
     public function canKickMember($request){
         $uid = (int) $request->get_param('user_id');
@@ -269,7 +269,7 @@ class Groups extends Theme {
         $allowed = $this->canUsePro($request);
 
         if($allowed !== true) return $allowed;
-        if(get_field('matched', $gid)) return new WP_Error('mm_matched', 'Members cannot be removed after names are drawn.', array('status' => 403));
+        if(get_field('matched', $gid)) return new WP_Error('mm_matched', 'Members cannot be removed after the group is shuffled. Unshuffle first.', array('status' => 403));
 
         return true;
     }
@@ -282,7 +282,7 @@ class Groups extends Theme {
         $gid = (int) $request->get_param('group_id');
 
         if($allowed !== true) return $allowed;
-        if(!get_field('matched', $gid)) return new WP_Error('mm_not_matched', 'Names have not been drawn yet.', array('status' => 403));
+        if(!get_field('matched', $gid)) return new WP_Error('mm_not_matched', 'The group hasn&rsquo;t been shuffled yet.', array('status' => 403));
         if((int) get_field('unshuffle_credits', $gid) < 1) return new WP_Error('mm_no_credits', 'No unshuffle credits left.', array('status' => 403));
 
         return true;
@@ -290,7 +290,7 @@ class Groups extends Theme {
 
     /* ---------------------------------------------------------- Exclusions */
 
-    const EXCLUSIONS_META = '_mm_exclusions'; // array of array(memberA, memberB): they don't draw each other
+    const EXCLUSIONS_META = '_mm_exclusions'; // array of array(memberA, memberB): they never get each other
     const EXCLUSIONS_MAX  = 50;
 
     /**
@@ -391,7 +391,7 @@ class Groups extends Theme {
     }
 
     /**
-     * op: list | add (a, b) | remove (a, b). Adding is refused when it would make the draw impossible.
+     * op: list | add (a, b) | remove (a, b). Adding is refused when it would make the shuffle impossible.
      */
     public function handle_exclusions($request){
         $gid = (int) $request->get_param('group_id');
@@ -827,6 +827,36 @@ class Groups extends Theme {
         ));
     }
 
+    /**
+     * After an unshuffle: clear pairs, gift status and "match opened"; optionally email members that
+     * their match is cancelled and the group is open again.
+     */
+    public function resetMatches($gid, $notify = true){
+        $name = (string) get_field('group_name', $gid);
+
+        foreach(self::memberIds($gid) as $uid){
+            delete_post_meta($uid, '_mm_gift_status');
+            delete_post_meta($uid, '_mm_match_viewed');
+            update_field('pair', '', $uid);
+
+            if(!$notify || !EmailCheck::isConfirmed($uid)) continue;
+
+            $first = trim((string) get_field('screen_name', $uid));
+            Emails::send((string) get_field('email', $uid), $name.' has been unshuffled', array(
+                'preheader' => 'Your previous match is cancelled. You&rsquo;ll get a new one when the group is shuffled again.',
+                'eyebrow'   => 'Heads up',
+                'title'     => $name.' has been unshuffled',
+                'body'      => array(
+                    '<p>Hi '.esc_html($first !== '' ? $first : 'there').', the organizer unshuffled the group, usually so more people can join.</p>',
+                    '<p><strong>Your previous match is cancelled, so please don&rsquo;t buy a gift for them yet.</strong> You&rsquo;ll get an email with your new match when the group is shuffled again.</p>',
+                ),
+                'card'      => Emails::groupCard($gid),
+                'button'    => array('Open the group', Emails::groupLink($gid)),
+                'footer'    => 'You&rsquo;re getting this because you&rsquo;re a member of '.esc_html($name).' on Manito Manita.',
+            ));
+        }
+    }
+
     public function handle_unshuffle_group($request) {
         // Get the group_id from the request
         $group_id = $request->get_param('group_id');
@@ -846,6 +876,9 @@ class Groups extends Theme {
     
                 // Update the 'unshuffle_credits' field with the new value
                 update_field('unshuffle_credits', $new_credits, $group_id);
+
+                // Old matches are void: reset per-member state, and tell members (not when reshuffling at once).
+                $this->resetMatches((int) $group_id, $request->get_param('notify') !== false);
     
                 // Respond with success
                 return new WP_REST_Response(array(
@@ -901,21 +934,22 @@ class Groups extends Theme {
         $html  = '<div class="mm-prot" data-group-name="'.esc_attr((string) ($fields['group_name'] ?? '')).'" data-matched="'.($matched ? '1' : '0').'" data-credits="'.$credits.'" data-unconfirmed="'.$unconfirmed.'">';
         $html .= '<div class="mm-prot__head"><div><span class="mm-prot__badge"><i class="fa-solid fa-star"></i> PRO</span>';
         $html .= '<h3>'.esc_html((string) ($fields['group_name'] ?? 'Your group')).'</h3>';
-        $html .= '<p>'.$count.' '.($count == 1 ? 'member' : 'members').' &middot; '.($matched ? 'Names drawn' : 'Names not drawn yet').'</p></div>';
-        $html .= '<div class="mm-prot__credits"><strong>'.$credits.'</strong><span>'.($credits == 1 ? 'redo' : 'redos').' left</span></div></div>';
+        $html .= '<p>'.$count.' '.($count == 1 ? 'member' : 'members').' &middot; '.($matched ? 'Shuffled' : 'Not shuffled yet').'</p></div>';
+        $html .= '<div class="mm-prot__credits"><strong>'.$credits.'</strong><span>'.($credits == 1 ? 'unshuffle' : 'unshuffles').' left</span></div></div>';
 
         $html .= '<h4 class="mm-prot__group">Members</h4>';
         $html .= $tool('members', 'fa-solid fa-users', 'Members', 'Names and emails, edit or remove members');
 
-        $html .= '<h4 class="mm-prot__group">Draw</h4>';
+        $html .= '<h4 class="mm-prot__group">Shuffle</h4>';
         $rules = count(self::exclusions($gid, self::memberIds($gid)));
-        $html .= $tool('exclusions', 'fa-solid fa-user-slash', 'Exclusions', ($rules ? $rules.' '.($rules == 1 ? 'rule' : 'rules').' &middot; ' : '').'Couples or family who shouldn&rsquo;t draw each other');
+        $html .= $tool('exclusions', 'fa-solid fa-user-slash', 'Exclusions', ($rules ? $rules.' '.($rules == 1 ? 'rule' : 'rules').' &middot; ' : '').'Couples or family who shouldn&rsquo;t get each other');
         if(!$matched){
-            $html .= $tool('shuffle', 'fa-solid fa-shuffle', 'Draw names', 'Everyone gets their match by email', ($count < 3) ? 'Needs at least 3 members' : '');
+            $html .= $tool('shuffle', 'fa-solid fa-shuffle', 'Shuffle', 'Everyone gets their match by email', ($count < 3) ? 'Needs at least 3 members' : '');
         }elseif($credits > 0){
-            $html .= $tool('redo', 'fa-solid fa-rotate', 'Redo the draw', 'New matches for everyone &middot; uses 1 of '.$credits.' redos');
+            $html .= $tool('unshuffle', 'fa-solid fa-rotate-left', 'Unshuffle', 'Reopen the group so late joiners can get in, then shuffle again &middot; uses 1 of '.$credits);
+            $html .= $tool('reshuffle', 'fa-solid fa-shuffle', 'Reshuffle now', 'New matches right away, same members &middot; uses 1 of '.$credits);
         }else{
-            $html .= $tool('add-credits', 'fa-solid fa-plus', 'Add 3 more redos', 'You&rsquo;ve used all redos &middot; &#8369;99');
+            $html .= $tool('add-credits', 'fa-solid fa-plus', 'Add 3 more unshuffles', 'You&rsquo;ve used all unshuffles &middot; &#8369;99');
         }
 
         // Reminders & schedule
@@ -933,11 +967,11 @@ class Groups extends Theme {
             $html .= $tool('gifts', 'fa-solid fa-gift', 'Gift status', $st['bought'].' bought &middot; '.$st['given'].' given &middot; '.$st['total'].' members');
         }else{
             $at = (int) get_post_meta($gid, self::AUTODRAW_META, true);
-            $html .= $tool('autodraw', 'fa-solid fa-calendar-check', 'Auto-draw', $at ? 'Scheduled: '.esc_html(wp_date('M j, g:i A', $at)) : 'Draw names automatically on a date you pick');
+            $html .= $tool('autodraw', 'fa-solid fa-calendar-check', 'Auto-shuffle', $at ? 'Scheduled: '.esc_html(wp_date('M j, g:i A', $at)) : 'Shuffle automatically on a date you pick');
         }
 
         $html .= '<h4 class="mm-prot__group">Results</h4>';
-        $html .= $tool('matches', 'fa-solid fa-handshake', 'See matches', 'Who is buying for whom', $matched ? '' : 'Available after names are drawn');
+        $html .= $tool('matches', 'fa-solid fa-handshake', 'See matches', 'Who is buying for whom', $matched ? '' : 'Available after the shuffle');
         $html .= $tool('export', 'fa-solid fa-file-arrow-down', 'Export to spreadsheet', 'Names, emails, matches, wishlists and addresses');
         $html .= '</div>';
 
@@ -1334,7 +1368,7 @@ class Groups extends Theme {
 
         // Only the group's moderator, and only once (PRO unshuffle resets 'matched' first).
         if(!self::isModerator($gid)) wp_send_json_error(['error' => 'Please enter the moderator password again']);
-        if(get_field('matched', $gid)) wp_send_json_error(['error' => 'Names have already been drawn for this group']);
+        if(get_field('matched', $gid)) wp_send_json_error(['error' => 'This group has already been shuffled']);
 
         try {
             $draw = $this->runDraw($gid);
@@ -1361,13 +1395,13 @@ class Groups extends Theme {
             $match1[] = $user->ID;
         }
 
-        if(count($match1) < 2) return array('result' => false, 'message' => 'At least 2 members are needed to draw names');
+        if(count($match1) < 2) return array('result' => false, 'message' => 'At least 2 members are needed to shuffle');
 
         // Nobody draws themselves; PRO groups also respect their exclusions.
         $blocked = get_field('pro', $gid) ? self::blockedPairs($gid) : array();
         $draw = self::drawPairs($match1, $blocked);
 
-        if($draw === null) return array('result' => false, 'message' => 'These exclusions make a draw impossible. Remove one in PRO Actions > Exclusions and try again');
+        if($draw === null) return array('result' => false, 'message' => 'These exclusions make a fair shuffle impossible. Remove one in PRO Actions > Exclusions and try again');
 
         foreach($match1 as $userId){
             if(!$this->reliable_update_field('pair', $draw[$userId], $userId, $maxRetries)){
@@ -1437,7 +1471,7 @@ class Groups extends Theme {
         $matched = (bool) get_field('matched', $gid);
 
         if(!in_array($type, array('wishlist', 'match'), true)) return new WP_REST_Response(array('success' => false, 'message' => 'Unknown reminder.'), 200);
-        if($type === 'match' && !$matched) return new WP_REST_Response(array('success' => false, 'message' => 'Names haven&rsquo;t been drawn yet.'), 200);
+        if($type === 'match' && !$matched) return new WP_REST_Response(array('success' => false, 'message' => 'The group hasn&rsquo;t been shuffled yet.'), 200);
         if(self::nudgedToday($gid, $type)) return new WP_REST_Response(array('success' => false, 'message' => 'You already sent this reminder today. Try again tomorrow.'), 200);
 
         $st = self::memberStatus($gid);
@@ -1454,7 +1488,7 @@ class Groups extends Theme {
             $cta = 'Add your wishlist';
         }else{
             $subject = $name.': see who you&rsquo;re giving a gift to';
-            $intro = 'Names have been drawn, but you haven&rsquo;t opened your match yet. Find your name in the group and tap <strong>See Match</strong>.';
+            $intro = 'The group has been shuffled, but you haven&rsquo;t opened your match yet. Find your name in the group and tap <strong>See Match</strong>.';
             $cta = 'See your match';
         }
 
@@ -1494,7 +1528,7 @@ class Groups extends Theme {
             $dt = DateTime::createFromFormat('Y-m-d\TH:i', (string) $request->get_param('at'), wp_timezone());
 
             if(get_field('matched', $gid)){
-                $error = 'Names have already been drawn.';
+                $error = 'This group has already been shuffled.';
             }elseif(!$dt || $dt->getTimestamp() < time() + 10 * MINUTE_IN_SECONDS){
                 $error = 'Pick a date and time at least 10 minutes from now.';
             }else{
@@ -1544,7 +1578,7 @@ class Groups extends Theme {
             if(get_field('matched', $gid) || !get_field('pro', $gid)) continue;
 
             $count = count(self::memberIds($gid));
-            $draw = ($count >= 3) ? $this->runDraw($gid) : array('result' => false, 'message' => 'At least 3 members are needed to draw names');
+            $draw = ($count >= 3) ? $this->runDraw($gid) : array('result' => false, 'message' => 'At least 3 members are needed to shuffle');
 
             $to = (string) get_field('your_email', $gid);
             if(!is_email($to)) continue;
@@ -1552,10 +1586,10 @@ class Groups extends Theme {
             $name = (string) get_field('group_name', $gid);
             $link = get_permalink(23).'?gid='.$gid.'&pw='.rawurlencode((string) get_field('group_password', $gid));
             $msg = $draw['result']
-                ? '<p>Names for <strong>'.esc_html($name).'</strong> were drawn automatically as scheduled. All '.$count.' members have been emailed their match.</p>'
-                : '<p>We couldn&rsquo;t draw names for <strong>'.esc_html($name).'</strong> as scheduled: '.esc_html($draw['message']).'.</p><p>Open your group to fix it and draw names.</p>';
+                ? '<p><strong>'.esc_html($name).'</strong> was shuffled automatically as scheduled. All '.$count.' members have been emailed their match.</p>'
+                : '<p>We couldn&rsquo;t shuffle <strong>'.esc_html($name).'</strong> as scheduled: '.esc_html($draw['message']).'.</p><p>Open your group to fix it and shuffle.</p>';
 
-            parent::sendEmail($to, $draw['result'] ? $name.': names have been drawn' : $name.': the automatic draw didn\'t run',
+            parent::sendEmail($to, $draw['result'] ? $name.' has been shuffled' : $name.': the automatic shuffle didn\'t run',
                 '<html><body style="font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;line-height:1.5">'.$msg
                 .'<p><a href="'.esc_url($link).'" style="display:inline-block;background:#1b1b1b;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Open your group</a></p></body></html>');
         }

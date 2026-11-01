@@ -278,7 +278,7 @@ class Payments {
 
         $body = '<html><body style="font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;line-height:1.5">'
             . '<h2 style="margin:0 0 12px">' . esc_html( $name ) . ' is now PRO</h2>'
-            . '<p>Your group has been upgraded to <strong>Manito Manita PRO</strong>. Ads are removed for everyone, and as the organizer you can now redo the draw (3 redos included), remove or edit members, see matches and export the group.</p>'
+            . '<p>Your group has been upgraded to <strong>Manito Manita PRO</strong>. Ads are removed for everyone, and as the organizer you can now unshuffle to let late joiners in (3 unshuffles included), add exclusions, remove or edit members, see matches and export the group.</p>'
             . '<p>Open your group and tap <strong>PRO Actions</strong>, then enter your group password.</p>'
             . '<p><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#1b1b1b;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Open your group</a></p>'
             . '</body></html>';

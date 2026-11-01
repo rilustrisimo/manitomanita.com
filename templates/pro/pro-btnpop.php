@@ -1,7 +1,7 @@
 <?php
 /**
  * PRO upgrade sheet (#make-pro). Opened by Theme.openUpsell(reason), which sets the headline for the
- * moment (redo the draw, fix names, gift to the group...) and highlights the matching benefit.
+ * moment (unshuffle, fix names, gift to the group...) and highlights the matching benefit.
  *
  * @author    eyorsogood.com, Rouie Ilustrisimo
  * @version   2.0.0
@@ -24,7 +24,7 @@ $mm_stats = Groups::siteStats();
         <div class="mm-upsell__top">
             <span class="mm-upsell__badge"><i class="fa-solid fa-star"></i> Manito Manita PRO</span>
             <h2 id="mm-upsell-title" data-mm-upsell-title>Extra tools for your group&rsquo;s organizer</h2>
-            <p class="mm-upsell__lead" data-mm-upsell-lead>Fix mistakes, redo the draw and keep everything organized.</p>
+            <p class="mm-upsell__lead" data-mm-upsell-lead>Fix mistakes, let late joiners in and keep everything organized.</p>
         </div>
 
         <div class="mm-upsell__price">
@@ -33,8 +33,8 @@ $mm_stats = Groups::siteStats();
         </div>
 
         <ul class="mm-upsell__list">
-            <li data-reason="exclude"><i class="fa-solid fa-user-slash"></i><span><b>Exclusions:</b> couples or family won&rsquo;t draw each other</span></li>
-            <li data-reason="redo"><i class="fa-solid fa-shuffle"></i><span><b>Redo the draw</b> if someone leaves or joins late <em>(3 redos included)</em></span></li>
+            <li data-reason="exclude"><i class="fa-solid fa-user-slash"></i><span><b>Exclusions:</b> couples or family won&rsquo;t get each other</span></li>
+            <li data-reason="unshuffle"><i class="fa-solid fa-rotate-left"></i><span><b>Unshuffle</b> so late joiners can get in, then shuffle again <em>(3 unshuffles included)</em></span></li>
             <li data-reason="fix"><i class="fa-solid fa-user-xmark"></i><span><b>Remove</b> duplicate or wrong members</span></li>
             <li data-reason="fix"><i class="fa-solid fa-pen-to-square"></i><span><b>Fix</b> a misspelled name or email</span></li>
             <li data-reason="names"><i class="fa-solid fa-address-book"></i><span><b>See</b> every member&rsquo;s real name and email</span></li>

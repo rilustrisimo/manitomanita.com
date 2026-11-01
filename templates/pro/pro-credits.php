@@ -1,6 +1,6 @@
 <?php
 /**
- * Buy 3 more unshuffle (redo) credits (#pro-credits), shown from PRO Actions when credits reach 0.
+ * Buy 3 more unshuffle credits (#pro-credits), shown from PRO Actions when credits reach 0.
  *
  * @author    eyorsogood.com, Rouie Ilustrisimo
  * @version   2.0.0
@@ -20,14 +20,20 @@ defined( 'ABSPATH' ) || die();
 
         <div class="mm-upsell__top">
             <span class="mm-upsell__badge"><i class="fa-solid fa-star"></i> PRO</span>
-            <h2 id="mm-credits-title">Add 3 more redos</h2>
-            <p class="mm-upsell__lead">You&rsquo;ve used all your redo credits. Add 3 more to redo the draw if someone else leaves or joins late.</p>
+            <h2 id="mm-credits-title">Add 3 more unshuffles</h2>
+            <p class="mm-upsell__lead">You&rsquo;ve used all your unshuffle credits. Add 3 more so you can reopen the group for late joiners and shuffle again.</p>
         </div>
 
         <div class="mm-upsell__price">
             <strong>&#8369;99</strong>
-            <span>for 3 redos<br>one-time</span>
+            <span>for 3 unshuffles<br>one-time</span>
         </div>
+
+        <ul class="mm-upsell__list mm-upsell__list--compact">
+            <li><i class="fa-solid fa-rotate-left"></i><span><b>1 credit = 1 unshuffle or reshuffle.</b> Unshuffle cancels the current matches and reopens the group for late joiners.</span></li>
+            <li><i class="fa-solid fa-shuffle"></i><span><b>Shuffling is always free.</b> Credits are only used to undo or redo a shuffle.</span></li>
+            <li><i class="fa-solid fa-infinity"></i><span><b>Credits never expire</b> and stay with this group.</span></li>
+        </ul>
 
         <div class="paypal-pay mm-upsell__pay">
             <?php get_template_part( 'paypal/index', 'paypal-credits' ); ?>

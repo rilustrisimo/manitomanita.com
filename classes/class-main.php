@@ -122,7 +122,7 @@ class Theme {
             'field_5f55bf05de4ca' => array('placeholder' => 'e.g. 500', 'instructions' => 'The minimum gift budget per person, in pesos (&#8369;).'),
             'field_5f55bf19de4cb' => array('placeholder' => 'Your full name', 'instructions' => 'You&rsquo;ll be the group moderator.'),
             'field_5f55bf2fde4cc' => array('placeholder' => 'you@example.com'),
-            'field_5f55bf45de4cd' => array('placeholder' => 'Create a password', 'instructions' => 'You&rsquo;ll use this to manage the group: edit details and draw names.'),
+            'field_5f55bf45de4cd' => array('placeholder' => 'Create a password', 'instructions' => 'You&rsquo;ll use this to manage the group: edit details and shuffle names.'),
             // Member fields
             'field_5f55f0e476675' => array('placeholder' => 'Your full name'),
             'field_5f55f1bc76676' => array('placeholder' => 'e.g. Ana', 'instructions' => 'This is how others in the group will see you.'),

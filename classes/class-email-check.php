@@ -281,7 +281,7 @@ class EmailCheck {
             'title'     => 'Welcome to ' . $group . ', ' . ( $name !== '' ? $name : 'friend' ) . '!',
             'body'      => array(
                 '<p>Your email is confirmed and you&rsquo;re now part of the group. Here&rsquo;s what happens next:</p>',
-                '<ol><li><strong>Add your wishlist</strong> so your Secret Santa knows what to get you.</li><li>Wait for the organizer to <strong>draw names</strong>. We&rsquo;ll email you.</li><li>Open the group and tap <strong>See Match</strong> to see who you&rsquo;re buying for.</li></ol>',
+                '<ol><li><strong>Add your wishlist</strong> so your Secret Santa knows what to get you.</li><li>Wait for the organizer to <strong>shuffle the group</strong>. We&rsquo;ll email you.</li><li>Open the group and tap <strong>See Match</strong> to see who you&rsquo;re buying for.</li></ol>',
             ),
             'card'      => Emails::groupCard( $gid ),
             'button'    => array( 'Open the group and add my wishlist', Emails::groupLink( $gid ) ),

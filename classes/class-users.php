@@ -889,8 +889,8 @@ class Users extends Theme {
         $cardres .= '    </div>';
 
         $matched = get_field('matched', $groupid);
-        $matchattr  = (!$matched)?'disabled class="mm-match-btn" title="Available once the moderator draws names"':'class="user-action match-btn mm-match-btn" user-data="'.$userid.'" data-action="see-match"';
-        $matchattr2 = ($matched)?'disabled class="mm-leave-btn mm-popup-only" title="Members can\'t leave after names are drawn"':'class="user-action leave-btn mm-leave-btn mm-popup-only" user-data="'.$userid.'" data-action="leave-group"';
+        $matchattr  = (!$matched)?'disabled class="mm-match-btn" title="Available once the organizer shuffles the group"':'class="user-action match-btn mm-match-btn" user-data="'.$userid.'" data-action="see-match"';
+        $matchattr2 = ($matched)?'disabled class="mm-leave-btn mm-popup-only" title="Members can\'t leave after the group is shuffled"':'class="user-action leave-btn mm-leave-btn mm-popup-only" user-data="'.$userid.'" data-action="leave-group"';
 
         $cardres .= '    <div class="user-action-btns">';
         $cardres .= '        <a href="#" class="user-action wish-btn" user-data="'.$userid.'" data-action="edit-wishlist"><i class="fas fa-gift"></i> Edit Wishlist</a>';

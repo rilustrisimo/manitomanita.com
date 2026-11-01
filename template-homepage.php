@@ -23,7 +23,7 @@ $stats = Groups::siteStats();
 
 $free = array(
 	array( 'fas fa-users',               'Unlimited members',          'Invite the whole office, family or barkada with one link.' ),
-	array( 'fas fa-shuffle',             'Fair, private draw',         'Nobody draws themselves, and only you can see your match.' ),
+	array( 'fas fa-shuffle',             'Fair, private shuffle',      'Nobody gets themselves, and only you can see your match.' ),
 	array( 'fas fa-list-check',          'Wishlists with links',       'Add what you want, with links to Lazada, Shopee and more.' ),
 	array( 'fas fa-wand-magic-sparkles', 'Gift ideas within budget',   'Suggestions picked from your match&rsquo;s wishlist and the group budget.' ),
 	array( 'fas fa-envelope-open-text',  'Email notifications',        'Everyone gets their group link and match by email.' ),
@@ -31,9 +31,9 @@ $free = array(
 );
 
 $pro = array(
-	'Exclusions: couples or family won&rsquo;t draw each other',
+	'Exclusions: couples or family won&rsquo;t get each other',
 	'No ads for everyone in the group',
-	'Redo the draw if someone leaves or joins late (3 redos included)',
+	'Unshuffle to let late joiners in, then shuffle again (3 unshuffles included)',
 	'Remove duplicate or wrong members',
 	'Fix a misspelled name or email',
 	'See every member&rsquo;s name and email',
@@ -42,11 +42,11 @@ $pro = array(
 );
 
 $faq = array(
-	array( 'Is Manito Manita really free?', 'Yes. Creating a group, inviting everyone, drawing names, wishlists, gift ideas and emails are free, with no limit on members. PRO is an optional one-time add-on for organizers who want extra tools.' ),
+	array( 'Is Manito Manita really free?', 'Yes. Creating a group, inviting everyone, shuffling names, wishlists, gift ideas and emails are free, with no limit on members. PRO is an optional one-time add-on for organizers who want extra tools.' ),
 	array( 'Do members need to create an account?', 'No. Members open the group link, enter their name, a screen name, their email and a password for that group. No app to install and no sign-up.' ),
-	array( 'How does the draw work?', 'When everyone has joined, the organizer draws names in one tap. Each member is matched with someone else at random, never themselves, and each person only sees their own match.' ),
-	array( 'What does PRO add, and how much is it?', 'PRO is a one-time &#8369;199 per group. It removes ads for the whole group and gives the organizer tools to redo the draw, remove or edit members, see matches and export the group data. You can pay with PayPal or any debit or credit card.' ),
-	array( 'Can couples or family avoid drawing each other?', 'Yes, with PRO. The organizer adds exclusions, like a couple or siblings, and the draw makes sure they never get each other.' ),
+	array( 'How does the shuffle work?', 'When everyone has joined, the organizer shuffles names in one tap. Each member is matched with someone else at random, never themselves, and each person only sees their own match.' ),
+	array( 'What does PRO add, and how much is it?', 'PRO is a one-time &#8369;199 per group. It removes ads for the whole group and gives the organizer tools to unshuffle (so late joiners can get in), remove or edit members, see matches and export the group data. You can pay with PayPal or any debit or credit card.' ),
+	array( 'Can couples or family avoid getting each other?', 'Yes, with PRO. The organizer adds exclusions, like a couple or siblings, and the shuffle makes sure they never get each other.' ),
 	array( 'Who can see my address and wishlist?', 'Your wishlist is visible to your group. Your address and contact details are shown only to the person who drew you, and to the organizer of a PRO group in the export.' ),
 );
 ?>
@@ -58,7 +58,7 @@ $faq = array(
 		<div class="mmh-wrap mmh-hero__grid">
 			<div class="mmh-hero__copy">
 				<p class="mmh-eyebrow">Online Manito Manita &amp; Secret Santa</p>
-				<h1 class="mmh-hero__title">Draw names for your gift exchange <span>in 2 minutes</span></h1>
+				<h1 class="mmh-hero__title">Shuffle names for your gift exchange <span>in 2 minutes</span></h1>
 				<p class="mmh-hero__lead">Create a group, share one link, and everyone privately sees who they&rsquo;re buying for, with wishlists and gift ideas in one place.</p>
 				<div class="mmh-hero__actions">
 					<a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="hero">Create a free group</a>
@@ -86,7 +86,7 @@ $faq = array(
 							<div class="mmh-mock__title">Office Christmas Party</div>
 							<div class="mmh-mock__meta"><span>&#8369;500</span><span>Dec 19</span><span>12 members</span></div>
 						</div>
-						<div class="mmh-mock__status"><i class="fas fa-circle-check"></i> Names have been drawn</div>
+						<div class="mmh-mock__status"><i class="fas fa-circle-check"></i> The group has been shuffled</div>
 						<div class="mmh-mock__match">
 							<div class="mmh-mock__label">You&rsquo;re buying for</div>
 							<div class="mmh-mock__person"><span class="mmh-mock__avatar">A</span><div><strong>Ana</strong><small>3 wishes</small></div></div>
@@ -122,7 +122,7 @@ $faq = array(
 			<ol class="mmh-steps">
 				<li data-reveal><span class="mmh-steps__num">1</span><h3>Create your group</h3><p>Add a group name, the budget and the exchange date. Takes a minute.</p></li>
 				<li data-reveal style="--d:.12s"><span class="mmh-steps__num">2</span><h3>Share the link</h3><p>Send it on Messenger, Viber or email. Members join and add their wishlist.</p></li>
-				<li data-reveal style="--d:.24s"><span class="mmh-steps__num">3</span><h3>Draw names</h3><p>One tap, and everyone privately sees their match, wishlist and gift ideas.</p></li>
+				<li data-reveal style="--d:.24s"><span class="mmh-steps__num">3</span><h3>Shuffle</h3><p>One tap, and everyone privately sees their match, wishlist and gift ideas.</p></li>
 			</ol>
 			<div class="mmh-center" data-reveal><a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="how-it-works">Create a free group</a></div>
 		</div>
@@ -155,7 +155,7 @@ $faq = array(
 					<div class="mmh-plan__price">&#8369;0</div>
 					<ul class="mmh-plan__list">
 						<li>Unlimited members</li>
-						<li>Private draw</li>
+						<li>Private shuffle</li>
 						<li>Wishlists and gift ideas</li>
 						<li>Email notifications and reminders</li>
 						<li>Comments on wishlists</li>

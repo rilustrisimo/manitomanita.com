@@ -80,18 +80,18 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
                         </div>
                         <div class="body-dash">
                             <?php if(!empty($fields['matched'])): ?>
-                            <div class="mm-dash-status is-matched"><i class="fas fa-gift"></i><div><strong>Names have been drawn!</strong> Tap <em>See Match</em> on your name to see who you&rsquo;re giving a gift to.</div></div>
+                            <div class="mm-dash-status is-matched"><i class="fas fa-gift"></i><div><strong>The group has been shuffled!</strong> Tap <em>See Match</em> on your name to see who you&rsquo;re giving a gift to.</div></div>
                             <?php else: ?>
-                            <div class="mm-dash-status"><i class="far fa-clock"></i><div><strong>Waiting for names to be drawn.</strong> Find your name below and add your wishlist. <em>See Match</em> unlocks once the moderator draws names.</div></div>
+                            <div class="mm-dash-status"><i class="far fa-clock"></i><div><strong>Waiting for the shuffle.</strong> Find your name below and add your wishlist. <em>See Match</em> unlocks once the organizer shuffles the group.</div></div>
                             <?php endif; ?>
                             <?php if(!$pro): // one quiet PRO hint at the moment it helps ?>
                             <div class="mm-pro-hint">
                                 <i class="fa-solid fa-star" aria-hidden="true"></i>
                                 <?php if(!empty($fields['matched'])): ?>
-                                <span><strong>Someone left or joined late?</strong> With PRO the organizer can redo the draw.</span>
-                                <button type="button" data-mm-upsell="redo">See PRO</button>
+                                <span><strong>More people want to join?</strong> With PRO the organizer can unshuffle the group to let them in.</span>
+                                <button type="button" data-mm-upsell="unshuffle">See PRO</button>
                                 <?php else: ?>
-                                <span><strong>Organizer:</strong> keep couples from drawing each other, or fix a name before drawing?</span>
+                                <span><strong>Organizer:</strong> keep couples from getting each other, or fix a name before shuffling?</span>
                                 <button type="button" data-mm-upsell="exclude">See PRO</button>
                                 <?php endif; ?>
                                 <button type="button" class="mm-pro-hint__gift" data-mm-upsell="gift">Gift PRO to the group</button>
