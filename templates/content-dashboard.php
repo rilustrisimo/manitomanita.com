@@ -223,10 +223,14 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
 	<div class="popup__divider"></div>
     <div class="popup__inner">
 		<?php if(get_field('matched', $group->getGroupId())): ?>
-        <div class="row">
-            <div class="col-md-12 joined card-columns">
-                
-            </div>
+        <div class="mm-joined" data-mm-joined>
+            <p class="mm-joined__summary"><i class="fas fa-users"></i> <span data-mm-joined-count>Loading members&hellip;</span></p>
+            <label class="mm-joined__search" hidden>
+                <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                <input type="search" placeholder="Search names" aria-label="Search names" autocomplete="off" data-mm-joined-search>
+            </label>
+            <ul class="mm-joined__list joined card-columns"></ul>
+            <p class="mm-joined__empty" data-mm-joined-empty hidden>No one matches that name.</p>
         </div>
         <?php endif;?>
 	</div>

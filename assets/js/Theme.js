@@ -1058,6 +1058,7 @@ var Theme = {
                     $('.memcount').text(response.data[2]);
                     $('.wishcount').text(response.data[3]);
                     $('.joined.card-columns').html(response.data[4]);
+                    Theme.initWhoJoined($);
                     Theme.initDashboardScripts($);
                     $('#cards-container').removeClass('populating');
 
@@ -1561,6 +1562,33 @@ var Theme = {
         }, { threshold: 0.6 });
 
         for (var i = 0; i < nums.length; i++) io.observe(nums[i]);
+    },
+
+    /**
+     * "Who joined" popup: member count, and a name search for bigger groups.
+     */
+    initWhoJoined: function($){
+        var box = $('[data-mm-joined]');
+        if (!box.length) return;
+
+        var items = box.find('.mm-joined__item'),
+            n = items.length,
+            search = box.find('.mm-joined__search'),
+            input = box.find('[data-mm-joined-search]'),
+            empty = box.find('[data-mm-joined-empty]');
+
+        box.find('[data-mm-joined-count]').html('<strong>' + n + '</strong> ' + (n === 1 ? 'member' : 'members') + ' joined &middot; names have been drawn');
+        search.prop('hidden', n <= 6);
+
+        input.off('input.mmJoined').on('input.mmJoined', function(){
+            var q = $.trim($(this).val()).toLowerCase(), shown = 0;
+            items.each(function(){
+                var hit = !q || ($(this).attr('data-name') || '').indexOf(q) !== -1;
+                $(this).prop('hidden', !hit);
+                if (hit) shown++;
+            });
+            empty.prop('hidden', shown > 0);
+        });
     },
 
     initAffiliateCap:function($){

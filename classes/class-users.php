@@ -887,7 +887,14 @@ class Users extends Theme {
         $cardres .= '    <span class="mm-member__chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>';
         $cardres .= '</div>';
 
-        $whojoined .= '<div class="card">'.get_field('name', $userid).'</div>';
+        // "Who joined" popup row: real name, screen name and wishlist status.
+        $fullName = trim((string) get_field('name', $userid));
+        $fullName = ($fullName !== '')?$fullName:$screenName;
+        $whojoined .= '<li class="mm-joined__item" data-name="'.esc_attr(mb_strtolower($fullName.' '.$screenName)).'">';
+        $whojoined .= '<span class="mm-avatar" aria-hidden="true">'.esc_html(mb_strtoupper(mb_substr($fullName, 0, 1))).'</span>';
+        $whojoined .= '<span class="mm-joined__text"><strong>'.esc_html($fullName).'</strong><small>'.esc_html($screenName).' &middot; '.(($wishTotal)?$wishTotal.' '.(($wishTotal == 1)?'wish':'wishes'):'No wishlist yet').'</small></span>';
+        $whojoined .= ($wishTotal)?'<span class="mm-joined__ok" title="Has a wishlist"><i class="fas fa-circle-check"></i></span>':'';
+        $whojoined .= '</li>';
 
         endforeach;
 
