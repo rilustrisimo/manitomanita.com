@@ -44,17 +44,9 @@ if ( qed_get_option( 'is_testimonial_enabled', 'option' ) && qed_is_display_test
 				</ul>
 			</div>
 			<div>
-				<h3>Explore</h3>
-				<ul>
-					<li><a href="<?php echo esc_url( home_url( '/gift-ideas/' ) ); ?>">Gift ideas</a></li>
-					<li><a href="<?php echo esc_url( home_url( '/blogs/' ) ); ?>">Blog</a></li>
-				</ul>
-			</div>
-			<div>
 				<h3>Help</h3>
 				<ul>
 					<li><a href="mailto:rouie@manitomanita.com">Contact us</a></li>
-					<li><a href="<?php echo esc_url( home_url( '/reset-password/' ) ); ?>">Forgot password?</a></li>
 				</ul>
 			</div>
 		</nav>

@@ -148,11 +148,7 @@
     }
 }
 
-@media (min-width: 640px) {
-    .mm-footer__cols {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
+
 
 @media (min-width: 900px) {
     .mm-footer__wrap {
