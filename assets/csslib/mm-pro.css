@@ -1,0 +1,339 @@
+/*
+ * PRO sheets (templates/pro/: #make-pro upgrade, #pro-credits, #pro-try) and the dashboard PRO hint.
+ * Overrides pro.less .pop-container styles for .mm-upsell only. Bottom sheet on phones.
+ */
+
+.mm-upsell {
+    --mmu-ink: #1b1b1b;
+    --mmu-gold: #D4AF37;
+    --mmu-gold-soft: rgba(212, 175, 55, .14);
+    --mmu-accent: #3ec7c2;
+    --mmu-text: #5c5c5c;
+    --mmu-line: #ececec;
+
+    background: rgba(17, 17, 17, .72) !important;
+    padding: 16px;
+}
+
+.mm-upsell .mm-upsell__inner {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+    max-height: calc(100vh - 32px);
+    padding: 26px 22px 22px;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .35);
+    overflow-y: auto;
+    text-align: left;
+    animation: mmuIn .28s cubic-bezier(.2, .8, .2, 1);
+    -webkit-overflow-scrolling: touch;
+}
+
+@keyframes mmuIn {
+    from { opacity: 0; transform: translateY(16px) scale(.98); }
+    to   { opacity: 1; transform: none; }
+}
+
+.mm-upsell .pop-container__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    margin: 0;
+}
+
+.mm-upsell .pop-container__close a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f2f2f2;
+    color: var(--mmu-ink);
+    font-size: 16px;
+}
+
+.mm-upsell .pop-container__close a:hover {
+    background: #e6e6e6;
+}
+
+/* Top */
+.mm-upsell__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--mmu-gold-soft);
+    color: #9a7b17;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.mm-upsell__badge--ok {
+    background: rgba(62, 199, 194, .14);
+    color: #2a9d99;
+}
+
+.mm-upsell h2 {
+    margin: 12px 40px 6px 0;
+    color: var(--mmu-ink);
+    font-family: inherit;
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: left;
+    text-transform: none;
+}
+
+.mm-upsell p.mm-upsell__lead {
+    margin: 0;
+    color: var(--mmu-text);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+/* Price */
+.mm-upsell__price {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 18px 0 14px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: var(--mmu-ink);
+    color: rgba(255, 255, 255, .72);
+}
+
+.mm-upsell__price strong {
+    color: var(--mmu-gold);
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.mm-upsell__price span {
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+/* Benefits */
+.mm-upsell ul.mm-upsell__list {
+    margin: 0 0 16px;
+    padding: 0;
+    list-style: none;
+}
+
+.mm-upsell ul.mm-upsell__list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 0;
+    padding: 9px 10px;
+    border-radius: 10px;
+    color: var(--mmu-ink);
+    font-size: 15px;
+    line-height: 1.4;
+    transition: background .2s ease;
+}
+
+.mm-upsell ul.mm-upsell__list li span {
+    border: 0;
+}
+
+.mm-upsell ul.mm-upsell__list li em {
+    color: var(--mmu-text);
+    font-style: normal;
+}
+
+.mm-upsell ul.mm-upsell__list li > i {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    margin-top: -3px;
+    border-radius: 8px;
+    background: var(--mmu-gold-soft);
+    color: #9a7b17;
+    font-size: 13px;
+    line-height: 30px;
+    text-align: center;
+}
+
+.mm-upsell ul.mm-upsell__list li.is-focus {
+    background: var(--mmu-gold-soft);
+}
+
+.mm-upsell ul.mm-upsell__list li.is-focus > i {
+    background: var(--mmu-gold);
+    color: var(--mmu-ink);
+}
+
+.mm-upsell ul.mm-upsell__list--compact li {
+    padding: 6px 0;
+    font-size: 14px;
+}
+
+/* PayPal + small print */
+.mm-upsell .mm-upsell__pay {
+    display: block !important; /* shown right away (no extra "Upgrade" click) */
+    margin: 4px 0 12px;
+}
+
+.mm-upsell p.mm-upsell__fine {
+    display: flex;
+    gap: 8px;
+    margin: 6px 0 0;
+    color: var(--mmu-text);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.mm-upsell p.mm-upsell__fine i {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    color: #9a9a9a;
+}
+
+/* Welcome sheet */
+.mm-upsell__extra {
+    margin: 18px 0 16px;
+    padding: 14px 16px 8px;
+    border: 1px solid var(--mmu-line);
+    border-radius: 14px;
+}
+
+.mm-upsell p.mm-upsell__extra-title {
+    margin: 0 0 6px;
+    color: var(--mmu-ink);
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.mm-upsell__extra-title span {
+    margin-left: 6px;
+    color: var(--mmu-text);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.mm-upsell__actions {
+    display: grid;
+    gap: 10px;
+}
+
+.mm-upsell .mm-upsell__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: background .15s ease, border-color .15s ease;
+}
+
+#pro-try .mm-upsell__btn {
+    margin: 0 !important; /* pro.less styles #try-pro-btn */
+    width: 100%;
+}
+
+.mm-upsell .mm-upsell__btn--gold,
+#pro-try #try-pro-btn {
+    background: var(--mmu-gold) !important;
+    border: 0 !important;
+    color: var(--mmu-ink) !important;
+}
+
+.mm-upsell .mm-upsell__btn--gold:hover {
+    background: #c39f2c;
+    color: var(--mmu-ink);
+}
+
+.mm-upsell .mm-upsell__btn--ghost {
+    border: 1px solid var(--mmu-line);
+    color: var(--mmu-ink);
+}
+
+.mm-upsell .mm-upsell__btn--ghost:hover {
+    border-color: var(--mmu-ink);
+    color: var(--mmu-ink);
+}
+
+/* Phones: bottom sheet */
+@media (max-width: 575px) {
+    .mm-upsell {
+        align-items: flex-end !important;
+        padding: 0;
+    }
+
+    .mm-upsell .mm-upsell__inner {
+        max-width: none;
+        max-height: 92vh;
+        padding: 24px 18px calc(18px + env(safe-area-inset-bottom));
+        border-radius: 20px 20px 0 0;
+        animation-name: mmuUp;
+    }
+
+    @keyframes mmuUp {
+        from { transform: translateY(100%); }
+        to   { transform: none; }
+    }
+
+    .mm-upsell h2 {
+        font-size: 22px;
+    }
+}
+
+/* ---------- Dashboard PRO hint (free groups) ---------- */
+
+.mm-pro-hint {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin: 0 0 14px;
+    padding: 10px 14px;
+    border: 1px dashed rgba(212, 175, 55, .55);
+    border-radius: 12px;
+    background: rgba(212, 175, 55, .07);
+    color: #1b1b1b;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.mm-pro-hint > i {
+    color: #D4AF37;
+}
+
+.mm-pro-hint > span {
+    flex: 1 1 220px;
+}
+
+.mm-pro-hint button {
+    height: 34px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 999px;
+    background: #1b1b1b;
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.mm-pro-hint button:hover {
+    background: #333;
+}
+
+.mm-pro-hint button.mm-pro-hint__gift {
+    background: transparent;
+    color: #8a6d12;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 0 4px;
+}

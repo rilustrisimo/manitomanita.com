@@ -738,23 +738,55 @@ var Theme = {
                     e.preventDefault();
                     $('#pro-try').hide();
 
-                    // Trigger click on #go-pro-btn
-                    $('#go-pro-btn').click();
+                    Theme.openUpsell($, 'welcome');
                 });
             }
         }
     },
 
     proPurchaseButton: function($){
-        if($('a#go-pro-btn').length > 0){
-            $('a#go-pro-btn').click(function(e){
-                e.preventDefault();
+        $(document).off('click.mmUpsell').on('click.mmUpsell', '#go-pro-btn, [data-mm-upsell]', function(e){
+            e.preventDefault();
+            var reason = $(this).attr('data-mm-upsell') || 'header';
+            Theme.track('select_promotion', { creative_slot: reason, promotion_name: 'pro_upgrade' });
+            Theme.openUpsell($, reason);
+        });
 
-                $('#make-pro.pop-container').css('display', 'flex');
-            });
+        // "Maybe later" and other plain close links inside the sheets
+        $(document).off('click.mmClose').on('click.mmClose', '.pop-container [data-mm-close]', function(e){
+            e.preventDefault();
+            $(this).closest('.pop-container').hide();
+        });
 
-            Theme.popClose($);
-        }
+        Theme.popClose($);
+    },
+
+    /**
+     * PRO upgrade sheet (#make-pro), with the headline for the moment that opened it.
+     */
+    openUpsell: function($, reason){
+        var sheet = $('#make-pro');
+        if (!sheet.length) return;
+
+        var copy = {
+            header:  ['Extra tools for your group\u2019s organizer', 'Fix mistakes, redo the draw and keep everything organized.'],
+            welcome: ['Extra tools for your group\u2019s organizer', 'Fix mistakes, redo the draw and keep everything organized.'],
+            redo:    ['Someone left or joined late?', 'Redo the draw so everyone gets a fresh match. 3 redos included.'],
+            fix:     ['Fix your member list before drawing', 'Remove duplicates and correct misspelled names or emails.'],
+            gift:    ['Gift PRO to your group', 'Remove ads for everyone and unlock the organizer tools. One payment covers the whole group.']
+        }[reason] || null;
+
+        if (!copy) { reason = 'header'; copy = ['Extra tools for your group\u2019s organizer', 'Fix mistakes, redo the draw and keep everything organized.']; }
+
+        sheet.find('[data-mm-upsell-title]').text(copy[0]);
+        sheet.find('[data-mm-upsell-lead]').text(copy[1]);
+        sheet.find('.mm-upsell__list li').removeClass('is-focus').filter('[data-reason="' + reason + '"]').addClass('is-focus');
+
+        $('.pop-container').hide();
+        sheet.css('display', 'flex').data('mmReason', reason);
+        sheet.find('.mm-upsell__inner').scrollTop(0);
+
+        Theme.track('view_promotion', { creative_slot: reason, promotion_name: 'pro_upgrade' });
     },
 
     popClose: function($){

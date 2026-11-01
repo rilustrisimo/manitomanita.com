@@ -10,6 +10,8 @@
  *   define( 'PAYPAL_CLIENT_ID', '...' );
  *   define( 'PAYPAL_CLIENT_SECRET', '...' );
  *   define( 'PAYPAL_MODE', 'live' ); // or 'sandbox'
+ *   define( 'GA4_MEASUREMENT_ID', 'G-...' ); // optional: server-side GA4 "purchase" events
+ *   define( 'GA4_API_SECRET', '...' );
  *
  * @author    eyorsogood.com, Rouie Ilustrisimo
  * @package   Eyorsogood
@@ -35,7 +37,8 @@ class Payments {
         'credits' => array( 'amount' => '99.00',  'label' => 'Manito Manita PRO - 3 unshuffle credits' ),
     );
 
-    protected static $hooked = false;
+    protected static $hooked  = false;
+    protected static $tracked = false; // GA4 purchase sent from the server for this request
 
     public static function init() {
         if ( self::$hooked ) return;
@@ -78,6 +81,11 @@ class Payments {
         var gid = <?php echo wp_json_encode( (string) $gid ); ?>;
         var product = <?php echo wp_json_encode( $product ); ?>;
         var nonce = <?php echo wp_json_encode( wp_create_nonce( 'mm_paypal' ) ); ?>;
+        var item = <?php echo wp_json_encode( array( 'item_id' => $product, 'item_name' => self::$products[ $product ]['label'], 'price' => (float) self::$products[ $product ]['amount'], 'quantity' => 1 ) ); ?>;
+
+        function track(name, params){
+            if (window.Theme && Theme.track) Theme.track(name, params);
+        }
 
         function post(data){
             data.nonce = nonce;
@@ -97,6 +105,7 @@ class Payments {
         paypal.Buttons({
             locale: 'en_PH',
             createOrder: function(){
+                track('begin_checkout', { currency: 'PHP', value: item.price, items: [item] });
                 return post({ action: 'mm_paypal_create', gid: gid, product: product }).then(function(resp){
                     if(!resp.success) throw new Error(resp.data || 'Could not start the payment.');
                     return resp.data.id;
@@ -108,6 +117,8 @@ class Payments {
 
                 return post({ action: 'mm_paypal_capture', order: data.orderID }).then(function(resp){
                     if(resp.success){
+                        // Sent from the browser only when the server couldn't (no GA4 API secret configured).
+                        if(!resp.data || !resp.data.tracked) track('purchase', { transaction_id: data.orderID, currency: 'PHP', value: item.price, items: [item] });
                         jQuery('#reload').submit(); // reload the dashboard with PRO / the new credits
                     }else{
                         fail(resp.data);
@@ -181,7 +192,7 @@ class Payments {
             wp_send_json_error( 'We could not confirm your payment. If you were charged, please contact us with your PayPal receipt.' );
         }
 
-        wp_send_json_success();
+        wp_send_json_success( array( 'tracked' => self::$tracked ) );
     }
 
     /**
@@ -220,7 +231,59 @@ class Payments {
         $current = (string) get_field( 'order_id', $gid );
         update_field( 'order_id', $current !== '' ? $current . ',' . $orderId : $orderId, $gid );
 
+        self::$tracked = self::ga4Purchase( $orderId, $product, (float) $amount['value'] );
+        if ( $product === 'pro' ) self::emailModerator( $gid );
+
         return true;
+    }
+
+    /**
+     * GA4 Measurement Protocol "purchase" (counted even when the browser blocks analytics).
+     */
+    protected static function ga4Purchase( $orderId, $product, $value ) {
+        if ( ! defined( 'GA4_MEASUREMENT_ID' ) || ! defined( 'GA4_API_SECRET' ) || ! GA4_MEASUREMENT_ID || ! GA4_API_SECRET ) return false;
+
+        // The visitor's GA client id from the _ga cookie ("GA1.1.123.456" -> "123.456").
+        $clientId = preg_match( '/^GA\d\.\d\.(\d+\.\d+)$/', (string) ( $_COOKIE['_ga'] ?? '' ), $m ) ? $m[1] : wp_rand() . '.' . time();
+
+        $r = wp_remote_post( 'https://www.google-analytics.com/mp/collect?measurement_id=' . rawurlencode( GA4_MEASUREMENT_ID ) . '&api_secret=' . rawurlencode( GA4_API_SECRET ), array(
+            'timeout' => 5,
+            'headers' => array( 'Content-Type' => 'application/json' ),
+            'body'    => wp_json_encode( array(
+                'client_id' => $clientId,
+                'events'    => array( array(
+                    'name'   => 'purchase',
+                    'params' => array(
+                        'transaction_id' => $orderId,
+                        'currency'       => self::CURRENCY,
+                        'value'          => $value,
+                        'items'          => array( array( 'item_id' => $product, 'item_name' => self::$products[ $product ]['label'], 'price' => $value, 'quantity' => 1 ) ),
+                    ),
+                ) ),
+            ) ),
+        ) );
+
+        return ! is_wp_error( $r ) && (int) wp_remote_retrieve_response_code( $r ) < 300;
+    }
+
+    /**
+     * Tells the moderator their group is now PRO (it may have been a gift from a member).
+     */
+    protected static function emailModerator( $gid ) {
+        $to = (string) get_field( 'your_email', $gid );
+        if ( ! is_email( $to ) ) return;
+
+        $name = (string) get_field( 'group_name', $gid );
+        $link = get_permalink( 23 ) . '?gid=' . $gid . '&pw=' . rawurlencode( (string) get_field( 'group_password', $gid ) );
+
+        $body = '<html><body style="font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;line-height:1.5">'
+            . '<h2 style="margin:0 0 12px">' . esc_html( $name ) . ' is now PRO</h2>'
+            . '<p>Your group has been upgraded to <strong>Manito Manita PRO</strong>. Ads are removed for everyone, and as the organizer you can now redo the draw (3 redos included), remove or edit members, see matches and export the group.</p>'
+            . '<p>Open your group and tap <strong>PRO Actions</strong>, then enter your group password.</p>'
+            . '<p><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#1b1b1b;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Open your group</a></p>'
+            . '</body></html>';
+
+        wp_mail( $to, $name . ' is now PRO', $body, array( 'From: Manito Manita <rouie@manitomanita.com>', 'Content-Type: text/html; charset=UTF-8' ) );
     }
 
     /* ------------------------------------------------------------ PayPal */

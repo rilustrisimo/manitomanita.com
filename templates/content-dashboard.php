@@ -84,6 +84,19 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
                             <?php else: ?>
                             <div class="mm-dash-status"><i class="far fa-clock"></i><div><strong>Waiting for names to be drawn.</strong> Find your name below and add your wishlist. <em>See Match</em> unlocks once the moderator draws names.</div></div>
                             <?php endif; ?>
+                            <?php if(!$pro): // one quiet PRO hint at the moment it helps ?>
+                            <div class="mm-pro-hint">
+                                <i class="fa-solid fa-star" aria-hidden="true"></i>
+                                <?php if(!empty($fields['matched'])): ?>
+                                <span><strong>Someone left or joined late?</strong> With PRO the organizer can redo the draw.</span>
+                                <button type="button" data-mm-upsell="redo">See PRO</button>
+                                <?php else: ?>
+                                <span><strong>Organizer:</strong> need to remove a duplicate or fix a name before drawing?</span>
+                                <button type="button" data-mm-upsell="fix">See PRO</button>
+                                <?php endif; ?>
+                                <button type="button" class="mm-pro-hint__gift" data-mm-upsell="gift">Gift PRO to the group</button>
+                            </div>
+                            <?php endif; ?>
                             <div class="mm-member-search" data-mm-search hidden>
                                 <label class="mm-member-search__field"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" placeholder="Find your name" aria-label="Find your name in the member list" autocomplete="off" data-mm-search-input></label>
                                 <div class="mm-member-search__count" data-mm-search-count aria-live="polite"></div>
