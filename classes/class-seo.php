@@ -28,6 +28,7 @@ defined( 'ABSPATH' ) || die();
 class SEO {
     const DASHBOARD_PAGE = 23;
     const RESET_PAGE     = 1389;
+    const OLD_GIFT_IDEAS = 77; // redirected to /exchange-gift-ideas-500-pesos/ (Landing::redirects)
     const FACEBOOK       = 'https://www.facebook.com/manitomanitaph';
 
     const HOME_TITLE = 'Manito Manita: Free Secret Santa & Kris Kringle Generator (Philippines)';
@@ -95,7 +96,7 @@ class SEO {
     }
 
     public static function sitemapExclude( $ids ) {
-        return array_unique( array_merge( (array) $ids, array( self::DASHBOARD_PAGE, self::RESET_PAGE ) ) );
+        return array_unique( array_merge( (array) $ids, array( self::DASHBOARD_PAGE, self::RESET_PAGE, self::OLD_GIFT_IDEAS ) ) );
     }
 
     public static function lang( $output ) {

@@ -33,8 +33,8 @@ get_header();
 				<p class="mmh-hero__lead"><?php echo $p['lead']; ?></p>
 				<div class="mmh-hero__actions">
 					<a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="<?php echo esc_attr( $slot ); ?>">Create a free group</a>
-					<?php if ( $p['type'] === 'guide' ) : ?>
-						<a href="#ideas" class="mmh-btn mmh-btn--ghost">See the gift ideas</a>
+					<?php if ( $p['type'] === 'guide' || $p['type'] === 'list' ) : ?>
+						<a href="#ideas" class="mmh-btn mmh-btn--ghost"><?php echo $p['type'] === 'list' ? 'See the themes' : 'See the gift ideas'; ?></a>
 					<?php else : ?>
 						<a href="#how-it-works" class="mmh-btn mmh-btn--ghost">How it works</a>
 					<?php endif; ?>
@@ -80,6 +80,22 @@ get_header();
 			<div class="mml-tip" data-reveal>
 				<i class="fas fa-gift"></i>
 				<div><strong>Organizing the exchange?</strong> Create a free group: everyone adds a wishlist, so nobody has to guess. Gift ideas are picked within your budget automatically.</div>
+				<a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="<?php echo esc_attr( $slot ); ?>:tip">Create a free group</a>
+			</div>
+		</div>
+	</section>
+	<?php elseif ( $p['type'] === 'list' ) : ?>
+	<section class="mmh-section" id="ideas">
+		<div class="mmh-wrap">
+			<?php foreach ( $p['lists'] as $g ) : ?>
+				<h3 class="mml-group" data-reveal><?php echo esc_html( $g[0] ); ?></h3>
+				<ul class="mml-chips" data-reveal>
+					<?php foreach ( $g[1] as $item ) : ?><li><?php echo esc_html( $item ); ?></li><?php endforeach; ?>
+				</ul>
+			<?php endforeach; ?>
+			<div class="mml-tip" data-reveal>
+				<i class="fas fa-shuffle"></i>
+				<div><strong>Got your themes?</strong> Create a free group, share the link and shuffle names. Everyone privately sees their Monito or Monita, with wishlists and gift ideas.</div>
 				<a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="<?php echo esc_attr( $slot ); ?>:tip">Create a free group</a>
 			</div>
 		</div>
