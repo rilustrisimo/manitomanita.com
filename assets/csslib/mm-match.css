@@ -997,3 +997,46 @@
 .aff-recent .aff-cta-optional {
     display: none;
 }
+
+/* ---------- "Your gift" status (See Match, Users::generateSeeMatchElements) ---------- */
+.mm-gift-status__opts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.mm-gift-status__opts button {
+    height: 44px;
+    border: 1px solid #e3e3e3;
+    border-radius: 12px;
+    background: #fff;
+    color: #1b1b1b;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.mm-gift-status__opts button:hover {
+    border-color: #1b1b1b;
+}
+
+.mm-gift-status__opts button[aria-pressed="true"] {
+    border-color: #3ec7c2;
+    background: #3ec7c2;
+    color: #1b1b1b;
+}
+
+.mm-gift-status__opts button[data-status="given"][aria-pressed="true"] {
+    border-color: #1f8a5b;
+    background: #1f8a5b;
+    color: #fff;
+}
+
+.mm-gift-status__note {
+    margin: 8px 0 0;
+    color: #6d6d6d;
+    font-size: 12px;
+    line-height: 1.4;
+}

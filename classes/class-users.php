@@ -45,6 +45,8 @@ class Users extends Theme {
         add_action( 'wp_ajax_nopriv_pass_generate', array($this, 'pass_generate') ); 
 
         add_action( 'wp_ajax_save_wishlist', array($this, 'save_wishlist') );
+        add_action( 'wp_ajax_mm_gift_status', array($this, 'save_gift_status') );
+        add_action( 'wp_ajax_nopriv_mm_gift_status', array($this, 'save_gift_status') );
         add_action( 'wp_ajax_nopriv_save_wishlist', array($this, 'save_wishlist') );
 
         add_action( 'wp_ajax_user_card_generate', array($this, 'user_card_generate') );
@@ -128,6 +130,23 @@ class Users extends Theme {
         $result = wp_delete_post($uid);
 
         wp_send_json_success($result);
+    }
+
+    /**
+     * AJAX: a member marks their gift as not yet / bought / given (See Match screen).
+     */
+    public function save_gift_status(){
+        $uid = (int) ($_POST['uid'] ?? 0);
+        $status = (string) ($_POST['status'] ?? '');
+
+        if(!wp_verify_nonce((string) ($_POST['nonce'] ?? ''), 'mm_gift_'.$uid) || get_post_type($uid) != 'users' || !$this->isVerifiedMember($uid)){
+            wp_send_json_error('Please open your match again.');
+        }
+        if(!in_array($status, array('', 'bought', 'given'), true)) wp_send_json_error('Unknown status.');
+
+        update_post_meta($uid, '_mm_gift_status', $status);
+
+        wp_send_json_success($status);
     }
 
     const WISH_MAX_ITEMS = 20;
@@ -373,6 +392,24 @@ class Users extends Theme {
         if($date) echo '<span class="mm-chip"><i class="far fa-calendar"></i> '.$date->format('M j, Y').'</span>';
         echo '    </div>';
         echo '</div>';
+
+        /** GIFT STATUS (only for the member themselves; the moderator's PRO board shows the totals) */
+        if($this->isVerifiedMember($uid)){
+            if(!get_post_meta($uid, '_mm_match_viewed', true)) update_post_meta($uid, '_mm_match_viewed', time());
+
+            $status = (string) get_post_meta($uid, '_mm_gift_status', true);
+            $choices = array('' => 'Not yet', 'bought' => 'Bought it', 'given' => 'Given');
+
+            echo '<section class="mm-sec mm-gift-status" data-mm-gift-status data-uid="'.(int) $uid.'" data-nonce="'.esc_attr(wp_create_nonce('mm_gift_'.(int) $uid)).'">';
+            echo '    <h3 class="mm-sec__title"><i class="fas fa-circle-check"></i> YOUR<span>&nbsp;GIFT</span></h3>';
+            echo '    <div class="mm-gift-status__opts" role="group" aria-label="Gift status">';
+            foreach($choices as $value => $label){
+                echo '<button type="button" data-status="'.esc_attr($value).'" aria-pressed="'.(($status === $value) ? 'true' : 'false').'">'.$label.'</button>';
+            }
+            echo '    </div>';
+            echo '    <p class="mm-gift-status__note">Only the group organizer sees whether you&rsquo;re done. Nobody sees who you&rsquo;re buying for.</p>';
+            echo '</section>';
+        }
 
         /** WISHLIST */
         echo '<section class="mm-sec">';

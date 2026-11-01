@@ -53,6 +53,7 @@ class Groups extends Theme {
         add_action('rest_api_init', array($this, 'get_user_export'));
         add_action('rest_api_init', array($this, 'members_group'));
         add_action('rest_api_init', array($this, 'exclusions_route'));
+        add_action('rest_api_init', array($this, 'pro_extra_routes'));
 
         // Groups is instantiated in several places; register the cron hooks once.
         static $cronHooked = false;
@@ -61,6 +62,8 @@ class Groups extends Theme {
             $cronHooked = true;
             add_action('init', array($this, 'scheduleExchangeReminders'));
             add_action('mm_exchange_reminders', array($this, 'sendExchangeReminders'));
+            add_action('init', array($this, 'scheduleAutoDraws'));
+            add_action('mm_auto_draw', array($this, 'runAutoDraws'));
         }
     }
 
@@ -908,6 +911,24 @@ class Groups extends Theme {
             $html .= $tool('add-credits', 'fa-solid fa-plus', 'Add 3 more redos', 'You&rsquo;ve used all redos &middot; &#8369;99');
         }
 
+        // Reminders & schedule
+        $st = self::memberStatus($gid);
+        $html .= '<h4 class="mm-prot__group">Reminders</h4>';
+        $noWish = count($st['no_wishlist']);
+        $html .= $tool('nudge-wishlist', 'fa-solid fa-envelope', 'Remind: add a wishlist',
+            $noWish.' '.($noWish == 1 ? 'member has' : 'members have').' no wishlist yet',
+            self::nudgedToday($gid, 'wishlist') ? 'Sent today. You can send it again tomorrow' : ($noWish ? '' : 'Everyone has a wishlist'));
+        if($matched){
+            $notSeen = count($st['not_viewed']);
+            $html .= $tool('nudge-match', 'fa-solid fa-bell', 'Remind: open their match',
+                $notSeen.' '.($notSeen == 1 ? 'member hasn&rsquo;t' : 'members haven&rsquo;t').' opened their match',
+                self::nudgedToday($gid, 'match') ? 'Sent today. You can send it again tomorrow' : ($notSeen ? '' : 'Everyone has opened their match'));
+            $html .= $tool('gifts', 'fa-solid fa-gift', 'Gift status', $st['bought'].' bought &middot; '.$st['given'].' given &middot; '.$st['total'].' members');
+        }else{
+            $at = (int) get_post_meta($gid, self::AUTODRAW_META, true);
+            $html .= $tool('autodraw', 'fa-solid fa-calendar-check', 'Auto-draw', $at ? 'Scheduled: '.esc_html(wp_date('M j, g:i A', $at)) : 'Draw names automatically on a date you pick');
+        }
+
         $html .= '<h4 class="mm-prot__group">Results</h4>';
         $html .= $tool('matches', 'fa-solid fa-handshake', 'See matches', 'Who is buying for whom', $matched ? '' : 'Available after names are drawn');
         $html .= $tool('export', 'fa-solid fa-file-arrow-down', 'Export to spreadsheet', 'Names, emails, matches, wishlists and addresses');
@@ -1302,10 +1323,6 @@ class Groups extends Theme {
     }
 
     public function execute_matching() {
-        $result = true; // Default result to true
-        $message = 'success';
-        $maxRetries = 3; // Maximum number of retries for each update
-
         $gid = (int) $_POST['gid'];
 
         // Only the group's moderator, and only once (PRO unshuffle resets 'matched' first).
@@ -1313,74 +1330,234 @@ class Groups extends Theme {
         if(get_field('matched', $gid)) wp_send_json_error(['error' => 'Names have already been drawn for this group']);
 
         try {
-            $matched = false;
-
-            $args = array(
-                'key' => 'groups',
-                'value' => $gid
-            );
-
-            $q = parent::createQuery('users', $args);
-            $users = $q->posts;
-            
-            $dontStop = true;
-            $match1 = array();
-            $match2 = array();
-            $emails = array();
-
-            // Collect users for matching
-            foreach ($users as $user) {
-                $match1[] = $user->ID;
-                $match2[] = $user->ID;
-                $emails[] = get_field('email', $user->ID);
-            }
-
-            if (count($match1) < 2) {
-                wp_send_json_success(array('result' => false, 'message' => 'At least 2 members are needed to draw names'));
-            }
-
-            // Nobody draws themselves; PRO groups also respect their exclusions.
-            $blocked = get_field('pro', $gid) ? self::blockedPairs($gid) : array();
-            $draw = self::drawPairs($match1, $blocked);
-
-            if ($draw === null) {
-                wp_send_json_success(array('result' => false, 'message' => 'These exclusions make a draw impossible. Remove one in PRO Actions > Exclusions and try again'));
-            }
-
-            foreach ($match1 as $k => $u) {
-                $match2[$k] = $draw[$u];
-            }
-
-            // Update field for each matched pair using reliable_update_field
-            foreach ($match1 as $k => $userId) {
-                $updated = $this->reliable_update_field('pair', $match2[$k], $userId, $maxRetries);
-
-                if (!$updated) {
-                    $result = false; // If update fails, set result to false
-                    $message = 'Pair Update Failed for User ID: ' . $userId;
-                    break; // Exit the loop on failure
-                }
-            }
-
-            // If all went well, proceed to send email notifications
-            if ($result) {
-                $this->setEmailForMembers($gid);
-                $this->reliable_update_field('matched', true, $gid, $maxRetries);
-            }
-            
+            $draw = $this->runDraw($gid);
         } catch (Exception $e) {
-            // On any exception, set result to false and return the error message
-            $result = false;
-            $message = 'Matching Failed. Check Errors.';
             wp_send_json_error(['error' => $e->getMessage()]);
-            return; // Stop execution after sending error response
+            return;
         }
 
-        // Send success response if all operations succeeded
-        wp_send_json_success(array('result' => $result, 'message' => $message));
+        if($draw['result']) delete_post_meta($gid, self::AUTODRAW_META);
+
+        wp_send_json_success($draw);
     }
 
-    
+    /**
+     * Draws names for a group (moderator button or scheduled auto-draw): saves each member's pair,
+     * emails everyone and marks the group matched. Returns array('result' => bool, 'message' => string).
+     */
+    public function runDraw($gid){
+        $gid = (int) $gid;
+        $maxRetries = 3;
+
+        $match1 = array();
+        foreach(parent::createQuery('users', array('key' => 'groups', 'value' => $gid))->posts as $user){
+            $match1[] = $user->ID;
+        }
+
+        if(count($match1) < 2) return array('result' => false, 'message' => 'At least 2 members are needed to draw names');
+
+        // Nobody draws themselves; PRO groups also respect their exclusions.
+        $blocked = get_field('pro', $gid) ? self::blockedPairs($gid) : array();
+        $draw = self::drawPairs($match1, $blocked);
+
+        if($draw === null) return array('result' => false, 'message' => 'These exclusions make a draw impossible. Remove one in PRO Actions > Exclusions and try again');
+
+        foreach($match1 as $userId){
+            if(!$this->reliable_update_field('pair', $draw[$userId], $userId, $maxRetries)){
+                return array('result' => false, 'message' => 'Pair Update Failed for User ID: '.$userId);
+            }
+            delete_post_meta($userId, '_mm_match_viewed'); // a new match has to be opened again
+        }
+
+        $this->setEmailForMembers($gid);
+        $this->reliable_update_field('matched', true, $gid, $maxRetries);
+
+        return array('result' => true, 'message' => 'success');
+    }
+
+    /* ------------------------------------------- Reminders, auto-draw, gifts (PRO) */
+
+    const AUTODRAW_META = '_mm_autodraw_at';   // unix time the names are drawn automatically
+    const NUDGE_META    = '_mm_nudge_';        // + type: unix time of the last reminder of that type
+
+    /**
+     * Member lists the PRO tools need: no wishlist, match not opened, gift status.
+     */
+    public static function memberStatus($gid){
+        $out = array('total' => 0, 'no_wishlist' => array(), 'not_viewed' => array(), 'bought' => 0, 'given' => 0, 'members' => array());
+
+        foreach(self::memberIds($gid) as $uid){
+            $name = trim((string) get_field('name', $uid));
+            $row = array(
+                'ID'     => $uid,
+                'name'   => $name !== '' ? $name : (string) get_field('screen_name', $uid),
+                'screen' => (string) get_field('screen_name', $uid),
+                'gift'   => (string) get_post_meta($uid, '_mm_gift_status', true),
+                'viewed' => (bool) get_post_meta($uid, '_mm_match_viewed', true),
+            );
+            $out['total']++;
+            if(!get_field('my_wishlists', $uid)) $out['no_wishlist'][] = $uid;
+            if(!$row['viewed']) $out['not_viewed'][] = $uid;
+            if($row['gift'] === 'bought') $out['bought']++;
+            if($row['gift'] === 'given') $out['given']++;
+            $out['members'][] = $row;
+        }
+
+        return $out;
+    }
+
+    public static function nudgedToday($gid, $type){
+        return (int) get_post_meta((int) $gid, self::NUDGE_META.$type, true) > time() - DAY_IN_SECONDS;
+    }
+
+    public function pro_extra_routes(){
+        foreach(array('nudge' => 'handle_nudge', 'autodraw' => 'handle_autodraw', 'gifts' => 'handle_gifts') as $route => $cb){
+            register_rest_route('custom-webhook/v1', '/'.$route, array(
+                'methods'             => 'POST',
+                'callback'            => array($this, $cb),
+                'permission_callback' => array($this, 'canUsePro'),
+            ));
+        }
+    }
+
+    /**
+     * type: wishlist (members with no wishlist) | match (members who haven't opened their match).
+     * Once per type per day; members who never confirmed their email are skipped.
+     */
+    public function handle_nudge($request){
+        $gid = (int) $request->get_param('group_id');
+        $type = (string) $request->get_param('type');
+        $matched = (bool) get_field('matched', $gid);
+
+        if(!in_array($type, array('wishlist', 'match'), true)) return new WP_REST_Response(array('success' => false, 'message' => 'Unknown reminder.'), 200);
+        if($type === 'match' && !$matched) return new WP_REST_Response(array('success' => false, 'message' => 'Names haven&rsquo;t been drawn yet.'), 200);
+        if(self::nudgedToday($gid, $type)) return new WP_REST_Response(array('success' => false, 'message' => 'You already sent this reminder today. Try again tomorrow.'), 200);
+
+        $st = self::memberStatus($gid);
+        $targets = ($type === 'wishlist') ? $st['no_wishlist'] : $st['not_viewed'];
+
+        $name = (string) get_field('group_name', $gid);
+        $link = get_permalink(23).'?gid='.$gid.'&pw='.rawurlencode((string) get_field('group_password', $gid));
+        $date = get_field('gift_exchange_date', $gid);
+        $dateTxt = ($date && ($d = DateTime::createFromFormat('m/d/Y', $date))) ? ' on '.$d->format('F j') : '';
+
+        if($type === 'wishlist'){
+            $subject = 'Add your wishlist for '.$name;
+            $intro = 'Your Secret Santa will have an easier time finding you a gift you&rsquo;ll love if you add a few wishes. It only takes a minute.';
+            $cta = 'Add your wishlist';
+        }else{
+            $subject = $name.': see who you&rsquo;re giving a gift to';
+            $intro = 'Names have been drawn, but you haven&rsquo;t opened your match yet. Find your name in the group and tap <strong>See Match</strong>.';
+            $cta = 'See your match';
+        }
+
+        $sent = 0;
+        foreach($targets as $uid){
+            $to = (string) get_field('email', $uid);
+            if(!is_email($to) || !EmailCheck::isConfirmed($uid)) continue;
+
+            $first = trim((string) get_field('screen_name', $uid));
+            $body = '<html><body style="font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;line-height:1.5">'
+                .'<p>Hi '.esc_html($first !== '' ? $first : 'there').',</p>'
+                .'<p>'.$intro.'</p>'
+                .'<p>The <strong>'.esc_html($name).'</strong> gift exchange is coming up'.esc_html($dateTxt).'.</p>'
+                .'<p><a href="'.esc_url($link).'" style="display:inline-block;background:#1b1b1b;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">'.$cta.'</a></p>'
+                .'<p style="color:#6d6d6d;font-size:13px">Sent by your group organizer through Manito Manita.</p>'
+                .'</body></html>';
+
+            if($type === 'match') $body = $this->addGiftIdeas($body, $gid, 'email-nudge');
+
+            if(parent::sendEmail($to, html_entity_decode($subject, ENT_QUOTES, 'UTF-8'), $body)) $sent++;
+        }
+
+        update_post_meta($gid, self::NUDGE_META.$type, time());
+
+        return new WP_REST_Response(array('success' => true, 'sent' => $sent, 'message' => $sent ? '' : 'Nobody needed this reminder.'), 200);
+    }
+
+    /**
+     * op: get | set (at = "YYYY-MM-DDTHH:MM" in the site's timezone) | clear.
+     */
+    public function handle_autodraw($request){
+        $gid = (int) $request->get_param('group_id');
+        $op = (string) $request->get_param('op');
+        $error = '';
+
+        if($op === 'set'){
+            $dt = DateTime::createFromFormat('Y-m-d\TH:i', (string) $request->get_param('at'), wp_timezone());
+
+            if(get_field('matched', $gid)){
+                $error = 'Names have already been drawn.';
+            }elseif(!$dt || $dt->getTimestamp() < time() + 10 * MINUTE_IN_SECONDS){
+                $error = 'Pick a date and time at least 10 minutes from now.';
+            }else{
+                update_post_meta($gid, self::AUTODRAW_META, $dt->getTimestamp());
+            }
+        }elseif($op === 'clear'){
+            delete_post_meta($gid, self::AUTODRAW_META);
+        }
+
+        $at = (int) get_post_meta($gid, self::AUTODRAW_META, true);
+
+        return new WP_REST_Response(array(
+            'success' => $error === '',
+            'message' => $error,
+            'at'      => $at ? wp_date('Y-m-d\TH:i', $at) : '',
+            'label'   => $at ? wp_date('l, F j \a\t g:i A', $at) : '',
+            'members' => count(self::memberIds($gid)),
+        ), 200);
+    }
+
+    public function handle_gifts($request){
+        $st = self::memberStatus((int) $request->get_param('group_id'));
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'total'   => $st['total'],
+            'bought'  => $st['bought'],
+            'given'   => $st['given'],
+            'members' => array_map(function($m){ return array('name' => $m['name'], 'screen' => $m['screen'], 'gift' => $m['gift'], 'viewed' => $m['viewed']); }, $st['members']),
+        ), 200);
+    }
+
+    /**
+     * Hourly cron: draws names for PRO groups whose scheduled time has passed, then tells the moderator.
+     */
+    public function runAutoDraws(){
+        $due = get_posts(array(
+            'post_type'      => 'groups',
+            'posts_per_page' => 50,
+            'fields'         => 'ids',
+            'meta_query'     => array(array('key' => self::AUTODRAW_META, 'value' => time(), 'compare' => '<=', 'type' => 'NUMERIC')),
+        ));
+
+        foreach($due as $gid){
+            delete_post_meta($gid, self::AUTODRAW_META); // one attempt per schedule
+
+            if(get_field('matched', $gid) || !get_field('pro', $gid)) continue;
+
+            $count = count(self::memberIds($gid));
+            $draw = ($count >= 3) ? $this->runDraw($gid) : array('result' => false, 'message' => 'At least 3 members are needed to draw names');
+
+            $to = (string) get_field('your_email', $gid);
+            if(!is_email($to)) continue;
+
+            $name = (string) get_field('group_name', $gid);
+            $link = get_permalink(23).'?gid='.$gid.'&pw='.rawurlencode((string) get_field('group_password', $gid));
+            $msg = $draw['result']
+                ? '<p>Names for <strong>'.esc_html($name).'</strong> were drawn automatically as scheduled. All '.$count.' members have been emailed their match.</p>'
+                : '<p>We couldn&rsquo;t draw names for <strong>'.esc_html($name).'</strong> as scheduled: '.esc_html($draw['message']).'.</p><p>Open your group to fix it and draw names.</p>';
+
+            parent::sendEmail($to, $draw['result'] ? $name.': names have been drawn' : $name.': the automatic draw didn\'t run',
+                '<html><body style="font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;line-height:1.5">'.$msg
+                .'<p><a href="'.esc_url($link).'" style="display:inline-block;background:#1b1b1b;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Open your group</a></p></body></html>');
+        }
+    }
+
+    public function scheduleAutoDraws(){
+        if(!wp_next_scheduled('mm_auto_draw')) wp_schedule_event(time() + 300, 'hourly', 'mm_auto_draw');
+    }
+
     public function setEmailForMembers($gid){
         $tag = "group-matched";
 
@@ -1403,7 +1580,7 @@ class Groups extends Theme {
 
 		$message = $e['email_body'];
 		$message = str_replace('[email_group]', get_field('group_name', $gid), $message);
-		$message = str_replace('[email_grouplink]', get_permalink(23).'?gid='.$creds[0].'&pw='.$creds[1], $message);
+		$message = str_replace('[email_grouplink]', get_permalink(23).'?gid='.(int) $gid.'&pw='.rawurlencode((string) get_field('group_password', $gid)), $message);
 		$message = $this->addGiftIdeas($message, $gid, 'email-match');
 
 		$to = $this->getAllMembersEmailsPerGroupId($gid);

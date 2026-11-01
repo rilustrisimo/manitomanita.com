@@ -29,6 +29,7 @@ var Theme = {
         this.initEmailChecks($);
         this.initFormAlerts($);
         this.initTurnstile($);
+        this.initGiftStatus($);
         this.initHome($);
         this.initPasswordToggles($);
 
@@ -288,6 +289,28 @@ var Theme = {
 
             if (btn === 'members') Theme.proMembers($, gid);
             if (btn === 'exclusions') Theme.proExclusions($, gid);
+            if (btn === 'autodraw') Theme.proAutoDraw($, gid);
+            if (btn === 'gifts') Theme.proGifts($, gid);
+
+            if (btn === 'nudge-wishlist' || btn === 'nudge-match') {
+                var type = btn === 'nudge-wishlist' ? 'wishlist' : 'match',
+                    who = $(this).find('small').text();
+                Theme.confirmSheet({
+                    title: type === 'wishlist' ? 'Remind members to add a wishlist?' : 'Remind members to open their match?',
+                    body: Theme.esc(who) + '. They\u2019ll get a friendly email with a button to the group. You can send this once a day.',
+                    confirm: 'Send reminder',
+                    onConfirm: function(done){
+                        Theme.proApi('nudge', { group_id: gid, type: type }).then(function(r){
+                            done();
+                            Theme.toast(r.sent ? 'Reminder sent to ' + r.sent + ' ' + (r.sent === 1 ? 'member' : 'members') : (r.message || 'Nobody needed this reminder'));
+                            Theme.getProListActions($);
+                        }).catch(function(err){
+                            done();
+                            Theme.toast(err.message, 'error');
+                        });
+                    }
+                });
+            }
             if (btn === 'matches') Theme.proMatches($, gid);
             if (btn === 'export') Theme.proExport($, gid, panel.attr('data-group-name') || 'group');
 
@@ -538,6 +561,104 @@ var Theme = {
 
         Theme.proApi('exclusions', { group_id: gid, op: 'list' }).then(render).catch(function(err){
             body.html('<p class="mm-prov__error">' + Theme.esc(err.message) + '</p>');
+        });
+    },
+
+    /* ---------- Auto-draw (scheduled) ---------- */
+
+    proAutoDraw: function($, gid){
+        var body = Theme.proView($, 'Auto-draw', Theme.proLoading);
+
+        function render(d){
+            var now = new Date(Date.now() + 60 * 60 * 1000), pad = function(n){ return (n < 10 ? '0' : '') + n; },
+                min = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':00';
+
+            body.html(
+                '<p class="mm-prov__meta">Pick when names should be drawn. Everyone gets their match by email at that time, and you get a confirmation. ' +
+                'Members can keep joining until then.</p>' +
+                (d.label ? '<div class="mm-prov__sched"><i class="fa-solid fa-calendar-check"></i><span>Scheduled for <b>' + Theme.esc(d.label) + '</b></span></div>' : '') +
+                '<label class="mm-prov__field">Draw names on<input type="datetime-local" data-ad-at min="' + min + '" value="' + Theme.esc(d.at || '') + '"></label>' +
+                '<button type="button" class="mm-upsell__btn mm-upsell__btn--dark" data-ad-save>' + (d.label ? 'Update schedule' : 'Schedule auto-draw') + '</button>' +
+                (d.label ? '<button type="button" class="mm-upsell__btn mm-upsell__btn--ghost mm-prov__gap" data-ad-clear>Cancel auto-draw</button>' : '') +
+                '<p class="mm-prov__meta mm-prov__gap">Needs at least 3 members at that time (now ' + d.members + '). Times are Philippine time.</p>'
+            );
+
+            body.find('[data-ad-save]').on('click', function(){
+                var at = body.find('[data-ad-at]').val(), btn = $(this);
+                if (!at) { Theme.toast('Pick a date and time', 'error'); return; }
+                btn.prop('disabled', true).text('Saving\u2026');
+                Theme.proApi('autodraw', { group_id: gid, op: 'set', at: at }).then(function(r){
+                    render(r);
+                    Theme.toast('Auto-draw scheduled');
+                }).catch(function(err){
+                    btn.prop('disabled', false).text('Schedule auto-draw');
+                    Theme.toast(err.message, 'error');
+                });
+            });
+
+            body.find('[data-ad-clear]').on('click', function(){
+                Theme.proApi('autodraw', { group_id: gid, op: 'clear' }).then(function(r){
+                    render(r);
+                    Theme.toast('Auto-draw cancelled');
+                }).catch(function(err){ Theme.toast(err.message, 'error'); });
+            });
+        }
+
+        Theme.proApi('autodraw', { group_id: gid, op: 'get' }).then(render).catch(function(err){
+            body.html('<p class="mm-prov__error">' + Theme.esc(err.message) + '</p>');
+        });
+    },
+
+    /* ---------- Gift status board ---------- */
+
+    proGifts: function($, gid){
+        var body = Theme.proView($, 'Gift status', Theme.proLoading);
+
+        Theme.proApi('gifts', { group_id: gid }).then(function(d){
+            var esc = Theme.esc, rows = '', labels = { '': 'Not yet', bought: 'Bought', given: 'Given' };
+
+            d.members.forEach(function(m){
+                rows += '<li class="mm-prov__row" data-name="' + esc((m.name + ' ' + m.screen).toLowerCase()) + '">' +
+                    '<span class="mm-avatar" aria-hidden="true">' + esc((m.name || '?').charAt(0).toUpperCase()) + '</span>' +
+                    '<span class="mm-prov__txt"><strong>' + esc(m.name) + '</strong><small>' + esc(m.screen) + (m.viewed ? '' : ' &middot; hasn\u2019t opened their match') + '</small></span>' +
+                    '<span class="mm-prov__state mm-prov__state--' + (m.gift || 'none') + '">' + labels[m.gift || ''] + '</span></li>';
+            });
+
+            var pct = d.total ? Math.round((d.bought + d.given) / d.total * 100) : 0;
+
+            body.html(
+                '<div class="mm-prov__progress"><div><b>' + (d.bought + d.given) + ' of ' + d.total + '</b> have their gift ready</div>' +
+                '<span><i style="width:' + pct + '%"></i></span><small>' + d.bought + ' bought &middot; ' + d.given + ' given</small></div>' +
+                '<p class="mm-prov__meta">Members mark this on their See Match screen. You only see whether they\u2019re done, never who they drew.</p>' +
+                '<div class="mm-prov__bar"><label class="mm-prov__search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" autocomplete="off"></label></div>' +
+                '<ul class="mm-prov__list">' + rows + '</ul><p class="mm-prov__none" hidden>No member matches that search.</p>'
+            );
+            Theme.proSearch(body, 'Search a name');
+        }).catch(function(err){
+            body.html('<p class="mm-prov__error">' + Theme.esc(err.message) + '</p>');
+        });
+    },
+
+    /**
+     * Member: "Your gift" buttons on See Match (not yet / bought / given).
+     */
+    initGiftStatus: function($){
+        $(document).off('click.mmGift').on('click.mmGift', '[data-mm-gift-status] button', function(){
+            var btn = $(this), box = btn.closest('[data-mm-gift-status]'), status = btn.attr('data-status');
+
+            box.find('button').attr('aria-pressed', 'false');
+            btn.attr('aria-pressed', 'true');
+
+            $.post($('#ajax-url').val(), { action: 'mm_gift_status', uid: box.attr('data-uid'), status: status, nonce: box.attr('data-nonce') })
+                .done(function(resp){
+                    if (resp && resp.success) {
+                        Theme.toast(status === 'given' ? 'Nice! Marked as given' : (status === 'bought' ? 'Marked as bought' : 'Updated'));
+                        Theme.track('gift_status', { status: status || 'none' });
+                    } else {
+                        Theme.toast((resp && resp.data) || 'Could not save. Please try again.', 'error');
+                    }
+                })
+                .fail(function(){ Theme.toast('Network error. Please try again.', 'error'); });
         });
     },
 
