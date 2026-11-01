@@ -32,12 +32,14 @@ class Affiliate {
             'offer_id' => '103490', // Lazada Talent (PH); the old 101166 redirects here
             'api_id'   => 4644,
             'domains'  => array('lazada.com.ph'),
+            'api_only' => true, // invol.co/aff_m ignores the url and opens a generic page
         ),
         'shopee' => array(
             'name'     => 'Shopee',
             'offer_id' => '103880', // Shopee PH - CPS; the old 101653 redirects here
             'api_id'   => 5034,
             'domains'  => array('shopee.ph', 'shp.ee', 'shope.ee'),
+            'source'   => 'shoplink', // aff_m with source=shoplink makes a Shopee short link to the exact page, per click (no API quota)
         ),
         'shein' => array(
             'name'     => 'SHEIN',
@@ -62,7 +64,7 @@ class Affiliate {
     );
 
     /**
-     * Merchant for a URL: ['name', 'offer_id', 'api_id'] or false.
+     * Merchant for a URL: ['name', 'offer_id', 'api_id', 'api_only', 'source'] or false.
      * Approved offers from the Involve Asia API win; the built-in list is the fallback.
      */
     public static function merchantFor( $url ) {
@@ -75,7 +77,7 @@ class Affiliate {
         foreach ( self::$merchants as $key => $m ) {
             foreach ( $m['domains'] as $domain ) {
                 if ( $host === $domain || substr( $host, -strlen( '.' . $domain ) ) === '.' . $domain ) {
-                    $fallback = array( 'name' => $m['name'], 'offer_id' => $m['offer_id'], 'api_id' => $m['api_id'] );
+                    $fallback = array( 'name' => $m['name'], 'offer_id' => $m['offer_id'], 'api_id' => $m['api_id'], 'api_only' => ! empty( $m['api_only'] ), 'source' => $m['source'] ?? '' );
                     break 2;
                 }
             }
@@ -86,6 +88,8 @@ class Affiliate {
                 'name'     => isset( $fallback ) ? $fallback['name'] : $offer['name'],
                 'offer_id' => $offer['link_id'],
                 'api_id'   => $offer['api_id'],
+                'api_only' => isset( $fallback ) && $fallback['api_only'],
+                'source'   => isset( $fallback ) ? $fallback['source'] : '',
             );
         }
 
@@ -114,18 +118,33 @@ class Affiliate {
 
         if ( ! $merchant ) return $url;
 
-        // Product pages: use the stored Deeplink API link, which opens the exact product (also in the
-        // store's app). Search pages (gift ideas, "Find it") are skipped to save the monthly quota.
-        if ( class_exists( 'Involve' ) && Involve::enabled() && ! self::isSearchUrl( $url ) ) {
-            $deeplink = Involve::deeplink( self::normalize( $url ), $merchant['api_id'] );
+        // Shopee: the shoplink format already opens the exact page (also in the app), no API needed.
+        if ( $merchant['source'] === 'shoplink' ) return self::classicLink( class_exists( 'Involve' ) ? Involve::cleanUrl( $url ) : $url, $merchant, $placement, $groupId );
+
+        // Stored Deeplink API link: opens the exact product / search page (also in the store's app).
+        // Wishlist products are generated in the background; search pages only when clicked.
+        if ( self::apiEnabled() ) {
+            $deeplink = Involve::deeplink( self::normalize( $url ), $merchant['api_id'], ! self::isSearchUrl( $url ) );
             if ( $deeplink ) return $deeplink;
+
+            // Shopee / Lazada: the plain link below would lose the page, so the click goes through
+            // our redirect, which generates the deeplink on the spot.
+            if ( $merchant['api_only'] ) return self::goUrl( $url, $placement, $groupId );
         }
 
+        return self::classicLink( $url, $merchant, $placement, $groupId );
+    }
+
+    /**
+     * Plain invol.co/aff_m tracking link. Keeps the page for SHEIN and (with source=shoplink) Shopee;
+     * Lazada ignores the url since its tracking change, so Lazada goes through the Deeplink API.
+     */
+    protected static function classicLink( $url, $merchant, $placement = '', $groupId = '' ) {
         $params = array(
             'offer_id'    => $merchant['offer_id'],
             'aff_id'      => self::AFF_ID,
             'property_id' => self::PROPERTY_ID,
-            'source'      => 'deeplink_generator_v2',
+            'source'      => $merchant['source'] !== '' ? $merchant['source'] : 'deeplink_generator_v2',
         );
 
         if ( $placement !== '' ) $params['aff_sub'] = $placement;
@@ -140,9 +159,80 @@ class Affiliate {
     public static function linkPrefix( $merchant, $placement = '', $groupId = '' ) {
         if ( ! isset( self::$merchants[ $merchant ] ) ) return '';
 
-        $link = self::link( self::searchUrl( $merchant, 'x' ), $placement, $groupId );
+        $url = self::searchUrl( $merchant, 'x' );
+        if ( ! self::merchantFor( $url ) ) return '';
 
-        return substr( $link, 0, strpos( $link, '&url=' ) + 5 );
+        $link = ( self::apiEnabled() && ! empty( self::$merchants[ $merchant ]['api_only'] ) )
+            ? self::goUrl( $url, $placement, $groupId )
+            : self::classicLink( $url, self::merchantFor( $url ), $placement, $groupId );
+
+        return preg_replace( '~([?&](?:u|url)=).*$~', '$1', $link );
+    }
+
+    protected static function apiEnabled() {
+        return class_exists( 'Involve' ) && Involve::enabled();
+    }
+
+    /**
+     * Our click-time redirect (see go()). The destination stays last so JavaScript can append it.
+     */
+    protected static function goUrl( $url, $placement = '', $groupId = '' ) {
+        $args = array( 'mm_go' => 1 );
+        if ( $placement !== '' ) $args['p'] = $placement;
+        if ( $groupId !== '' )   $args['g'] = (string) $groupId;
+
+        return home_url( '/' ) . '?' . http_build_query( $args ) . '&u=' . rawurlencode( self::normalize( $url ) );
+    }
+
+    /**
+     * Handles /?mm_go=1&u=<store url>: redirects to the stored or freshly generated deeplink. When
+     * there is none (store refused, monthly budget used up, API down, bots), Shopee / Lazada go
+     * straight to the page itself, so the visitor always lands on the right product.
+     */
+    public static function go() {
+        if ( empty( $_GET['mm_go'] ) || empty( $_GET['u'] ) ) return;
+
+        $url = trim( wp_unslash( (string) $_GET['u'] ) );
+        $merchant = preg_match( '~^https?://~i', $url ) ? self::merchantFor( $url ) : false;
+
+        nocache_headers();
+        header( 'X-Robots-Tag: noindex, nofollow', true );
+
+        if ( ! $merchant ) { // only store links are redirected
+            wp_safe_redirect( home_url( '/' ) );
+            exit;
+        }
+
+        $placement = sanitize_key( (string) ( $_GET['p'] ?? '' ) );
+        $groupId   = absint( $_GET['g'] ?? 0 );
+        $target    = $merchant['source'] === 'shoplink' ? self::classicLink( $url, $merchant, $placement, $groupId ? $groupId : '' ) : '';
+
+        if ( ! $target && self::apiEnabled() ) {
+            $target = Involve::deeplink( $url, $merchant['api_id'], false );
+
+            if ( ! $target && self::mayGenerate() ) $target = Involve::deeplinkNow( $url, $merchant['api_id'] );
+        }
+
+        if ( ! $target ) $target = $merchant['api_only'] ? $url : self::classicLink( $url, $merchant, $placement, $groupId ? $groupId : '' );
+
+        wp_redirect( $target, 302 );
+        exit;
+    }
+
+    /**
+     * Keeps crawlers and floods from spending the monthly deeplink budget (30 new links / hour / IP).
+     */
+    protected static function mayGenerate() {
+        $ua = (string) ( $_SERVER['HTTP_USER_AGENT'] ?? '' );
+        if ( $ua === '' || preg_match( '~bot|crawl|spider|slurp|preview|facebookexternalhit|mediapartners|curl|wget|python|scan~i', $ua ) ) return false;
+
+        $key = 'mm_go_' . md5( (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) );
+        $count = (int) get_transient( $key );
+        if ( $count >= 30 ) return false;
+
+        set_transient( $key, $count + 1, HOUR_IN_SECONDS );
+
+        return true;
     }
 
     /**
@@ -364,3 +454,5 @@ class Affiliate {
         return preg_match( '~^https?://~i', $url ) ? $url : 'https://' . ltrim( $url, '/' );
     }
 }
+
+add_action( 'init', array( 'Affiliate', 'go' ), 1 );

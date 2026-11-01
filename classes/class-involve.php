@@ -5,11 +5,11 @@
  * - Offers: once a day the approved offers are fetched and turned into a "store domain => offer"
  *   map, so links to any approved advertiser (Shopee, Lazada, Shein, ...) are tracked without code
  *   changes. The hardcoded map in Affiliate stays as the fallback.
- * - Deeplinks: the plain invol.co/aff_m?url= format tracks, but Shopee/Lazada drop the product and
- *   open a generic page (also in their apps). /deeplink/generate returns a link to the exact
- *   product. Generating is limited (~1,000 unique links / 30 days, 60 calls / minute), so each
- *   product is generated once in the background, stored, and reused; until then (or when a
- *   store refuses the product) the plain tracked link is used.
+ * - Deeplinks: the plain invol.co/aff_m?url= format ignores the url for Lazada (it always opens a
+ *   generic page, also in the app; Shopee works with source=shoplink, see Affiliate). /deeplink/generate returns a
+ *   link to the exact product or search page. Generating is limited (~1,000 unique links / 30
+ *   days, 60 calls / minute), so each URL is generated once (in the background for wishlist
+ *   products, or at click time through Affiliate::go), stored, and reused.
  * - One entry per product: URLs are reduced to a product fingerprint (tracking parameters removed,
  *   e.g. shopee:{shop}:{item}, lazada:{item}, shein:{id}) and short links (shp.ee, s.lazada...) are
  *   resolved to the product page first, so the same product shared differently uses one deeplink.
@@ -138,9 +138,9 @@ class Involve {
     /* ------------------------------------------------------------- Deeplinks */
 
     /**
-     * Stored product deeplink for a URL, or '' (queues generation the first time).
+     * Stored product deeplink for a URL, or '' (queues generation the first time, unless $queue is false).
      */
-    public static function deeplink( $url, $apiOfferId ) {
+    public static function deeplink( $url, $apiOfferId, $queue = true ) {
         if ( ! $apiOfferId ) return '';
 
         $url = self::cleanUrl( $url );
@@ -157,9 +157,37 @@ class Involve {
             if ( ( $entry['t'] ?? 0 ) > time() - self::RETRY_FAILED ) return '';
         }
 
-        self::$queued[ $key ] = array( 'url' => $url, 'offer' => (int) $apiOfferId );
+        if ( $queue ) self::$queued[ $key ] = array( 'url' => $url, 'offer' => (int) $apiOfferId );
 
         return '';
+    }
+
+    /**
+     * Click time (Affiliate::go): the stored deeplink, or one generated right now. '' when the store
+     * refused the URL, the monthly budget is used up or the API did not answer in time.
+     */
+    public static function deeplinkNow( $url, $apiOfferId ) {
+        if ( ! $apiOfferId ) return '';
+
+        $stored = self::deeplink( $url, $apiOfferId, false );
+        if ( $stored ) return $stored;
+
+        $url = self::cleanUrl( $url );
+        $key = self::key( $url );
+        $links = (array) get_option( self::LINKS_OPT, array() );
+
+        if ( isset( $links[ $key ] ) && empty( $links[ $key ]['a'] ) && ( $links[ $key ]['t'] ?? 0 ) > time() - self::RETRY_FAILED ) return ''; // refused recently
+
+        $token = self::token();
+        if ( ! $token ) return '';
+
+        $made = self::recentCount( $links );
+        $link = self::generate( $key, array( 'url' => $url, 'offer' => (int) $apiOfferId ), $token, $links, $made, 8 );
+
+        update_option( self::LINKS_OPT, $links, false );
+        self::$links = $links;
+
+        return (string) $link;
     }
 
     /* ------------------------------------------------------- Product fingerprints */
@@ -272,11 +300,7 @@ class Involve {
         if ( ! $queue ) return;
 
         $links = (array) get_option( self::LINKS_OPT, array() );
-        $made  = 0;
-
-        foreach ( $links as $e ) {
-            if ( ! empty( $e['l'] ) && ( $e['t'] ?? 0 ) > time() - 30 * DAY_IN_SECONDS ) $made++;
-        }
+        $made  = self::recentCount( $links );
 
         $token = self::token();
         if ( ! $token ) return;
@@ -288,51 +312,18 @@ class Involve {
 
             unset( $queue[ $key ] );
 
-            if ( ! empty( $links[ $key ]['l'] ) || isset( $links[ $key ]['a'] ) ) continue;
+            $called = false;
+            $link = self::generate( $key, $job, $token, $links, $made, 20, $called );
 
-            $url = $job['url'];
-            $saveKey = $key;
-
-            // Short link: find the product page first; reuse its deeplink if we already have one.
-            if ( self::isShortLink( $url ) ) {
-                $resolved = self::resolve( $url );
-
-                if ( ! $resolved ) {
-                    $links[ $key ] = array( 'e' => 'short link could not be resolved', 't' => time() );
-                    continue;
-                }
-
-                $url = self::cleanUrl( $resolved );
-                $saveKey = self::key( $url );
-                $links[ $key ] = array( 'a' => $saveKey, 't' => time() );
-
-                if ( ! empty( $links[ $saveKey ]['l'] ) ) continue;
-                if ( isset( $links[ $saveKey ]['e'] ) && ( $links[ $saveKey ]['t'] ?? 0 ) > time() - self::RETRY_FAILED ) continue;
-            }
-
-            if ( $made >= self::MONTH_LIMIT ) {
-                error_log( 'Involve: monthly deeplink budget reached; using standard tracking links.' );
+            if ( $link === null ) {
                 $queue = array(); // try again after older links age out of the 30-day window
                 break;
             }
 
-            $r = self::post( 'deeplink/generate', array(
-                'offer_id' => $job['offer'],
-                'url'      => $url,
-                'aff_sub'  => 'deeplink',
-            ), $token );
-
-            $link = ( $r && ( $r['status'] ?? '' ) === 'success' ) ? (string) ( $r['data']['tracking_link'] ?? '' ) : '';
-
-            if ( $link && preg_match( '~^https://~', $link ) ) {
-                $links[ $saveKey ] = array( 'l' => esc_url_raw( $link ), 't' => time() );
-                $made++;
-            } else {
-                $links[ $saveKey ] = array( 'e' => substr( (string) ( $r['message'] ?? 'failed' ), 0, 120 ), 't' => time() );
+            if ( $called ) {
+                $done++;
+                usleep( 1100000 );
             }
-
-            $done++;
-            usleep( 1100000 );
         }
 
         update_option( self::LINKS_OPT, $links, false );
@@ -340,6 +331,74 @@ class Involve {
         self::$links = $links;
 
         if ( $queue ) wp_schedule_single_event( time() + 60, self::WORK_HOOK );
+    }
+
+    /**
+     * Generates one deeplink into $links (short links are resolved and aliased to the product).
+     * Returns the link, '' when there is none (refused / unresolvable), or null when the monthly
+     * budget is used up. $called is set when the Deeplink API was used.
+     */
+    protected static function generate( $key, $job, $token, &$links, &$made, $timeout = 20, &$called = false ) {
+        if ( ! empty( $links[ $key ]['l'] ) ) return $links[ $key ]['l'];
+        if ( isset( $links[ $key ]['a'] ) ) return (string) ( $links[ $links[ $key ]['a'] ]['l'] ?? '' );
+
+        $url = $job['url'];
+        $saveKey = $key;
+
+        // Short link: find the product page first; reuse its deeplink if we already have one.
+        if ( self::isShortLink( $url ) ) {
+            $resolved = self::resolve( $url );
+
+            if ( ! $resolved ) {
+                $links[ $key ] = array( 'e' => 'short link could not be resolved', 't' => time() );
+                return '';
+            }
+
+            $url = self::cleanUrl( $resolved );
+            $saveKey = self::key( $url );
+            $links[ $key ] = array( 'a' => $saveKey, 't' => time() );
+
+            if ( ! empty( $links[ $saveKey ]['l'] ) ) return $links[ $saveKey ]['l'];
+            if ( isset( $links[ $saveKey ]['e'] ) && ( $links[ $saveKey ]['t'] ?? 0 ) > time() - self::RETRY_FAILED ) return '';
+        }
+
+        if ( $made >= self::MONTH_LIMIT ) {
+            error_log( 'Involve: monthly deeplink budget reached; using fallback links.' );
+            return null;
+        }
+
+        $called = true;
+        $r = self::post( 'deeplink/generate', array(
+            'offer_id' => $job['offer'],
+            'url'      => $url,
+            'aff_sub'  => 'deeplink',
+        ), $token, $timeout );
+
+        $link = ( $r && ( $r['status'] ?? '' ) === 'success' ) ? (string) ( $r['data']['tracking_link'] ?? '' ) : '';
+
+        if ( $link && preg_match( '~^https://~', $link ) ) {
+            $links[ $saveKey ] = array( 'l' => esc_url_raw( $link ), 't' => time() );
+            $made++;
+            return $links[ $saveKey ]['l'];
+        }
+
+        // No answer (timeout) is not stored as a refusal, so the next click or run tries again.
+        if ( $r ) $links[ $saveKey ] = array( 'e' => substr( (string) ( $r['message'] ?? 'failed' ), 0, 120 ), 't' => time() );
+
+        return '';
+    }
+
+    /**
+     * Deeplinks generated in the last 30 days (Involve Asia's rolling window).
+     */
+    protected static function recentCount( $links ) {
+        $made = 0;
+
+        foreach ( $links as $e ) {
+            if ( ! empty( $e['l'] ) && ( $e['t'] ?? 0 ) > time() - 30 * DAY_IN_SECONDS ) $made++;
+        }
+
+        return $made;
     }
 
     /* --------------------------------------------------------------- Helpers */
@@ -357,9 +416,9 @@ class Involve {
         return $token;
     }
 
-    protected static function post( $path, $fields, $token = '' ) {
+    protected static function post( $path, $fields, $token = '', $timeout = 20 ) {
         $response = wp_remote_post( self::API . $path, array(
-            'timeout' => 20,
+            'timeout' => $timeout,
             'headers' => $token ? array( 'Authorization' => 'Bearer ' . $token ) : array(),
             'body'    => $fields,
         ) );
