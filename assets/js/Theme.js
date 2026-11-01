@@ -1042,84 +1042,147 @@ var Theme = {
         }
     },
 
+    /**
+     * Dashboard onboarding tour (spotlight + card), picked by situation:
+     * organizer (just created the group), member before the shuffle, member after the shuffle.
+     * Shown once per group and situation; "Show me around" ([data-mm-tour-again]) replays it.
+     */
     initTours: function($){
-        if($("a[data-src='#join-group']").length > 0){
-            var tour = new Tour({
-                steps: [
-                    {
-                        element: "a[data-src='#join-group']",
-                        title: "JOIN THE GROUP",
-                        content: "If you haven't joined the group yet, just hit the Join Group button.<br><br>Moderator is not included in the matching. If the moderator wish to join, He/She should also register on the JOIN GROUP and provide a screename.",
-                        backdrop: true
-                    },
-                    {
-                        element: "#navigation-dashboard li:nth-child(2) a",
-                        title: "SHUFFLE THE GROUP",
-                        content: "There should be atleast three (3) members to make the SHUFFLE MATCH button clickable / usable.",
-                        backdrop: true
-                    },
-                    {
-                        element: "#go-pro-btn",
-                        title: "TRY PRO VERSION",
-                        content: "Unlock Advanced Moderator Tools",
-                        backdrop: true
-                    },
-                    {
-                        element: "#clipboard",
-                        title: "SHARE THE LINK",
-                        content: "Share this link to the awesome people you want to be part of the group.",
-                        backdrop: true
-                    },
-                    {
-                        element: '#members-list .card:first-child .user-action[data-action="edit-wishlist"]',
-                        title: "EDIT YOUR WISHLIST",
-                        content: "Find your Screen Name to edit and fill up your wishlist. Don't be shy. :)",
-                        backdrop: true
-                    },
-                    {
-                        element: '#members-list .card:first-child .user-action-btns a:nth-child(2)',
-                        title: "SEE YOUR PAIR",
-                        content: "This button will be available when the group is already matched. You can check here who is your lucky pair.",
-                        backdrop: true
-                    },
-                    {
-                        element: '#members-list .card:first-child .user-action-btns a:nth-child(3)',
-                        title: "LEAVE THE GROUP",
-                        content: "This is not your tribe? Leave the group before the matching is done. A member cannot leave the group once the Shuffle is already made.",
-                        backdrop: true
-                    },
-                    {
-                        element: '#members-list .card:first-child .expand-deets',
-                        title: "EXPAND DETAILS",
-                        content: "Take a peek on the member's wishlist and comment details.",
-                        backdrop: true
-                    },
-                    {
-                        element: '#members-list .card:first-child .comment-btn',
-                        title: "MAKE A COMMENT",
-                        content: "Make a comment on any member using this button.",
-                        backdrop: true
-                    }
-                ],
-                onShow: function(tour){
-                    $('.sample-card').show();
-                },
-                onEnd: function(tour){
-                    $('.sample-card').remove();
-                }
-            });
-            
-            // Initialize the tour
-            tour.init();
-            
-            // Start the tour
-            tour.start();
+        $('.sample-card').remove();
+        if (!$('#members-list').length || !$('#groupid-val').length) return;
 
-            if(tour.ended()){
-                $('.sample-card').remove();
+        var gid = $('#groupid-val').val(),
+            matched = $('.mm-dash-status.is-matched').length > 0,
+            isPro = $('body').hasClass('pro-version'),
+            organizer = /[?&]pop=try-pro/.test(window.location.search),
+            name = organizer ? 'organizer' : (matched ? 'member-after' : 'member-before'),
+            key = 'mm_tour_' + name + '_' + gid;
+
+        function steps(which){
+            var shuffleTarget = isPro ? '#pro-actions-btn' : '.mm-header .shuff-btn a';
+            var all = {
+                organizer: [
+                    { el: '#clipboard', title: 'Share this link', text: 'Send it on Messenger, Viber or email. Members join, confirm their email and add a wishlist.' },
+                    { el: '#navigation-dashboard li:first-child a', title: 'Playing too?', text: 'The organizer isn\u2019t in the shuffle automatically. If you\u2019re joining the exchange, join with your own screen name.' },
+                    { el: '#members-list', title: 'Watch people join', text: 'Members appear here once they confirm their email.' },
+                    { el: shuffleTarget, title: 'Shuffle when everyone is in', text: 'Everyone gets their match by email. You need at least 3 members.' },
+                    { el: '#go-pro-btn', title: 'Need more control? (optional)', text: 'PRO adds exclusions for couples, unshuffle for late joiners, reminders and more. Everything else is free.' }
+                ],
+                'member-before': [
+                    { el: '[data-mm-search]:not([hidden]), #members-list', title: 'Find your name', text: 'Your card is in the member list. Big group? Use the search box.' },
+                    { el: '#members-list .user-action[data-action="edit-wishlist"]', title: 'Add your wishlist', text: 'Tap Edit Wishlist on your name and add a few things you\u2019d love. Links to Lazada or Shopee work great.' },
+                    { el: '.mm-dash-status', title: 'We\u2019ll email you', text: 'When the organizer shuffles, you\u2019ll get an email with your match.' }
+                ],
+                'member-after': [
+                    { el: '.mm-dash-status', title: 'The group has been shuffled!', text: 'Everyone has a match now. Yours is waiting.' },
+                    { el: '#members-list .mm-match-btn:not([disabled])', title: 'See your match', text: 'Tap See Match on your name and enter your password. You\u2019ll see their wishlist, address and gift ideas.' },
+                    { el: '#members-list .mm-view-btn', title: 'Peek at wishlists', text: 'View anyone\u2019s wishlist and leave a comment. Then mark your gift as bought in See Match.' }
+                ]
+            };
+            return all[which] || [];
+        }
+
+        function blocked(){
+            return $('.fancybox-container:visible, .pop-container:visible').length > 0;
+        }
+
+        function start(force){
+            var tries = 0;
+            (function wait(){
+                // Wait for the member cards (loaded by AJAX) and for any popup to close.
+                if ((!$('#members-list .card.mm-member').length || blocked()) && tries++ < 40) return setTimeout(wait, 500);
+                if (blocked()) return;
+                Theme.tour.run($, name, steps(name), function(done){
+                    try { localStorage.setItem(key, done ? 'done' : 'skipped'); } catch (e) {}
+                });
+            })();
+        }
+
+        $(document).off('click.mmTourAgain').on('click.mmTourAgain', '[data-mm-tour-again]', function(e){
+            e.preventDefault();
+            start(true);
+        });
+
+        var seen = null;
+        try { seen = localStorage.getItem(key); } catch (e) {}
+        if (!seen) setTimeout(start, 1200);
+    },
+
+    /**
+     * Minimal spotlight tour. steps: [{ el, title, text }]; missing targets are skipped.
+     */
+    tour: {
+        run: function($, name, steps, onEnd){
+            steps = steps.filter(function(st){ return $(st.el).filter(':visible').length; });
+            if (!steps.length) return;
+
+            $('#mm-tour').remove();
+            var idx = 0,
+                root = $('<div id="mm-tour" class="mm-tour" role="dialog" aria-live="polite">' +
+                    '<div class="mm-tour__spot"></div>' +
+                    '<div class="mm-tour__card"><div class="mm-tour__dots"></div><h3></h3><p></p>' +
+                    '<div class="mm-tour__nav"><button type="button" class="mm-tour__skip">Skip</button>' +
+                    '<span><button type="button" class="mm-tour__back">Back</button>' +
+                    '<button type="button" class="mm-tour__next">Next</button></span></div></div></div>').appendTo('body'),
+                spot = root.find('.mm-tour__spot'),
+                card = root.find('.mm-tour__card');
+
+            Theme.track('tour_start', { tour: name });
+
+            function place(){
+                var target = $(steps[idx].el).filter(':visible').first();
+                if (!target.length) return;
+                var r = target[0].getBoundingClientRect(), pad = 8;
+                spot.css({ top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2 });
+
+                if (window.innerWidth < 640) { card.css({ top: '', left: '', bottom: '' }).addClass('is-bottom'); return; }
+                card.removeClass('is-bottom');
+                var cw = card.outerWidth(), ch = card.outerHeight(),
+                    top = r.bottom + 16;
+                if (top + ch > window.innerHeight - 12) top = Math.max(12, r.top - ch - 16);
+                var left = Math.min(Math.max(12, r.left), window.innerWidth - cw - 12);
+                card.css({ top: top, left: left });
             }
-        }else{
-            $('.sample-card').remove();
+
+            function show(i){
+                idx = i;
+                var st = steps[idx], target = $(st.el).filter(':visible').first();
+                card.find('h3').text(st.title);
+                card.find('p').text(st.text);
+                card.find('.mm-tour__dots').html(steps.map(function(_, k){ return '<i class="' + (k === idx ? 'is-on' : '') + '"></i>'; }).join(''));
+                card.find('.mm-tour__back').prop('hidden', idx === 0);
+                card.find('.mm-tour__next').text(idx === steps.length - 1 ? 'Got it' : 'Next');
+
+                var rect = target[0].getBoundingClientRect();
+                if (rect.top < 80 || rect.bottom > window.innerHeight - 160) {
+                    target[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
+                    setTimeout(place, 420);
+                } else {
+                    place();
+                }
+                Theme.track('tour_step', { tour: name, step: idx + 1 });
+                card.find('.mm-tour__next').trigger('focus');
+            }
+
+            function end(done){
+                root.remove();
+                $(window).off('.mmTour');
+                $(document).off('.mmTour');
+                Theme.track(done ? 'tour_complete' : 'tour_skip', { tour: name, step: idx + 1 });
+                if (onEnd) onEnd(done);
+            }
+
+            root.on('click', '.mm-tour__next', function(){ idx < steps.length - 1 ? show(idx + 1) : end(true); });
+            root.on('click', '.mm-tour__back', function(){ if (idx > 0) show(idx - 1); });
+            root.on('click', '.mm-tour__skip', function(){ end(false); });
+            $(window).on('resize.mmTour scroll.mmTour', place);
+            $(document).on('keydown.mmTour', function(e){
+                if (e.key === 'Escape') end(false);
+                if (e.key === 'ArrowRight') root.find('.mm-tour__next').trigger('click');
+                if (e.key === 'ArrowLeft') root.find('.mm-tour__back').trigger('click');
+            });
+
+            show(0);
         }
     },
 

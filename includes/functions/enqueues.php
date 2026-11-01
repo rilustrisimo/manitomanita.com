@@ -39,7 +39,7 @@ if ( ! function_exists( 'qed_init_theme_assets' ) ) {
 			wp_enqueue_style( 'bxslider', PARENT_URL . '/assets/csslib/bxslider/jquery.bxslider.min.css', array(), '4.2.12' );
 			wp_enqueue_style( 'fancybox', PARENT_URL . '/assets/csslib/jquery.fancybox.min.css', array());
 			wp_enqueue_style( 'jquery-ui', PARENT_URL . '/assets/csslib/jquery-ui.css', array());
-			wp_enqueue_style( 'bootstraptour', PARENT_URL . '/assets/csslib/bootstrap-tour-standalone.css', array());
+			// Bootstrap Tour replaced by Theme.tour (no extra CSS/JS).
 			wp_enqueue_style( 'dashicons' );
 			wp_register_style( 'magnific-popup', PARENT_URL . '/assets/csslib/magnific-popup.css', array(), '1.1.0' );
 
@@ -47,7 +47,7 @@ if ( ! function_exists( 'qed_init_theme_assets' ) ) {
 			wp_register_style( 'swiper', PARENT_URL . '/assets/csslib/swiper.min.css' );
 
 			wp_enqueue_script( 'bootstrap', PARENT_URL . '/assets/jslib/bootstrap.min.js',array( 'jquery' ), '',true );
-			wp_enqueue_script( 'bootstraptour', PARENT_URL . '/assets/jslib/bootstrap-tour.min.js',array( 'jquery' ), '',true );
+
 			//wp_enqueue_script( 'jscookie', PARENT_URL . '/assets/jslib/js.cookie.min.js',array( 'jquery' ), '',true );
 			wp_enqueue_script( 'jquery-ui', PARENT_URL . '/assets/jslib/jquery-ui.js',array( 'jquery' ), '',true );
 			// Font Awesome icons come from the CSS (enqueued above); the 540 KB SVG/JS build is not loaded.
