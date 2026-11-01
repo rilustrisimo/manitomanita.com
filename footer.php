@@ -44,6 +44,15 @@ if ( qed_get_option( 'is_testimonial_enabled', 'option' ) && qed_is_display_test
 				</ul>
 			</div>
 			<div>
+				<h3>Free tools</h3>
+				<ul>
+					<li><a href="<?php echo esc_url( home_url( '/monito-monita-generator/' ) ); ?>">Monito Monita generator</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/kris-kringle-generator-philippines/' ) ); ?>">Kris Kringle generator</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/secret-santa-generator/' ) ); ?>">Secret Santa generator</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/exchange-gift-ideas-500-pesos/' ) ); ?>">Gift ideas under &#8369;500</a></li>
+				</ul>
+			</div>
+			<div>
 				<h3>Help</h3>
 				<ul>
 					<li><a href="mailto:rouie@manitomanita.com">Contact us</a></li>

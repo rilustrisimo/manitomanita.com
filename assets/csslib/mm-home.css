@@ -965,3 +965,195 @@
         transition: none !important;
     }
 }
+
+/* ---------- Landing pages (template-landing.php) ---------- */
+
+.mml-hero {
+    padding-bottom: 64px;
+}
+
+.mml-crumbs {
+    margin: 0 0 18px;
+    color: rgba(255, 255, 255, .55);
+    font-size: 13px;
+}
+
+.mml-crumbs a {
+    color: rgba(255, 255, 255, .75);
+    text-decoration: none;
+}
+
+.mml-crumbs a:hover {
+    color: #3ec7c2;
+}
+
+.mml-hero__copy {
+    max-width: 760px;
+}
+
+.mm-home .mml-left {
+    text-align: left;
+}
+
+.mml-prose p {
+    margin: 0 0 14px !important;
+    color: #3a3a3a;
+    font-size: 17px;
+    line-height: 1.7;
+}
+
+.mml-prose h2 {
+    margin-bottom: 16px !important;
+}
+
+.mml-updated {
+    color: #8a8a8a !important;
+    font-size: 13px !important;
+}
+
+.mml-gap {
+    margin-top: 28px;
+}
+
+/* Gift guide */
+.mm-home h3.mml-group {
+    margin: 36px 0 12px;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.mml-ideas {
+    display: grid;
+    gap: 10px;
+}
+
+.mml-idea {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px 16px;
+    border: 1px solid var(--mm-line);
+    border-radius: 14px;
+    background: #fff;
+}
+
+.mml-idea strong {
+    color: var(--mm-dark);
+    font-size: 16px;
+}
+
+.mml-idea__shops {
+    display: flex;
+    gap: 8px;
+}
+
+.mm-home .mml-shop {
+    display: inline-flex;
+    align-items: center;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.mm-home .mml-shop--lazada {
+    background: #0f146d;
+}
+
+.mm-home .mml-shop--shopee {
+    background: #ee4d2d;
+}
+
+.mm-home .mml-shop:hover {
+    opacity: .88;
+    color: #fff;
+}
+
+.mml-tip {
+    display: grid;
+    gap: 12px;
+    margin-top: 36px;
+    padding: 20px;
+    border-radius: 16px;
+    background: var(--mm-dark);
+    color: rgba(255, 255, 255, .85);
+}
+
+.mml-tip > i {
+    color: #3ec7c2;
+    font-size: 22px;
+}
+
+.mml-tip strong {
+    color: #fff;
+}
+
+/* Related pages */
+.mml-related {
+    display: grid;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+.mm-home .mml-related__card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 20px;
+    border: 1px solid var(--mm-line);
+    border-radius: 16px;
+    background: #fff;
+    color: var(--mm-dark);
+    text-decoration: none;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.mm-home .mml-related__card .mmh-eyebrow {
+    margin: 0 !important;
+    font-size: 11px;
+}
+
+.mm-home .mml-related__card strong {
+    font-size: 17px;
+    line-height: 1.3;
+}
+
+.mml-related__go {
+    margin-top: auto;
+    color: #2a9d99;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+@media (hover: hover) {
+    .mm-home .mml-related__card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, .08);
+    }
+}
+
+@media (min-width: 640px) {
+    .mml-ideas {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mml-tip {
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+    }
+}
+
+@media (min-width: 900px) {
+    .mml-ideas {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .mml-related {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

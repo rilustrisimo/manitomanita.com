@@ -13,7 +13,7 @@
  */
 defined( 'ABSPATH' ) || die();
 
-if ( is_404() || is_page_template( 'template-homepage.php' ) ) {
+if ( is_404() || is_page_template( 'template-homepage.php' ) || ( class_exists( 'Landing' ) && Landing::isActive() ) ) {
 	return; // the homepage has its own hero
 }
 

@@ -141,10 +141,17 @@
     padding-bottom: calc(18px + env(safe-area-inset-bottom));
 }
 
-/* Room for the homepage's sticky phone CTA */
+/* Room for the homepage's / landing pages' sticky phone CTA */
 @media (max-width: 899px) {
-    .page-template-template-homepage .mm-footer__wrap--bottom {
+    .page-template-template-homepage .mm-footer__wrap--bottom,
+    .mm-landing-page .mm-footer__wrap--bottom {
         padding-bottom: 90px;
+    }
+}
+
+@media (min-width: 640px) {
+    .mm-footer__cols {
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 
