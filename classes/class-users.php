@@ -82,6 +82,7 @@ class Users extends Theme {
 
             // Lets save_wishlist() trust this member for the rest of the session.
             if(get_post_type($uid) == 'users') $_SESSION['mm_verified'][(int) $uid] = time();
+            if(get_post_type($uid) == 'groups') Groups::markModerator($uid); // moderator tools / PRO actions
 		} else {
 		    $result = false;
         }
@@ -94,8 +95,14 @@ class Users extends Theme {
     }
 
     public function load_popup_content(){
-        $uid = $_POST['uid'];
-        $form = $_POST['form'];
+        $uid = (int) $_POST['uid'];
+        $form = trim((string) $_POST['form']);
+
+        // Everything here is personal (match, address, details): only for whoever entered the password.
+        if($form != "99999" && !$this->canManage($uid)){
+            echo '<p class="mm-empty">Your session has expired. Please close this window and enter your password again.</p>';
+            wp_die();
+        }
 
         if($form){
             if(trim($form) == "9999"): //see match
@@ -114,7 +121,9 @@ class Users extends Theme {
     }
 
     public function user_leave_group(){
-        $uid = $_POST['uid'];
+        $uid = (int) $_POST['uid'];
+
+        if(get_post_type($uid) != 'users' || !$this->isVerifiedMember($uid)) wp_send_json_error('Please enter your password again.');
 
         $result = wp_delete_post($uid);
 
@@ -124,6 +133,22 @@ class Users extends Theme {
     const WISH_MAX_ITEMS = 20;
     const WISH_MAX_LINKS = 5;
     const WISH_MAX_TEXT  = 500;
+
+    /**
+     * Member who entered their own password, or (members only) the moderator of their PRO group;
+     * for a group: its moderator.
+     */
+    protected function canManage($uid){
+        $type = get_post_type($uid);
+
+        if($type == 'groups') return Groups::isModerator($uid);
+        if($type != 'users') return false;
+        if($this->isVerifiedMember($uid)) return true;
+
+        $gid = (int) get_field('groups', $uid, false);
+
+        return Groups::isModerator($gid) && get_field('pro', $gid);
+    }
 
     protected function isVerifiedMember($uid){
         $t = (isset($_SESSION['mm_verified'][(int) $uid]))?(int) $_SESSION['mm_verified'][(int) $uid]:0;

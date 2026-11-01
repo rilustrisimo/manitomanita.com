@@ -198,11 +198,71 @@ class Groups extends Theme {
         return $classes;
     }
 
+    /* ---------------------------------------------------- Access checks */
+
+    const MOD_TTL = 7200; // a moderator password check is trusted for 2 hours
+
+    /**
+     * Called after the group (moderator) password was verified.
+     */
+    public static function markModerator($gid){
+        $_SESSION['mm_mod'][(int) $gid] = time();
+    }
+
+    public static function isModerator($gid){
+        $gid = (int) $gid;
+        $t = (isset($_SESSION['mm_mod'][$gid]))?(int) $_SESSION['mm_mod'][$gid]:0;
+
+        return $gid && get_post_type($gid) === 'groups' && $t > time() - self::MOD_TTL;
+    }
+
+    /**
+     * REST: PRO tools need a verified moderator of a PRO group.
+     */
+    public function canUsePro($request){
+        $gid = (int) $request->get_param('group_id');
+
+        if(!self::isModerator($gid)) return new WP_Error('mm_forbidden', 'Please enter the moderator password again.', array('status' => 403));
+        if(!get_field('pro', $gid)) return new WP_Error('mm_not_pro', 'This is a PRO feature.', array('status' => 403));
+
+        return true;
+    }
+
+    /**
+     * REST: kicking is for a member of the moderator's own PRO group, before names are drawn.
+     */
+    public function canKickMember($request){
+        $uid = (int) $request->get_param('user_id');
+        $gid = (get_post_type($uid) === 'users')?(int) get_field('groups', $uid, false):0;
+
+        $request->set_param('group_id', $gid);
+        $allowed = $this->canUsePro($request);
+
+        if($allowed !== true) return $allowed;
+        if(get_field('matched', $gid)) return new WP_Error('mm_matched', 'Members cannot be removed after names are drawn.', array('status' => 403));
+
+        return true;
+    }
+
+    /**
+     * REST: unshuffling needs a matched group and at least one credit.
+     */
+    public function canUnshuffle($request){
+        $allowed = $this->canUsePro($request);
+        $gid = (int) $request->get_param('group_id');
+
+        if($allowed !== true) return $allowed;
+        if(!get_field('matched', $gid)) return new WP_Error('mm_not_matched', 'Names have not been drawn yet.', array('status' => 403));
+        if((int) get_field('unshuffle_credits', $gid) < 1) return new WP_Error('mm_no_credits', 'No unshuffle credits left.', array('status' => 403));
+
+        return true;
+    }
+
     public function get_user_export() {
         register_rest_route('custom-webhook/v1', '/get-user-export', array(
             'methods' => 'POST',
             'callback' => array($this, 'get_user_data'),
-            'permission_callback' => '__return_true', // Allow public access
+            'permission_callback' => array($this, 'canUsePro'),
         ));
     }
 
@@ -269,7 +329,7 @@ class Groups extends Theme {
         register_rest_route('custom-webhook/v1', '/edit-user', array(
             'methods' => 'POST',
             'callback' => array($this, 'handle_edit_user'),
-            'permission_callback' => '__return_true', // Allow public access
+            'permission_callback' => array($this, 'canUsePro'),
         ));
     }
 
@@ -322,7 +382,7 @@ class Groups extends Theme {
         register_rest_route('custom-webhook/v1', '/trash-user', array(
             'methods' => 'POST',
             'callback' => array($this, 'handle_trash_user'),
-            'permission_callback' => '__return_true', // Allow public access
+            'permission_callback' => array($this, 'canKickMember'),
         ));
     }
 
@@ -363,7 +423,7 @@ class Groups extends Theme {
         register_rest_route('custom-webhook/v1', '/kick', array(
             'methods' => 'POST',
             'callback' => array($this, 'handle_kick'),
-            'permission_callback' => '__return_true', // Note: Customize for secure access if needed
+            'permission_callback' => array($this, 'canUsePro'),
         ));
     }
 
@@ -416,7 +476,7 @@ class Groups extends Theme {
         register_rest_route('custom-webhook/v1', '/matches', array(
             'methods' => 'POST',
             'callback' => array($this, 'handle_matches'),
-            'permission_callback' => '__return_true', // Note: Customize for secure access if needed
+            'permission_callback' => array($this, 'canUsePro'),
         ));
     }
 
@@ -471,7 +531,7 @@ class Groups extends Theme {
         register_rest_route('custom-webhook/v1', '/joined', array(
             'methods' => 'POST',
             'callback' => array($this, 'handle_joined'),
-            'permission_callback' => '__return_true', // Note: Customize for secure access if needed
+            'permission_callback' => array($this, 'canUsePro'),
         ));
     }
 
@@ -525,7 +585,7 @@ class Groups extends Theme {
         register_rest_route('custom-webhook/v1', '/unshuffle-group', array(
             'methods' => 'POST',
             'callback' => array($this, 'handle_unshuffle_group'),
-            'permission_callback' => '__return_true', // Note: Customize for secure access if needed
+            'permission_callback' => array($this, 'canUnshuffle'),
         ));
     }
 
@@ -578,6 +638,9 @@ class Groups extends Theme {
 
     public function get_pro_list(){
         $gid = (int)$_POST['gid'];
+
+        if(!self::isModerator($gid) || !get_field('pro', $gid)) wp_send_json_error('Please enter the moderator password again.');
+
         $fields = $this->getGroupDetails($gid);
 
         $meta_query = array(
@@ -997,9 +1060,14 @@ class Groups extends Theme {
         $message = 'success';
         $maxRetries = 3; // Maximum number of retries for each update
 
+        $gid = (int) $_POST['gid'];
+
+        // Only the group's moderator, and only once (PRO unshuffle resets 'matched' first).
+        if(!self::isModerator($gid)) wp_send_json_error(['error' => 'Please enter the moderator password again']);
+        if(get_field('matched', $gid)) wp_send_json_error(['error' => 'Names have already been drawn for this group']);
+
         try {
-            $gid = $_POST['gid'];
-            $matched = get_field('matched', $gid);
+            $matched = false;
 
             $args = array(
                 'key' => 'groups',
@@ -1019,6 +1087,10 @@ class Groups extends Theme {
                 $match1[] = $user->ID;
                 $match2[] = $user->ID;
                 $emails[] = get_field('email', $user->ID);
+            }
+
+            if (count($match1) < 2) {
+                wp_send_json_success(array('result' => false, 'message' => 'At least 2 members are needed to draw names'));
             }
 
             // Ensure no users match with themselves

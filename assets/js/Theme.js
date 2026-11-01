@@ -258,6 +258,8 @@ var Theme = {
 
                     $('#pro-actions .pop-container__content').html(resp.data);
                     Theme.initProButtons($)
+                }else{
+                    $('#pro-actions .pop-container__content').html($('<p>').text(resp.data || 'Please enter the moderator password again.'));
                 }
             },
             error: function (xhr, ajaxOptions, thrownError) {

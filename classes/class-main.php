@@ -63,7 +63,7 @@ class Theme {
     
 
     function __autoload() {
-        $classes = array('affiliate', 'captcha', 'gift-ai', 'involve', 'groups', 'logs', 'users', 'wishlists');
+        $classes = array('affiliate', 'captcha', 'gift-ai', 'involve', 'payments', 'groups', 'logs', 'users', 'wishlists');
 
         foreach($classes as $value){
             require_once PARENT_DIR . '/classes/class-'. $value .'.php';
@@ -90,8 +90,6 @@ class Theme {
          */
 
         add_action( 'init', array($this, 'createPostTypes')); 
-        add_action('rest_api_init', array($this, 'paypalWebhookAPI'));
-        add_action('rest_api_init', array($this, 'paypalWebhookAPICredits'));
         
     }
 
@@ -141,131 +139,6 @@ class Theme {
 
         return $field;
     }
-
-    public function paypalWebhookAPICredits() {
-        register_rest_route('custom-api/v1', '/webhook-credits/', array(
-            'methods' => 'GET',
-            'callback' => array($this, 'handle_webhook_credits_callback'),
-            'args' => array(
-                'gid' => array(
-                    'required' => true,
-                    'validate_callback' => function($param) {
-                        return is_numeric($param); // or other validation logic for `gid`
-                    }
-                ),
-                'order_id' => array(
-                    'required' => true,
-                    'validate_callback' => function($param) {
-                        return !empty($param); // Basic check that order_id is not empty
-                    }
-                )
-            ),
-            'permission_callback' => '__return_true'
-        ));
-    }
-
-    public function handle_webhook_credits_callback($request) {
-        // Retrieve and sanitize parameters
-        $gid = sanitize_text_field($request->get_param('gid'));
-        $order_id = sanitize_text_field($request->get_param('order_id'));
-    
-        // Log the received webhook information
-        $log_entry = "Received webhook with GID: $gid and Order ID: $order_id";
-        error_log($log_entry);
-    
-        // Check if the post with ID $gid exists and is of type 'groups'
-        if (get_post_type($gid) === 'groups') {
-            // Update the unshuffle_credits field
-            update_field('unshuffle_credits', 3, $gid);
-    
-            // Get the current value of the order_id field
-            $current_order_id = get_field('order_id', $gid);
-    
-            // Check if the order_id field has an existing value
-            if (!empty($current_order_id)) {
-                // If there is a current value, append the new order_id with a comma
-                $new_order_id = $current_order_id . ',' . $order_id;
-            } else {
-                // If there is no current value, just use the new order_id
-                $new_order_id = $order_id;
-            }
-    
-            // Update the order_id field with the new value
-            update_field('order_id', $new_order_id, $gid);
-    
-            // Confirm the update in the response
-            return new WP_REST_Response(array(
-                'status' => 'success',
-                'message' => 'Webhook received and group updated successfully',
-                'gid' => $gid,
-                'order_id' => $new_order_id
-            ), 200);
-        } else {
-            // If the post type is incorrect or does not exist, return an error
-            return new WP_REST_Response(array(
-                'status' => 'error',
-                'message' => 'Invalid GID or post type. No update was made.',
-                'gid' => $gid,
-                'order_id' => $order_id
-            ), 400);
-        }
-    }    
-
-    // Register REST API endpoint for webhook callback
-    public function paypalWebhookAPI() {
-        register_rest_route('custom-api/v1', '/webhook/', array(
-            'methods' => 'GET',
-            'callback' => array($this, 'handle_webhook_callback'),
-            'args' => array(
-                'gid' => array(
-                    'required' => true,
-                    'validate_callback' => function($param) {
-                        return is_numeric($param); // or other validation logic for `gid`
-                    }
-                ),
-                'order_id' => array(
-                    'required' => true,
-                    'validate_callback' => function($param) {
-                        return !empty($param); // Basic check that order_id is not empty
-                    }
-                )
-            ),
-            'permission_callback' => '__return_true'
-        ));
-    }
-
-    public function handle_webhook_callback($request) {
-        // Retrieve and sanitize parameters
-        $gid = sanitize_text_field($request->get_param('gid'));
-        $order_id = sanitize_text_field($request->get_param('order_id'));
-    
-        // Log the received webhook information
-        $log_entry = "Received webhook with GID: $gid and Order ID: $order_id";
-        error_log($log_entry);
-    
-        // Check if the post with ID $gid exists and is of type 'groups'
-        if (get_post_type($gid) === 'groups') {
-            // Update the 'pro' custom field to true
-            update_field('pro', true, $gid);
-            update_field('order_id', $order_id, $gid);
-    
-            // Confirm the update in the response
-            return new WP_REST_Response(array(
-                'status' => 'success',
-                'message' => 'Webhook received and group updated successfully',
-                'gid' => $gid,
-                'order_id' => $order_id
-            ), 200);
-        } else {
-            // If the post type is incorrect or does not exist, return an error
-            return new WP_REST_Response(array(
-                'status' => 'error',
-                'message' => 'Invalid GID or post type. No update was made.',
-                'gid' => $gid,
-                'order_id' => $order_id
-            ), 400);
-        }
-    }    
 
     public function validateEmail($valid, $value, $field, $input) {
         // Correct email syntax
