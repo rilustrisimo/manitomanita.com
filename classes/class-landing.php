@@ -203,16 +203,13 @@ class Landing {
         // Our own head tags instead of Yoast's (no WP post behind these URLs).
         add_filter( 'wpseo_frontend_presenters', '__return_empty_array', 999 );
         add_filter( 'wpseo_json_ld_output', '__return_false', 999 );
-        add_filter( 'pre_get_document_title', array( __CLASS__, 'docTitle' ), 200000 );
+        // Yoast swaps WordPress's <title> for its own; with Yoast off here we print the title ourselves.
+        remove_action( 'wp_head', '_wp_render_title_tag', 1 );
         add_action( 'wp_head', array( __CLASS__, 'head' ), 1 );
         add_filter( 'body_class', function ( $c ) { $c[] = 'mm-landing-page'; return $c; } );
 
         include get_template_directory() . '/template-landing.php';
         exit;
-    }
-
-    public static function docTitle( $t ) {
-        return html_entity_decode( self::$current['title'], ENT_QUOTES, 'UTF-8' );
     }
 
     public static function head() {
@@ -222,6 +219,7 @@ class Landing {
         $desc = html_entity_decode( $p['desc'], ENT_QUOTES, 'UTF-8' );
         $title = html_entity_decode( $p['title'], ENT_QUOTES, 'UTF-8' );
 
+        echo '<title>' . esc_html( $title ) . '</title>' . "\n";
         echo '<meta name="description" content="' . esc_attr( $desc ) . '">' . "\n";
         echo '<meta name="robots" content="index, follow, max-image-preview:large">' . "\n";
         echo '<link rel="canonical" href="' . esc_url( $url ) . '">' . "\n";
