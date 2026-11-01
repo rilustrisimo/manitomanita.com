@@ -57,6 +57,7 @@ class SEO {
         // Philippine English.
         add_filter( 'language_attributes', array( __CLASS__, 'lang' ) );
         add_filter( 'wpseo_locale', array( __CLASS__, 'locale' ) );
+        add_filter( 'wpseo_og_locale', array( __CLASS__, 'locale' ) ); // Yoast 14+ name for the og:locale filter
 
         add_action( 'wp_head', array( __CLASS__, 'schema' ), 30 );
         add_action( 'init', array( __CLASS__, 'llms' ), 1 );
