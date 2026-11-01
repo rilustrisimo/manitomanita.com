@@ -26,6 +26,7 @@ var Theme = {
         this.proScripts($);
         this.initAffiliateCap($);
         this.initTracking($);
+        this.initEmailChecks($);
         this.initHome($);
         this.initPasswordToggles($);
 
@@ -288,9 +289,11 @@ var Theme = {
             if (btn === 'export') Theme.proExport($, gid, panel.attr('data-group-name') || 'group');
 
             if (btn === 'shuffle') {
+                var unconfirmed = parseInt(panel.attr('data-unconfirmed'), 10) || 0;
                 Theme.confirmSheet({
                     title: 'Draw names now?',
-                    body: 'Everyone will get their match by email. Make sure all members have joined first, because no one can join after the draw.',
+                    body: 'Everyone will get their match by email. Make sure all members have joined first, because no one can join after the draw.' +
+                        (unconfirmed ? '<br><b>' + unconfirmed + ' ' + (unconfirmed === 1 ? 'member hasn\u2019t' : 'members haven\u2019t') + ' confirmed their email</b>, so they may not receive their match. They can still see it on the group page.' : ''),
                     confirm: 'Draw names',
                     onConfirm: function(done){ done(); Theme.initMatching($, gid); }
                 });
@@ -420,7 +423,8 @@ var Theme = {
                     '<span class="mm-avatar" aria-hidden="true">' + esc(name.charAt(0).toUpperCase()) + '</span>' +
                     '<span class="mm-prov__txt"><strong>' + esc(name) + '</strong>' +
                     '<small>' + esc(u.screen) + (u.email ? ' &middot; ' + esc(u.email) : '') + '</small>' +
-                    '<small>' + (u.wishes ? u.wishes + (u.wishes === 1 ? ' wish' : ' wishes') : 'No wishlist yet') + '</small></span>' +
+                    '<small>' + (u.wishes ? u.wishes + (u.wishes === 1 ? ' wish' : ' wishes') : 'No wishlist yet') +
+                    (u.confirmed ? '' : ' <span class="mm-prov__badge">Email not confirmed</span>') + '</small></span>' +
                     '<span class="mm-prov__acts">' +
                     '<button type="button" class="mm-prov__mini" data-edit="' + u.ID + '"><i class="fa-solid fa-pen"></i> Edit</button>' +
                     (matched ? '' : '<button type="button" class="mm-prov__mini mm-prov__mini--danger" data-remove="' + u.ID + '" data-label="' + esc(name) + '"><i class="fa-solid fa-user-xmark"></i> Remove</button>') +
@@ -1465,6 +1469,131 @@ var Theme = {
             });
             empty.prop('hidden', shown > 0);
         });
+    },
+
+    /**
+     * Email quality: "Did you mean ...?" on email fields, the Create Group verification code, and the
+     * "Email confirmed" notice after a member taps the link in their welcome email.
+     */
+    initEmailChecks: function($){
+        if (/[?&]mm_confirmed=1/.test(window.location.search)) {
+            setTimeout(function(){ Theme.toast('Thanks! Your email is confirmed.'); }, 600);
+        }
+
+        var common = ['gmail.com', 'yahoo.com', 'yahoo.com.ph', 'outlook.com', 'hotmail.com', 'icloud.com', 'ymail.com', 'live.com', 'me.com', 'rocketmail.com', 'msn.com', 'aol.com'];
+
+        function distance(a, b){
+            var m = [], i, j;
+            for (i = 0; i <= a.length; i++) { m[i] = [i]; }
+            for (j = 0; j <= b.length; j++) { m[0][j] = j; }
+            for (i = 1; i <= a.length; i++) {
+                for (j = 1; j <= b.length; j++) {
+                    m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
+                }
+            }
+            return m[a.length][b.length];
+        }
+
+        function suggest(email){
+            var at = email.lastIndexOf('@');
+            if (at < 1) return '';
+            var domain = email.slice(at + 1).toLowerCase(), best = '', bestD = 3;
+            if (!domain || common.indexOf(domain) !== -1) return '';
+            common.forEach(function(c){
+                var d = distance(domain, c);
+                if (d < bestD) { bestD = d; best = c; }
+            });
+            return best ? email.slice(0, at + 1) + best : '';
+        }
+
+        $(document).off('blur.mmEmail').on('blur.mmEmail', '.acf-form input[type="email"]', function(){
+            var input = $(this), field = input.closest('.acf-input'), hint = field.find('.mm-email-hint'),
+                fix = suggest($.trim(input.val()));
+
+            if (!fix) { hint.remove(); return; }
+            if (!hint.length) hint = $('<p class="mm-email-hint"></p>').appendTo(field);
+
+            hint.html('Did you mean <b></b>? <button type="button">Use this</button>');
+            hint.find('b').text(fix);
+            hint.find('button').on('click', function(){
+                input.val(fix).trigger('input').trigger('change');
+                hint.remove();
+            });
+        });
+
+        // Create Group: verification code box under "Your email"
+        var otp = $('[data-mm-otp]');
+        if (!otp.length) return;
+
+        var emailField = otp.closest('form').find('.acf-field[data-key="field_5f55bf2fde4cc"]'),
+            emailInput = emailField.find('input'),
+            box = otp.find('[data-mm-otp-box]'),
+            msg = otp.find('[data-mm-otp-msg]'),
+            send = otp.find('[data-mm-otp-send]'),
+            resend = otp.find('[data-mm-otp-resend]'),
+            sentTo = '',
+            timer = null;
+
+        if (emailField.length) otp.insertAfter(emailField);
+
+        function looksValid(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
+
+        function refresh(){
+            var v = $.trim(emailInput.val()).toLowerCase();
+            otp.prop('hidden', !looksValid(v));
+            if (sentTo && v !== sentTo) { // email changed after sending: start over
+                sentTo = '';
+                box.prop('hidden', true);
+                send.prop('hidden', false);
+                msg.text('');
+            }
+        }
+
+        function countdown(){
+            var left = 30;
+            resend.prop('disabled', true).text('Resend in ' + left + 's');
+            clearInterval(timer);
+            timer = setInterval(function(){
+                left--;
+                if (left <= 0) { clearInterval(timer); resend.prop('disabled', false).text('Resend'); }
+                else { resend.text('Resend in ' + left + 's'); }
+            }, 1000);
+        }
+
+        function request(btn){
+            var email = $.trim(emailInput.val());
+            btn.prop('disabled', true);
+            msg.removeClass('is-error').text('Sending\u2026');
+
+            $.post($('#ajax-url').val(), { action: 'mm_send_otp', email: email, nonce: otp.find('input[name="mm_otp_nonce"]').val() })
+                .done(function(resp){
+                    if (resp && resp.success) {
+                        sentTo = email.toLowerCase();
+                        send.prop('hidden', true);
+                        box.prop('hidden', false);
+                        box.find('input').val('').trigger('focus');
+                        msg.html(resp.data);
+                        countdown();
+                        Theme.track('otp_sent', {});
+                    } else {
+                        msg.addClass('is-error').html((resp && resp.data) || 'Could not send the code. Please try again.');
+                        btn.prop('disabled', false);
+                    }
+                })
+                .fail(function(){
+                    msg.addClass('is-error').text('Network error. Please try again.');
+                    btn.prop('disabled', false);
+                })
+                .always(function(){ if (btn.is(send)) send.prop('disabled', false); });
+        }
+
+        emailInput.off('input.mmOtp change.mmOtp').on('input.mmOtp change.mmOtp', refresh);
+        send.off('click.mmOtp').on('click.mmOtp', function(){ request(send); });
+        resend.off('click.mmOtp').on('click.mmOtp', function(){ request(resend); });
+        box.find('input').off('input.mmOtp').on('input.mmOtp', function(){
+            this.value = this.value.replace(/\D/g, '').slice(0, 6);
+        });
+        refresh();
     },
 
     initAffiliateCap:function($){

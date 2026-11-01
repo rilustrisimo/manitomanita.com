@@ -533,7 +533,8 @@
     margin: 0;
 }
 
-.mm-prov__search i {
+.mm-prov__search > i,
+.mm-prov__search > svg { /* Font Awesome's JS swaps <i> for <svg> */
     position: absolute;
     left: 12px;
     top: 50%;
@@ -822,4 +823,31 @@
 
 .mm-toast--error {
     background: #c42b31;
+}
+
+/* Avatars inside the PRO sheet (mm-dashboard.css colours come from .dashboard variables) */
+.mm-prot-sheet .mm-avatar {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, .16);
+    color: #9a7b17;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.mm-prov__badge {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #fdecec;
+    color: #b4232a;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
 }

@@ -1694,7 +1694,8 @@
     display: none;
 }
 
-.mm-joined__search i {
+.mm-joined__search > i,
+.mm-joined__search > svg { /* Font Awesome's JS swaps <i> for <svg> */
     position: absolute;
     left: 14px;
     top: 50%;

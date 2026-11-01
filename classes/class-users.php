@@ -783,6 +783,16 @@ class Users extends Theme {
         $subject = $e['email_subject'];
         $subject = str_replace('[email_group]', get_field('group_name', get_field('groups', $uid)), $subject);
 
+        // "Confirm your email" button: at [email_confirm_link], otherwise before </body> (or at the end).
+        $button = EmailCheck::confirmButton($uid);
+        if(strpos($message, '[email_confirm_link]') !== false){
+            $message = str_replace('[email_confirm_link]', $button, $message);
+        }elseif(stripos($message, '</body>') !== false){
+            $message = preg_replace('~</body>~i', $button.'</body>', $message, 1);
+        }else{
+            $message .= $button;
+        }
+
         parent::sendEmail($to, $subject, $message);
     }
 

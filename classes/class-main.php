@@ -63,7 +63,7 @@ class Theme {
     
 
     function __autoload() {
-        $classes = array('affiliate', 'captcha', 'gift-ai', 'involve', 'payments', 'groups', 'logs', 'users', 'wishlists');
+        $classes = array('affiliate', 'captcha', 'email-check', 'gift-ai', 'involve', 'payments', 'groups', 'logs', 'users', 'wishlists');
 
         foreach($classes as $value){
             require_once PARENT_DIR . '/classes/class-'. $value .'.php';
@@ -146,6 +146,10 @@ class Theme {
             return __('Please enter a valid email address.', 'acf');
         }
 
+        if (class_exists('EmailCheck') && EmailCheck::isDisposable($value)) {
+            return __('Please use your regular email address, not a temporary one.', 'acf');
+        }
+
         // Check domain's MX records
         $domain = substr(strrchr($value, "@"), 1);
         if (!checkdnsrr($domain, 'MX')) {
@@ -178,7 +182,7 @@ class Theme {
     public function sendEmail($email, $subject, $message, $bcc = false){
 		$headers = "From: Manito Manita <rouie@manitomanita.com>\r\n";
 		$headers .= "MIME-Version: 1.0\r\n";
-        $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
         
         if($bcc){
             //$headers .= "BCC: itsmerouie@gmail.com\r\n";
@@ -334,7 +338,8 @@ class Theme {
             'form' => true,
             'return' => (is_null($redirect))?home_url():home_url('/'.$redirect),
             'updated_message' => __("Account Created", 'acf'),
-            'html_after_fields' => Captcha::widget(), // empty unless Turnstile keys are set
+            // Turnstile (when its keys are set) + the email code box on Create Group
+            'html_after_fields' => Captcha::widget().(($postType == 'groups')?EmailCheck::codeField():''),
         ));
     }
 

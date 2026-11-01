@@ -317,6 +317,7 @@ class Groups extends Theme {
                 'screen'      => (string) get_field('screen_name', $u->ID),
                 'email'       => (string) get_field('email', $u->ID),
                 'wishes'      => is_array($wishes) ? count($wishes) : 0,
+                'confirmed'   => EmailCheck::isConfirmed($u->ID),
                 'pair_name'   => $pair ? (string) get_field('name', $pair) : '',
                 'pair_screen' => $pair ? (string) get_field('screen_name', $pair) : '',
             );
@@ -721,6 +722,12 @@ class Groups extends Theme {
         $matched = !empty($fields['matched']);
         $count   = (int) $this->get_users_count_with_meta(array(array('key' => 'groups', 'value' => $gid)));
         $credits = (int) get_field('unshuffle_credits', $gid);
+        $unconfirmed = 0;
+        if(!$matched){
+            foreach(get_posts(array('post_type' => 'users', 'posts_per_page' => -1, 'fields' => 'ids', 'meta_query' => array(array('key' => 'groups', 'value' => $gid)))) as $uid){
+                if(!EmailCheck::isConfirmed($uid)) $unconfirmed++;
+            }
+        }
 
         $tool = function($btn, $icon, $title, $desc, $disabled = '', $extra = ''){
             $attr = $disabled ? ' disabled aria-disabled="true"' : ' data-btn="'.esc_attr($btn).'"';
@@ -730,7 +737,7 @@ class Groups extends Theme {
                 .$extra.'<i class="fa-solid fa-chevron-right mm-prot__go" aria-hidden="true"></i></button>';
         };
 
-        $html  = '<div class="mm-prot" data-group-name="'.esc_attr((string) ($fields['group_name'] ?? '')).'" data-matched="'.($matched ? '1' : '0').'" data-credits="'.$credits.'">';
+        $html  = '<div class="mm-prot" data-group-name="'.esc_attr((string) ($fields['group_name'] ?? '')).'" data-matched="'.($matched ? '1' : '0').'" data-credits="'.$credits.'" data-unconfirmed="'.$unconfirmed.'">';
         $html .= '<div class="mm-prot__head"><div><span class="mm-prot__badge"><i class="fa-solid fa-star"></i> PRO</span>';
         $html .= '<h3>'.esc_html((string) ($fields['group_name'] ?? 'Your group')).'</h3>';
         $html .= '<p>'.$count.' '.($count == 1 ? 'member' : 'members').' &middot; '.($matched ? 'Names drawn' : 'Names not drawn yet').'</p></div>';
@@ -1339,8 +1346,11 @@ class Groups extends Theme {
 
             $subject = str_replace('[email_group]', $groupName, $e['email_subject']);
 
-            foreach($this->getAllMembersEmailsPerGroupId($gid) as $to){
-                if($to) parent::sendEmail($to, $subject, $message);
+            // Reminders skip members who never confirmed their email (fewer bounces); the match email still goes to all.
+            $members = get_posts(array('post_type' => 'users', 'posts_per_page' => -1, 'fields' => 'ids', 'meta_query' => array(array('key' => 'groups', 'value' => $gid))));
+            foreach($members as $uid){
+                $to = get_field('email', $uid);
+                if($to && EmailCheck::isConfirmed($uid)) parent::sendEmail($to, $subject, $message);
             }
         }
     }

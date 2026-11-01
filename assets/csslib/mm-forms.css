@@ -338,3 +338,124 @@
         transform-origin: center top;
     }
 }
+
+/* ---------- Email checks (Theme.initEmailChecks, EmailCheck) ---------- */
+
+.mm-email-hint {
+    margin: 6px 0 0;
+    color: #8a6d12;
+    font-size: 13px;
+    line-height: 1.4;
+    text-align: left;
+}
+
+.mm-email-hint b {
+    color: #1b1b1b;
+}
+
+.mm-email-hint button {
+    margin-left: 4px;
+    padding: 2px 10px;
+    border: 1px solid #1b1b1b;
+    border-radius: 999px;
+    background: #fff;
+    color: #1b1b1b;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* Verification code (Create Group) */
+.mm-otp {
+    margin: -6px 0 18px;
+    padding: 14px;
+    border: 1px solid #d9eceb;
+    border-radius: 12px;
+    background: #f3fbfb;
+    text-align: left;
+}
+
+.mm-otp[hidden],
+.mm-otp [hidden] {
+    display: none !important;
+}
+
+.mm-otp .mm-otp__send {
+    display: block;
+    width: 100%;
+    height: 44px;
+    border: 0;
+    border-radius: 10px;
+    background: #1b1b1b;
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.mm-otp .mm-otp__send:disabled {
+    opacity: .6;
+    cursor: wait;
+}
+
+.mm-otp label {
+    display: block;
+    margin: 0 0 6px;
+    color: #1b1b1b;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.mm-otp__row {
+    display: flex;
+    gap: 8px;
+}
+
+:is(#create-group, #custom-popup) .acf-form .mm-otp input[name="mm_otp"] {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 48px;
+    padding: 0 14px !important;
+    border: 1px solid #d9d9d9;
+    border-radius: 10px;
+    background: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 6px;
+    text-align: center;
+}
+
+.mm-otp .mm-otp__resend {
+    flex: 0 0 auto;
+    padding: 0 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 10px;
+    background: #fff;
+    color: #1b1b1b;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.mm-otp .mm-otp__resend:disabled {
+    color: #9a9a9a;
+    cursor: default;
+}
+
+.mm-otp p.mm-otp__msg {
+    margin: 8px 0 0;
+    color: #2a9d99;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.mm-otp p.mm-otp__msg:empty {
+    display: none;
+}
+
+.mm-otp p.mm-otp__msg.is-error {
+    color: #c42b31;
+}
