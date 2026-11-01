@@ -49,8 +49,10 @@ $faq = array(
 );
 ?>
 <div class="mm-home">
+<script>(function(d){var r=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;if(r||!('IntersectionObserver' in window))return;d.className+=' mm-anim';setTimeout(function(){if(!window.mmRevealReady)d.className+=' mm-reveal-all';},3000);})(document.documentElement);</script>
 
 	<section class="mmh-hero" data-mm-hero>
+		<span class="mmh-hero__glow mmh-hero__glow--3" aria-hidden="true"></span>
 		<div class="mmh-wrap mmh-hero__grid">
 			<div class="mmh-hero__copy">
 				<p class="mmh-eyebrow">Online Manito Manita &amp; Secret Santa</p>
@@ -105,32 +107,32 @@ $faq = array(
 	<?php if ( $stats['groups'] >= 100 ) : ?>
 	<section class="mmh-stats" aria-label="Manito Manita in numbers">
 		<div class="mmh-wrap mmh-stats__row">
-			<div><strong><?php echo esc_html( number_format_i18n( $stats['groups'] ) ); ?>+</strong><span>groups created</span></div>
-			<div><strong><?php echo esc_html( number_format_i18n( $stats['members'] ) ); ?>+</strong><span>members joined</span></div>
-			<div><strong>&#8369;0</strong><span>to use, forever</span></div>
+			<div data-reveal><strong><span data-count="<?php echo (int) $stats['groups']; ?>"><?php echo esc_html( number_format_i18n( $stats['groups'] ) ); ?></span>+</strong><span>groups created</span></div>
+			<div data-reveal style="--d:.1s"><strong><span data-count="<?php echo (int) $stats['members']; ?>"><?php echo esc_html( number_format_i18n( $stats['members'] ) ); ?></span>+</strong><span>members joined</span></div>
+			<div data-reveal style="--d:.2s"><strong>&#8369;0</strong><span>to use, forever</span></div>
 		</div>
 	</section>
 	<?php endif; ?>
 
 	<section class="mmh-section" id="how-it-works">
 		<div class="mmh-wrap">
-			<h2 class="mmh-h2">How it works</h2>
+			<h2 class="mmh-h2" data-reveal>How it works</h2>
 			<ol class="mmh-steps">
-				<li><span class="mmh-steps__num">1</span><h3>Create your group</h3><p>Add a group name, the budget and the exchange date. Takes a minute.</p></li>
-				<li><span class="mmh-steps__num">2</span><h3>Share the link</h3><p>Send it on Messenger, Viber or email. Members join and add their wishlist.</p></li>
-				<li><span class="mmh-steps__num">3</span><h3>Draw names</h3><p>One tap, and everyone privately sees their match, wishlist and gift ideas.</p></li>
+				<li data-reveal><span class="mmh-steps__num">1</span><h3>Create your group</h3><p>Add a group name, the budget and the exchange date. Takes a minute.</p></li>
+				<li data-reveal style="--d:.12s"><span class="mmh-steps__num">2</span><h3>Share the link</h3><p>Send it on Messenger, Viber or email. Members join and add their wishlist.</p></li>
+				<li data-reveal style="--d:.24s"><span class="mmh-steps__num">3</span><h3>Draw names</h3><p>One tap, and everyone privately sees their match, wishlist and gift ideas.</p></li>
 			</ol>
-			<div class="mmh-center"><a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="how-it-works">Create a free group</a></div>
+			<div class="mmh-center" data-reveal><a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="how-it-works">Create a free group</a></div>
 		</div>
 	</section>
 
 	<section class="mmh-section mmh-section--soft">
 		<div class="mmh-wrap">
-			<h2 class="mmh-h2">Everything you need, free</h2>
-			<p class="mmh-sub">No trial, no limits on members, no credit card.</p>
+			<h2 class="mmh-h2" data-reveal>Everything you need, free</h2>
+			<p class="mmh-sub" data-reveal style="--d:.08s">No trial, no limits on members, no credit card.</p>
 			<div class="mmh-features">
-				<?php foreach ( $free as $f ) : ?>
-				<div class="mmh-feature">
+				<?php foreach ( $free as $i => $f ) : ?>
+				<div class="mmh-feature" data-reveal style="--d:<?php echo esc_attr( ( $i % 3 ) * 0.1 ); ?>s">
 					<span class="mmh-feature__icon"><i class="<?php echo esc_attr( $f[0] ); ?>"></i></span>
 					<h3><?php echo $f[1]; ?></h3>
 					<p><?php echo $f[2]; ?></p>
@@ -142,10 +144,10 @@ $faq = array(
 
 	<section class="mmh-section" id="pro">
 		<div class="mmh-wrap">
-			<h2 class="mmh-h2">Free forever. PRO when you need more control.</h2>
-			<p class="mmh-sub">PRO is optional. Most groups never need it, but organizers of bigger groups love it.</p>
+			<h2 class="mmh-h2" data-reveal>Free forever. PRO when you need more control.</h2>
+			<p class="mmh-sub" data-reveal style="--d:.08s">PRO is optional. Most groups never need it, but organizers of bigger groups love it.</p>
 			<div class="mmh-plans">
-				<div class="mmh-plan mmh-plan--free">
+				<div class="mmh-plan mmh-plan--free" data-reveal>
 					<div class="mmh-plan__badge">Free forever</div>
 					<div class="mmh-plan__name">Free</div>
 					<div class="mmh-plan__price">&#8369;0</div>
@@ -158,7 +160,7 @@ $faq = array(
 					</ul>
 					<a href="#create-group" class="mmh-btn mmh-btn--primary mmh-btn--block" data-mm-track="create_group_click" data-mm-slot="plans-free">Create a free group</a>
 				</div>
-				<div class="mmh-plan mmh-plan--pro" data-mm-promo="pro-table">
+				<div class="mmh-plan mmh-plan--pro" data-mm-promo="pro-table" data-reveal style="--d:.15s">
 					<div class="mmh-plan__badge mmh-plan__badge--pro">For organizers</div>
 					<div class="mmh-plan__name">PRO</div>
 					<div class="mmh-plan__price">&#8369;199 <small>one-time, per group</small></div>
@@ -174,8 +176,8 @@ $faq = array(
 
 	<section class="mmh-section mmh-section--soft" id="faq">
 		<div class="mmh-wrap mmh-wrap--narrow">
-			<h2 class="mmh-h2">Questions</h2>
-			<div class="mmh-faq">
+			<h2 class="mmh-h2" data-reveal>Questions</h2>
+			<div class="mmh-faq" data-reveal style="--d:.1s">
 				<?php foreach ( $faq as $i => $q ) : ?>
 				<details<?php echo $i === 0 ? ' open' : ''; ?>>
 					<summary><?php echo $q[0]; ?></summary>
@@ -187,7 +189,7 @@ $faq = array(
 	</section>
 
 	<section class="mmh-final">
-		<div class="mmh-wrap mmh-center">
+		<div class="mmh-wrap mmh-center" data-reveal>
 			<h2>Ready for this year&rsquo;s exchange?</h2>
 			<p>Set it up in 2 minutes. Free forever.</p>
 			<a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="final">Create a free group</a>

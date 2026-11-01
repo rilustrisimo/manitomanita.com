@@ -27,21 +27,42 @@ if ( qed_get_option( 'is_testimonial_enabled', 'option' ) && qed_is_display_test
 	</div>
 </div>
 <?php endif; ?>
-<footer class="footer">
-	<?php get_template_part( 'templates/footer/widget-areas' ); ?>
-	<div class="footer__bottom">
-		<?php
-		if ( $is_back_to_top ) {
-			echo '<div class="footer__arrow-top"><a href="#"><i class="fa fa-chevron-up"></i></a></div>';
-		}
-		?>
-		<div class="container">
-			<div class="row">
-				<div class="col-md-12">
-					<?php //get_template_part( 'templates/footer/info' ); ?>
-					<div class="footer__copyright"><?php echo qed_esc_text( qed_get_option( 'footer_text_note', 'option', '© 2020 - eyorsogood | Website by Rouie Ilustrisimo' ), 'option_input', true ); ?></div>
-				</div>
+<footer class="mm-footer" role="contentinfo">
+	<div class="mm-footer__wrap">
+		<div class="mm-footer__brand">
+			<?php get_template_part( 'templates/header/logo' ); ?>
+			<p>The free online Manito Manita and Secret Santa organizer for offices, families and barkadas.</p>
+			<a href="#create-group" class="mm-footer__cta" data-mm-track="create_group_click" data-mm-slot="footer">Create a free group</a>
+		</div>
+		<nav class="mm-footer__cols" aria-label="Footer">
+			<div>
+				<h3>Product</h3>
+				<ul>
+					<li><a href="<?php echo esc_url( home_url( '/#how-it-works' ) ); ?>">How it works</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/#pro' ) ); ?>">Free &amp; PRO</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/#faq' ) ); ?>">FAQ</a></li>
+				</ul>
 			</div>
+			<div>
+				<h3>Explore</h3>
+				<ul>
+					<li><a href="<?php echo esc_url( home_url( '/gift-ideas/' ) ); ?>">Gift ideas</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/blogs/' ) ); ?>">Blog</a></li>
+				</ul>
+			</div>
+			<div>
+				<h3>Help</h3>
+				<ul>
+					<li><a href="mailto:rouie@manitomanita.com">Contact us</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/reset-password/' ) ); ?>">Forgot password?</a></li>
+				</ul>
+			</div>
+		</nav>
+	</div>
+	<div class="mm-footer__bottom">
+		<div class="mm-footer__wrap mm-footer__wrap--bottom">
+			<span>&copy; <?php echo esc_html( wp_date( 'Y' ) ); ?> Manito Manita. Free forever.</span>
+			<span>Made in the Philippines by <a href="https://eyorsogood.com" rel="noopener" target="_blank">Rouie Ilustrisimo</a></span>
 		</div>
 	</div>
 </footer>

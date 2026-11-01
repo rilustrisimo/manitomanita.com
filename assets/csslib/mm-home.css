@@ -135,9 +135,8 @@
 
 .mmh-hero {
     position: relative;
-    margin-top: -60px; /* tuck under the header's curved bottom */
-    padding: 96px 0 56px;
-    background: radial-gradient(120% 80% at 85% 10%, rgba(62, 199, 194, .25), transparent 60%), var(--mm-dark);
+    padding: 48px 0 56px;
+    background: var(--mm-dark);
     color: rgba(255, 255, 255, .82);
 }
 
@@ -410,9 +409,13 @@
     line-height: 1.1;
 }
 
-.mmh-stats span {
+.mmh-stats div > span {
     color: var(--mm-muted);
     font-size: 13px;
+}
+
+.mmh-stats [data-count] {
+    font-variant-numeric: tabular-nums; /* digits don't jump while counting */
 }
 
 /* ---------- Sections ---------- */
@@ -711,6 +714,192 @@
     transform: none;
 }
 
+/* Chat bubble (Chaty plugin) moves up while the bar is showing */
+.chaty,
+[id^="chaty-widget"] {
+    transition: transform .25s ease;
+}
+
+@media (max-width: 899px) {
+    .mm-sticky-on .chaty,
+    .mm-sticky-on [id^="chaty-widget"] {
+        transform: translateY(-72px);
+    }
+}
+
+/* ---------- Motion ---------- */
+
+/* Hero: teal glows drifting over the dark gradient */
+.mmh-hero {
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--mm-dark);
+}
+
+.mmh-hero::before,
+.mmh-hero::after,
+.mmh-hero__glow {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(10px);
+    will-change: transform;
+}
+
+.mmh-hero::before {
+    top: -30%;
+    right: -20%;
+    width: 75vmax;
+    height: 75vmax;
+    background: radial-gradient(circle, rgba(62, 199, 194, .32) 0%, rgba(62, 199, 194, 0) 62%);
+    animation: mmhDriftA 22s ease-in-out infinite alternate;
+}
+
+.mmh-hero::after {
+    bottom: -45%;
+    left: -25%;
+    width: 65vmax;
+    height: 65vmax;
+    background: radial-gradient(circle, rgba(42, 157, 153, .28) 0%, rgba(42, 157, 153, 0) 60%);
+    animation: mmhDriftB 26s ease-in-out infinite alternate;
+}
+
+.mmh-hero__glow--3 {
+    top: 20%;
+    left: 35%;
+    width: 40vmax;
+    height: 40vmax;
+    background: radial-gradient(circle, rgba(140, 230, 226, .16) 0%, rgba(140, 230, 226, 0) 60%);
+    animation: mmhDriftC 18s ease-in-out infinite alternate;
+}
+
+@keyframes mmhDriftA {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(-18vw, 12vh) scale(1.12); }
+    100% { transform: translate(-6vw, 26vh) scale(.95); }
+}
+
+@keyframes mmhDriftB {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(22vw, -14vh) scale(1.1); }
+    100% { transform: translate(8vw, -4vh) scale(1.18); }
+}
+
+@keyframes mmhDriftC {
+    0%   { transform: translate(0, 0) scale(.9); }
+    50%  { transform: translate(-20vw, -10vh) scale(1.15); }
+    100% { transform: translate(14vw, 8vh) scale(1); }
+}
+
+/* Phone mockup floats; wishes and gift chips pop in */
+.mmh-phone {
+    animation: mmhFloat 6s ease-in-out infinite;
+}
+
+@keyframes mmhFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+}
+
+.mmh-mock__status,
+.mmh-mock__wishes li,
+.mmh-mock__chips span {
+    animation: mmhPop .55s cubic-bezier(.2, .9, .3, 1.3) both;
+}
+
+.mmh-mock__status              { animation-delay: .5s; }
+.mmh-mock__wishes li:nth-child(1) { animation-delay: .9s; }
+.mmh-mock__wishes li:nth-child(2) { animation-delay: 1.05s; }
+.mmh-mock__wishes li:nth-child(3) { animation-delay: 1.2s; }
+.mmh-mock__chips span:nth-child(1) { animation-delay: 1.5s; }
+.mmh-mock__chips span:nth-child(2) { animation-delay: 1.62s; }
+.mmh-mock__chips span:nth-child(3) { animation-delay: 1.74s; }
+
+@keyframes mmhPop {
+    from { opacity: 0; transform: translateY(8px) scale(.96); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Hero copy rises in on load */
+.mmh-hero__copy > * {
+    animation: mmhRise .7s cubic-bezier(.2, .7, .2, 1) both;
+}
+
+.mmh-hero__copy > *:nth-child(2) { animation-delay: .08s; }
+.mmh-hero__copy > *:nth-child(3) { animation-delay: .16s; }
+.mmh-hero__copy > *:nth-child(4) { animation-delay: .24s; }
+.mmh-hero__copy > *:nth-child(5),
+.mmh-hero__copy > *:nth-child(6) { animation-delay: .32s; }
+
+@keyframes mmhRise {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Soft shine across the primary hero button every few seconds */
+.mmh-hero .mmh-btn--primary {
+    position: relative;
+    overflow: hidden;
+}
+
+.mmh-hero .mmh-btn--primary::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -60%;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(100deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .55), rgba(255, 255, 255, 0));
+    transform: skewX(-20deg);
+    animation: mmhShine 5s ease-in-out 2s infinite;
+}
+
+@keyframes mmhShine {
+    0%, 70% { left: -60%; }
+    100%    { left: 130%; }
+}
+
+/* Scroll reveal (html.mm-anim is set inline only when the reveal script can run) */
+.mm-anim .mm-home [data-reveal] {
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity .7s ease, transform .7s cubic-bezier(.2, .7, .2, 1);
+    transition-delay: var(--d, 0s);
+}
+
+.mm-anim .mm-home [data-reveal].is-in,
+.mm-reveal-all .mm-home [data-reveal] {
+    opacity: 1;
+    transform: none;
+}
+
+/* Cards lift slightly on hover */
+.mmh-feature,
+.mmh-steps li,
+.mmh-plan {
+    transition: transform .25s ease, box-shadow .25s ease, opacity .7s ease;
+}
+
+@media (hover: hover) {
+    .mmh-feature:hover,
+    .mmh-steps li:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, .08);
+    }
+
+    .mmh-feature:hover .mmh-feature__icon {
+        animation: mmhWiggle .5s ease;
+    }
+}
+
+@keyframes mmhWiggle {
+    0%, 100% { transform: rotate(0); }
+    30%      { transform: rotate(-10deg) scale(1.08); }
+    60%      { transform: rotate(8deg) scale(1.08); }
+}
+
 /* ---------- Larger screens ---------- */
 
 @media (min-width: 640px) {
@@ -725,7 +914,7 @@
 
 @media (min-width: 900px) {
     .mmh-hero {
-        padding: 120px 0 80px;
+        padding: 80px 0 88px;
     }
 
     .mmh-hero__grid {
@@ -769,7 +958,10 @@
 
 @media (prefers-reduced-motion: reduce) {
     .mm-home *,
+    .mm-home *::before,
+    .mm-home *::after,
     .mmh-sticky {
+        animation: none !important;
         transition: none !important;
     }
 }

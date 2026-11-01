@@ -58,27 +58,11 @@ if (!(isset($_COOKIE[$cookiename]) && $_COOKIE[$cookiename] == $post_count)) {
 	};
 </script>
 <?php endif; ?>
-<header class="header" role="banner">
-	<div class="top_layer">
-		<div class="header__content-wrap">
-			<div class="container-fluid">
-				<div class="row">
-					<div class="col-md-12">
-						<?php get_template_part( 'templates/header/logo' ); ?>
-					</div><!-- .header__content -->
-					<div class="clearfix"></div>
-				</div>
-			</div><!-- .container -->
-		</div><!-- .header__content-wrap -->
-	</div>
-	<div class="clearfix"></div>
-	<div class="bottom_layer dasboard-nav">
-		<div class="container">
-			<div class="header__content-wrap">
-				<div class="row">
-					<div class="col-md-12 header__content">
-						<nav class="main-nav-header" role="navigation">
-							<ul id="navigation-dashboard" class="main-nav">
+<header class="mm-header mm-header--dashboard" role="banner">
+	<div class="mm-header__bar">
+		<?php get_template_part( 'templates/header/logo' ); ?>
+		<nav class="mm-header__nav" aria-label="Group">
+			<ul id="navigation-dashboard" class="mm-header__menu">
 								<li class="menu-item menu-item-type-custom menu-item-object-custom"><a href="javascript:;" <?php echo (get_field('matched', $group->getGroupId()))?'disabled':'data-fancybox="" data-src="#join-group"'; ?>>Join Group</a></li>
 								
 								
@@ -97,16 +81,9 @@ if (!(isset($_COOKIE[$cookiename]) && $_COOKIE[$cookiename] == $post_count)) {
 
 									<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="#" id="pro-actions-btn">PRO Actions</a></li>
 								<?php endif; ?>
-								<!--<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="<?php echo get_permalink(77); ?>">Gift Ideas</a></li>-->
-							</ul>							
-						</nav>
-						<div class="clearfix"></div>
-					</div><!-- .header__content -->
-				</div>
-			</div><!-- .header__content-wrap -->
-		</div><!-- .container -->
+							</ul>
+		</nav>
 	</div>
-	<div class="clearfix"></div>
 </header>
 <?php if ( $is_sticky_header ) { echo '</div>'; }
 SD_Js_Client_Script::add_script( 'initResizeHandler', 'Theme.initResizeHandler();' );

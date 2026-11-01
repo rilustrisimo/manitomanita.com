@@ -66,7 +66,7 @@ function my_custom_styles() {
  */
 add_action( 'wp_enqueue_scripts', 'mm_enqueue_ui_styles', 20 );
 function mm_enqueue_ui_styles() {
-	$names = array( 'mm-match', 'mm-dashboard', 'mm-forms' );
+	$names = array( 'mm-header', 'mm-footer', 'mm-match', 'mm-dashboard', 'mm-forms' );
 	if ( is_page_template( 'template-homepage.php' ) ) $names[] = 'mm-home';
 
 	foreach ( $names as $name ) {

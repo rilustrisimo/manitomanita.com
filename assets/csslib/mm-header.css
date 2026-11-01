@@ -1,0 +1,233 @@
+/*
+ * Site header (header.php) and group dashboard header (header-dashboard.php).
+ * Slim dark bar: logo left, actions right; on phones the dashboard actions wrap to an even row.
+ * Teal accent; PRO groups (body.pro-version) use gold. Overrides elements/logo.less.
+ */
+
+.mm-header {
+    --mmh-accent: #3ec7c2;
+    --mmh-accent-dark: #2a9d99;
+    --mmh-ink: #1b1b1b;
+
+    position: sticky;
+    top: 0;
+    z-index: 990;
+    width: 100%;
+    background: var(--mmh-ink);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .06), 0 6px 18px rgba(0, 0, 0, .18);
+}
+
+.pro-version .mm-header {
+    --mmh-accent: #D4AF37;
+    --mmh-accent-dark: #b8952a;
+}
+
+.admin-bar .mm-header {
+    top: 32px;
+}
+
+@media (max-width: 782px) {
+    .admin-bar .mm-header {
+        top: 46px;
+    }
+}
+
+.mm-header__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    max-width: 1120px;
+    min-height: 64px;
+    margin: 0 auto;
+    padding: 10px 16px;
+}
+
+/* ---------- Logo ---------- */
+
+.mm-header .logo {
+    float: none;
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.mm-header .logo a,
+.mm-header .logo a:hover {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 0;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: .02em;
+    text-align: left;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.mm-header .logo a span {
+    color: #3ec7c2; /* brand wordmark stays teal, also on PRO */
+    font-weight: 300;
+}
+
+.mm-header #logoLink img {
+    display: block;
+    width: 30px;
+    max-width: none;
+    height: auto;
+    margin: 0 8px 0 0;
+}
+
+/* ---------- Actions ---------- */
+
+.mm-header__nav {
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.mm-header .mm-header__menu {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mm-header .mm-header__menu li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mm-header .mm-header__menu li::before,
+.mm-header .mm-header__menu li::after {
+    content: none;
+}
+
+.mm-header .mm-header__menu a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 40px;
+    padding: 0 16px;
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: 10px;
+    background: transparent;
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: .2px;
+    text-decoration: none;
+    text-transform: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.mm-header .mm-header__menu a:hover,
+.mm-header .mm-header__menu a:focus-visible {
+    border-color: rgba(255, 255, 255, .55);
+    background: rgba(255, 255, 255, .06);
+    color: #fff;
+    outline: none;
+}
+
+/* Primary action: Create Group (site) / Join Group (dashboard) */
+.mm-header .mm-header__menu a[data-src="#create-group"],
+.mm-header .mm-header__menu a[href="#create-group"],
+.mm-header--dashboard .mm-header__menu li:first-child a {
+    border-color: var(--mmh-accent);
+    background: var(--mmh-accent);
+    color: var(--mmh-ink);
+}
+
+.mm-header .mm-header__menu a[data-src="#create-group"]:hover,
+.mm-header .mm-header__menu a[href="#create-group"]:hover,
+.mm-header--dashboard .mm-header__menu li:first-child a:hover {
+    border-color: var(--mmh-accent-dark);
+    background: var(--mmh-accent-dark);
+    color: #fff;
+}
+
+/* Try Pro / PRO Actions */
+.mm-header #go-pro-btn span,
+.mm-header #go-pro-btn i {
+    color: #D4AF37;
+}
+
+.mm-header #pro-actions-btn {
+    border-color: rgba(212, 175, 55, .6);
+    color: #D4AF37;
+}
+
+/* Disabled (e.g. Join Group after names are drawn) */
+.mm-header .mm-header__menu a[disabled],
+.mm-header--dashboard .mm-header__menu li:first-child a[disabled] {
+    border-color: rgba(255, 255, 255, .12);
+    background: transparent;
+    color: rgba(255, 255, 255, .35);
+    pointer-events: none;
+    cursor: default;
+}
+
+/* ---------- Phones ---------- */
+
+@media (max-width: 640px) {
+    .mm-header__bar {
+        min-height: 56px;
+        padding: 8px 12px;
+    }
+
+    .mm-header .logo a,
+    .mm-header .logo a:hover {
+        font-size: 18px;
+    }
+
+    .mm-header #logoLink img {
+        width: 26px;
+    }
+
+    .mm-header .mm-header__menu a {
+        height: 38px;
+        padding: 0 12px;
+        font-size: 13px;
+    }
+
+    /* Dashboard: logo row, then an even row of actions */
+    .mm-header--dashboard .mm-header__bar {
+        flex-wrap: wrap;
+        justify-content: center;
+        padding-bottom: 10px;
+    }
+
+    .mm-header--dashboard .mm-header__nav {
+        flex: 1 1 100%;
+    }
+
+    .mm-header--dashboard .mm-header__menu li {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .mm-header--dashboard .mm-header__menu a {
+        width: 100%;
+        padding: 0 6px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mm-header .logo a,
+    .mm-header .logo a:hover {
+        font-size: 16px;
+    }
+
+    .mm-header .mm-header__menu a {
+        font-size: 12px;
+    }
+}

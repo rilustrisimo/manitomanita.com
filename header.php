@@ -16,43 +16,21 @@ if ( $is_sticky_header ) {
 	echo '<div class="header-wrap">';
 }
 ?>
-<header class="header" role="banner">
-	<div class="top_layer">
-		<div class="header__content-wrap">
-			<div class="container-fluid">
-				<div class="row">
-					<div class="col-md-12">
-						<?php get_template_part( 'templates/header/logo' ); ?>
-					</div><!-- .header__content -->
-					<div class="clearfix"></div>
-				</div>
-			</div><!-- .container -->
-		</div><!-- .header__content-wrap -->
+<header class="mm-header" role="banner">
+	<div class="mm-header__bar">
+		<?php get_template_part( 'templates/header/logo' ); ?>
+		<?php if ( has_nav_menu( 'header-menu' ) ) : ?>
+			<nav class="mm-header__nav" aria-label="Main">
+				<?php wp_nav_menu(array(
+					'theme_location' => 'header-menu',
+					'container'      => false,
+					'menu_class'     => 'mm-header__menu',
+					'menu_id'        => 'navigation',
+					'depth'          => 1,
+				)); ?>
+			</nav>
+		<?php endif; ?>
 	</div>
-	<div class="clearfix"></div>
-	<div class="bottom_layer">
-		<div class="container">
-			<div class="header__content-wrap">
-				<div class="row">
-					<div class="col-md-12 header__content">
-						<?php if ( has_nav_menu( 'header-menu' ) ) : ?>
-							<nav class="main-nav-header" role="navigation">
-								<?php wp_nav_menu(array(
-									'theme_location' => 'header-menu',
-									'container' => 'ul',
-									'menu_class' => 'main-nav',
-									'menu_id' => 'navigation',
-									'depth' => 3,
-								)); ?>
-							</nav>
-						<?php endif; ?>
-						<div class="clearfix"></div>
-					</div><!-- .header__content -->
-				</div>
-			</div><!-- .header__content-wrap -->
-		</div><!-- .container -->
-	</div>
-	<div class="clearfix"></div>
 </header>
 <?php if ( $is_sticky_header ) { echo '</div>'; }
 SD_Js_Client_Script::add_script( 'initResizeHandler', 'Theme.initResizeHandler();' );
