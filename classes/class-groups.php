@@ -51,6 +51,7 @@ class Groups extends Theme {
         add_action('rest_api_init', array($this, 'trash_user'));
         add_action('rest_api_init', array($this, 'edit_user'));
         add_action('rest_api_init', array($this, 'get_user_export'));
+        add_action('rest_api_init', array($this, 'members_group'));
 
         // Groups is instantiated in several places; register the cron hooks once.
         static $cronHooked = false;
@@ -283,6 +284,55 @@ class Groups extends Theme {
         return true;
     }
 
+    public function members_group() {
+        register_rest_route('custom-webhook/v1', '/members', array(
+            'methods'             => 'POST',
+            'callback'            => array($this, 'handle_members'),
+            'permission_callback' => array($this, 'canUsePro'),
+        ));
+    }
+
+    /**
+     * PRO members manager / matches view: one list with everything the moderator tools need.
+     */
+    public function handle_members($request) {
+        $gid = (int) $request->get_param('group_id');
+        $matched = (bool) get_field('matched', $gid);
+
+        $q = new WP_Query(array(
+            'post_type'      => 'users',
+            'posts_per_page' => -1,
+            'meta_query'     => array(array('key' => 'groups', 'value' => $gid, 'compare' => '=')),
+            'orderby'        => 'date',
+            'order'          => 'ASC',
+        ));
+
+        $users = array();
+        foreach($q->posts as $u){
+            $wishes = get_field('my_wishlists', $u->ID);
+            $pair = $matched ? (int) get_field('pair', $u->ID, false) : 0;
+            $users[] = array(
+                'ID'          => $u->ID,
+                'name'        => (string) get_field('name', $u->ID),
+                'screen'      => (string) get_field('screen_name', $u->ID),
+                'email'       => (string) get_field('email', $u->ID),
+                'wishes'      => is_array($wishes) ? count($wishes) : 0,
+                'pair_name'   => $pair ? (string) get_field('name', $pair) : '',
+                'pair_screen' => $pair ? (string) get_field('screen_name', $pair) : '',
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'group'   => array(
+                'name'    => (string) get_field('group_name', $gid),
+                'matched' => $matched,
+                'credits' => (int) get_field('unshuffle_credits', $gid),
+            ),
+            'users'   => $users,
+        ), 200);
+    }
+
     public function get_user_export() {
         register_rest_route('custom-webhook/v1', '/get-user-export', array(
             'methods' => 'POST',
@@ -324,7 +374,7 @@ class Groups extends Theme {
             $wishlists = array();
             $links = array();
 
-            foreach(get_field('my_wishlists', $user->ID) as $key => $w):
+            foreach((array) get_field('my_wishlists', $user->ID) as $key => $w):
                 $wishlists[] =  '['.($key+1).'] '.$w['wishlist_description'];
                 $links[] =  ($w['reference_links'])?$w['reference_links']:'';
             endforeach;
@@ -333,6 +383,7 @@ class Groups extends Theme {
                 'ID' => $user->ID,
                 'name' => get_field('name', $user->ID),
                 'screen' => get_field('screen_name', $user->ID),
+                'email' => get_field('email', $user->ID),
                 'pair_name' => (get_field('matched', $group_id))?get_field('name', get_field('pair', $user->ID)):'',
                 'pair_screen' => (get_field('matched', $group_id))?get_field('screen_name', get_field('pair', $user->ID)):'',
                 'address_contact' => get_field('my_address_and_contact_details', $user->ID),
@@ -666,33 +717,43 @@ class Groups extends Theme {
 
         if(!self::isModerator($gid) || !get_field('pro', $gid)) wp_send_json_error('Please enter the moderator password again.');
 
-        $fields = $this->getGroupDetails($gid);
+        $fields  = $this->getGroupDetails($gid);
+        $matched = !empty($fields['matched']);
+        $count   = (int) $this->get_users_count_with_meta(array(array('key' => 'groups', 'value' => $gid)));
+        $credits = (int) get_field('unshuffle_credits', $gid);
 
-        $meta_query = array(
-            array(
-                'key' => 'groups',
-                'value' => $gid,
-            ),
-        );
+        $tool = function($btn, $icon, $title, $desc, $disabled = '', $extra = ''){
+            $attr = $disabled ? ' disabled aria-disabled="true"' : ' data-btn="'.esc_attr($btn).'"';
+            return '<button type="button" class="mm-prot__tool'.($disabled ? ' is-off' : '').'"'.$attr.'>'
+                .'<span class="mm-prot__icon"><i class="'.esc_attr($icon).'"></i></span>'
+                .'<span class="mm-prot__txt"><strong>'.$title.'</strong><small>'.($disabled ? esc_html($disabled) : $desc).'</small></span>'
+                .$extra.'<i class="fa-solid fa-chevron-right mm-prot__go" aria-hidden="true"></i></button>';
+        };
 
-        $post_count = $this->get_users_count_with_meta($meta_query);
-        $unshuf_count = (int)get_field('unshuffle_credits', $gid);
-        $unshuf_action = ($unshuf_count > 0)?'un-shuffle':'add-credits';
-        $unshuf_txt = ($unshuf_count > 0)?'Unshuffle':'Add Unshuffle Credits';
-        
+        $html  = '<div class="mm-prot" data-group-name="'.esc_attr((string) ($fields['group_name'] ?? '')).'" data-matched="'.($matched ? '1' : '0').'" data-credits="'.$credits.'">';
+        $html .= '<div class="mm-prot__head"><div><span class="mm-prot__badge"><i class="fa-solid fa-star"></i> PRO</span>';
+        $html .= '<h3>'.esc_html((string) ($fields['group_name'] ?? 'Your group')).'</h3>';
+        $html .= '<p>'.$count.' '.($count == 1 ? 'member' : 'members').' &middot; '.($matched ? 'Names drawn' : 'Names not drawn yet').'</p></div>';
+        $html .= '<div class="mm-prot__credits"><strong>'.$credits.'</strong><span>'.($credits == 1 ? 'redo' : 'redos').' left</span></div></div>';
 
-        $list = "";
-        $list .= "<ul class='pro-btns-list'>";
-        $list .= (!$fields['matched'] && $post_count > 2)?"<li><a href='#' class='pro-list-btn' data-btn='shuffle'><div><span><i class='fa-solid fa-shuffle'></i></span> Shuffle Group</div></a></li>":"<li><a href='javascript:;' disabled><span><i class='fa-solid fa-shuffle'></i></span> Shuffle Group</a></li>";
-        $list .= ($fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='".$unshuf_action."'><div><span><i class='fa-solid fa-clock-rotate-left'></i></span>".$unshuf_txt."</div></a><span class='uncount'>".$unshuf_count."</span></li>":"<li><a href='javascript:;' disabled><div><span><i class='fa-solid fa-clock-rotate-left'></i></span>Unshuffle</div></a><span class='uncount'>".$unshuf_count."</span></li>";
-        $list .= "<li><a href='#' class='pro-list-btn' data-btn='joined'><div><span><i class='fa-solid fa-user-plus'></i></span>Joined Names</div></a></li>";
-        $list .= ($fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='matches'><div><span><i class='fa-solid fa-handshake'></i></span>See Matches</div></a></li>":"<li><a href='javascript:;' disabled><div><span><i class='fa-solid fa-handshake'></i></span>See Matches</div></a></li>";
-        $list .= (!$fields['matched'])?"<li><a href='#' class='pro-list-btn' data-btn='kick'><div><span><i class='fa-solid fa-user-xmark'></i></span>Kick Members</div></a></li>":"<li><a href='javascript:;' disabled><div><span><i class='fa-solid fa-user-xmark'></i></span>Kick Members</div></a></li>";
-        $list .= "<li><a href='#' class='pro-list-btn' data-btn='edit'><div><span><i class='fa-solid fa-pen-to-square'></i></span>Edit Member</div></a></li>";
-        $list .= "<li><a href='#' class='pro-list-btn' data-btn='export'><div><span><i class='fa-solid fa-file-arrow-down'></i></span>Export Data</div></a></li>";
-        $list .= "</ul>";
+        $html .= '<h4 class="mm-prot__group">Members</h4>';
+        $html .= $tool('members', 'fa-solid fa-users', 'Members', 'Names and emails, edit or remove members');
 
-        wp_send_json_success($list);
+        $html .= '<h4 class="mm-prot__group">Draw</h4>';
+        if(!$matched){
+            $html .= $tool('shuffle', 'fa-solid fa-shuffle', 'Draw names', 'Everyone gets their match by email', ($count < 3) ? 'Needs at least 3 members' : '');
+        }elseif($credits > 0){
+            $html .= $tool('redo', 'fa-solid fa-rotate', 'Redo the draw', 'New matches for everyone &middot; uses 1 of '.$credits.' redos');
+        }else{
+            $html .= $tool('add-credits', 'fa-solid fa-plus', 'Add 3 more redos', 'You&rsquo;ve used all redos &middot; &#8369;99');
+        }
+
+        $html .= '<h4 class="mm-prot__group">Results</h4>';
+        $html .= $tool('matches', 'fa-solid fa-handshake', 'See matches', 'Who is buying for whom', $matched ? '' : 'Available after names are drawn');
+        $html .= $tool('export', 'fa-solid fa-file-arrow-down', 'Export to spreadsheet', 'Names, emails, matches, wishlists and addresses');
+        $html .= '</div>';
+
+        wp_send_json_success($html);
     }
 
     

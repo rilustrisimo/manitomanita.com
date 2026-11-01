@@ -274,444 +274,288 @@ var Theme = {
     },
 
     initProButtons: function($){
-        const groupid = $('input#groupid-val').val();
+        var gid = $('input#groupid-val').val();
 
-        $('.pro-list-btn').click(function(e){
+        $('#pro-actions').off('click.mmPro').on('click.mmPro', '[data-btn]', function(e){
             e.preventDefault();
-            
-            const databtn = $(this).attr('data-btn');
 
-            if(databtn == "shuffle"){
-                $.fancybox.open({
-                    src: `
-                        <div style="width: 300px; padding: 20px; text-align: center;">
-                            <p>Kindly make sure that all members have already joined the group before proceeding in shuffling.</p>
-                            <button id="proceedButton" style="margin: 10px; padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Proceed</button>
-                            <button id="cancelButton" style="padding: 8px 16px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
-                        </div>
-                    `,
-                    type: 'html',
-                    smallBtn: false,
-                    touch: false,
-                    trapFocus: false,
-                    afterShow: function(instance, current) {
-                        // "Proceed" button functionality
-                        $('#proceedButton').on('click', function() {
-                            Theme.initMatching($, groupid); // Run the function
-                            $.fancybox.close(); // Close the modal
-                        });
-                        // "Cancel" button functionality
-                        $('#cancelButton').on('click', function() {
-                            $.fancybox.close(); // Simply close the modal
+            var btn = $(this).attr('data-btn'),
+                panel = $('#pro-actions .mm-prot'),
+                credits = parseInt(panel.attr('data-credits'), 10) || 0;
+
+            if (btn === 'members') Theme.proMembers($, gid);
+            if (btn === 'matches') Theme.proMatches($, gid);
+            if (btn === 'export') Theme.proExport($, gid, panel.attr('data-group-name') || 'group');
+
+            if (btn === 'shuffle') {
+                Theme.confirmSheet({
+                    title: 'Draw names now?',
+                    body: 'Everyone will get their match by email. Make sure all members have joined first, because no one can join after the draw.',
+                    confirm: 'Draw names',
+                    onConfirm: function(done){ done(); Theme.initMatching($, gid); }
+                });
+            }
+
+            if (btn === 'redo') {
+                Theme.confirmSheet({
+                    title: 'Redo the draw?',
+                    body: 'Everyone gets a new match and a new email. Make sure no one has bought a gift for their current match yet.<br><b>Uses 1 of ' + credits + ' ' + (credits === 1 ? 'redo' : 'redos') + '.</b>',
+                    confirm: 'Redo the draw',
+                    danger: true,
+                    onConfirm: function(done){
+                        Theme.proApi('unshuffle-group', { group_id: gid }).then(function(){
+                            done();
+                            Theme.initMatching($, gid); // draws again and reloads the dashboard
+                        }).catch(function(err){
+                            done();
+                            Theme.toast(err.message, 'error');
                         });
                     }
                 });
             }
 
-            if(databtn == "un-shuffle"){
-                $.fancybox.open({
-                    src: `
-                        <div style="width: 300px; padding: 20px; text-align: center;">
-                            <p>Kindly make sure that all members have not purchased or secured a gift for the current match. Unshuffling the group will give each member a new match when you shuffle again.</p>
-                            <button id="proceedButton" style="margin: 10px; padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Proceed</button>
-                            <button id="cancelButton" style="padding: 8px 16px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
-                        </div>
-                    `,
-                    type: 'html',
-                    smallBtn: false,
-                    touch: false,
-                    trapFocus: false,
-                    afterShow: function(instance, current) {
-                        // "Proceed" button functionality
-                        $('#proceedButton').on('click', function() {
-                            $.fancybox.close(); // Close the modal
-                            
-                            Theme.initShowOverlay($);
-                            
-                            fetch('/wp-json/custom-webhook/v1/unshuffle-group', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                Theme.removeOverlay($);
-
-                                console.log(data);
-
-                                if (data.success) {
-                                    $('#reload').submit(); // Refresh the page if matching succeeded
-                                } else {
-                                    alert(`Error: ${data.message}`);  // Show error message
-                                }
-                            })
-                            .catch(error => {
-                                alert('An unexpected error occurred: ' + error.message);
-                                Theme.removeOverlay($);
-                            });
-                        });
-                        // "Cancel" button functionality
-                        $('#cancelButton').on('click', function() {
-                            $.fancybox.close(); // Simply close the modal
-                        });
-                    }
-                });
-            }
-
-            if(databtn == "joined"){
-                Theme.joinedFunction($, groupid);
-            }
-
-            if(databtn == "matches"){
-                Theme.matchesFunction($, groupid);
-            }
-
-            if(databtn == "kick"){
-                Theme.kickFunction($, groupid);
-            }
-
-            if(databtn == "edit"){
-                Theme.editMemberFunction($, groupid);
-            }
-
-            if(databtn == "export"){
-                Theme.exportDataFunction($, groupid);
-            }
-
-            if(databtn == "add-credits"){
-                $('#pro-credits.pop-container').css('display', 'flex');
+            if (btn === 'add-credits') {
+                $('#pro-credits').css('display', 'flex');
                 Theme.popClose($);
             }
         });
-    },
 
-    exportDataFunction: function($, groupid) {
-        Theme.initShowOverlay($);
-    
-        fetch('/wp-json/custom-webhook/v1/get-user-export', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
-        })
-        .then(response => response.json())
-        .then(data => {
-            Theme.removeOverlay($);
-            console.log(data);
-    
-            if (data.success) {
-                // Prepare CSV content
-                let csvContent = "\uFEFF" + "Name,Screen Name,Pair Name,Pair Screen,Address Contact,Wishlists,Links\n"; // Header row
-    
-                function removeNewlines(field) {
-                    if (field === null || field === undefined) return ''; // Handle null/undefined fields
-                    let string = String(field); // Convert to string if not already
-    
-                    // Remove all newline characters (including \r\n, \n, and \r)
-                    string = string.replace(/[\r\n]+/g, '');
-    
-                    return string;
-                }
-    
-                // Add each user's data row
-                data.users.forEach(user => {
-                    let wishlists = user.wishlists.length > 0 ? user.wishlists.join('|') : 'N/A';
-                    let links = user.links.flat().filter(link => link && link.link_url).map(link => link.link_url).join('|');
-    
-                    // Log to see if the row looks correct
-                    console.log(`Row: ${user.name}, ${user.screen}, ${wishlists}, ${links}`);
-    
-                    let row = `"${user.name}","${user.screen}","${user.pair_name || 'N/A'}","${user.pair_screen || 'N/A'}","${user.address_contact || 'N/A'}","${removeNewlines(wishlists)}","${removeNewlines(links)}"`;
-                    csvContent += row + "\n";
-                });
-    
-                // Generate current timestamp for filename
-                let timestamp = new Date().toISOString().replace(/[:.-]/g, '');
-    
-                // Create a Blob with the CSV content
-                let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    
-                // Create a download link for the CSV file
-                let downloadLink = document.createElement("a");
-    
-                // Use URL.createObjectURL to generate a download URL for the Blob
-                if (navigator.msSaveBlob) { // For IE
-                    navigator.msSaveBlob(blob, `manitomanita_group_data_${timestamp}.csv`);
-                } else { // For other browsers
-                    downloadLink.href = URL.createObjectURL(blob);
-                    downloadLink.download = `manitomanita_group_data_${timestamp}.csv`;
-    
-                    // Append the link to the body, trigger click to download, and remove it
-                    document.body.appendChild(downloadLink);
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
-                }
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('An unexpected error occurred: ' + error.message);
-            Theme.removeOverlay($);
-        });
-    },     
-
-    editMemberFunction: function($, groupid){
-        Theme.initShowOverlay($);
-    
-        fetch('/wp-json/custom-webhook/v1/edit-user', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
-        })
-        .then(response => response.json())
-        .then(data => {
-            Theme.removeOverlay($);
-            console.log(data);
-    
-            if (data.success) {
-                let tableHTML = '<table style="width: 100%; border-collapse: collapse;">';
-                tableHTML += '<thead><tr><th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Member Name</th>';
-                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Screen Name</th>';
-                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Edit Member</th></tr></thead><tbody>';
-                
-                data.users.forEach((user, index) => {
-                    let rowColor = index % 2 === 0 ? '#ffffff' : '#f9f9f9';
-                    tableHTML += `<tr style="background-color: ${rowColor};">`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.name}</td>`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.screen}</td>`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;"><a href="#" class="edit-link" data-name="${user.name}" data-id="${user.ID}">Edit Details</a></td>`;
-                    tableHTML += '</tr>';
-                });
-    
-                tableHTML += '</tbody></table>';
-    
-                // Display the table in a FancyBox modal
-                $.fancybox.open({
-                    src: `<div style="padding: 20px; max-width: 600px;">${tableHTML}</div>`,
-                    type: 'html',
-                    opts: {
-                        afterShow: function() {
-                            // Attach event listeners to kick links
-                            $('.edit-link').on('click', function(event) {
-                                event.preventDefault();
-                                //let userName = $(this).data('name');
-                                let userId = $(this).data('id');
-    
-                                Theme.action = 'edit-member';
-                                Theme.userid = userId;
-
-                                Theme.initCustomPopup($)
-                            });
-                        }
-                    }
-                });
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('An unexpected error occurred: ' + error.message);
-            Theme.removeOverlay($);
-        });
-    },      
-
-    kickFunction: function($, groupid){
-        Theme.initShowOverlay($);
-    
-        fetch('/wp-json/custom-webhook/v1/kick', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
-        })
-        .then(response => response.json())
-        .then(data => {
-            Theme.removeOverlay($);
-            console.log(data);
-    
-            if (data.success) {
-                let tableHTML = '<table style="width: 100%; border-collapse: collapse;">';
-                tableHTML += '<thead><tr><th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Member Name</th>';
-                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Screen Name</th>';
-                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Kick Member</th></tr></thead><tbody>';
-                
-                data.users.forEach((user, index) => {
-                    let rowColor = index % 2 === 0 ? '#ffffff' : '#f9f9f9';
-                    tableHTML += `<tr style="background-color: ${rowColor};">`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.name}</td>`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.screen}</td>`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;"><a href="#" class="kick-link" data-name="${user.name}" data-id="${user.ID}">Remove</a></td>`;
-                    tableHTML += '</tr>';
-                });
-    
-                tableHTML += '</tbody></table>';
-    
-                // Display the table in a FancyBox modal
-                $.fancybox.open({
-                    src: `<div style="padding: 20px; max-width: 600px;">${tableHTML}</div>`,
-                    type: 'html',
-                    opts: {
-                        afterShow: function() {
-                            // Attach event listeners to kick links
-                            $('.kick-link').on('click', function(event) {
-                                event.preventDefault();
-                                let userName = $(this).data('name');
-                                let userId = $(this).data('id');
-    
-                                // Open confirmation FancyBox
-                                $.fancybox.open({
-                                    src: `<div style="padding: 20px; text-align: center;">
-                                            <p>Are you sure you want to remove <strong>${userName}</strong> from the group?</p>
-                                            <button id="proceed-kick" style="margin-right: 10px;">Proceed</button>
-                                            <button id="cancel-kick">Cancel</button>
-                                          </div>`,
-                                    type: 'html',
-                                    opts: {
-                                        afterShow: function() {
-                                            // Confirm kick action
-                                            $('#proceed-kick').on('click', function() {
-                                                $.fancybox.close(); // Close confirmation
-    
-                                                fetch('/wp-json/custom-webhook/v1/trash-user', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ user_id: userId }) // Pass the user ID to the API
-                                                })
-                                                .then(response => response.json())
-                                                .then(result => {
-                                                    if (result.success) {
-                                                        $.fancybox.close(); // Close all FancyBox instances
-                                                        Theme.ajaxCardUsers($);
-                                                        Theme.getProListActions($);
-                                                        alert('User successfully removed from the group.');
-                                                    } else {
-                                                        alert('Failed to remove the user: ' + result.message);
-                                                    }
-                                                })
-                                                .catch(error => {
-                                                    alert('An unexpected error occurred: ' + error.message);
-                                                });
-                                            });
-    
-                                            // Cancel action
-                                            $('#cancel-kick').on('click', function() {
-                                                $.fancybox.close(); // Close only the confirmation box
-                                            });
-                                        }
-                                    }
-                                });
-                            });
-                        }
-                    }
-                });
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('An unexpected error occurred: ' + error.message);
-            Theme.removeOverlay($);
-        });
-    },       
-
-    matchesFunction: function($, groupid){
-        Theme.initShowOverlay($);
-                    
-        fetch('/wp-json/custom-webhook/v1/matches', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
-        })
-        .then(response => response.json())
-        .then(data => {
-            Theme.removeOverlay($);
-            
-            // Check if the response is successful
-            if (data.success) {
-                // Build HTML for the table
-                let tableHTML = '<table style="width: 100%; border-collapse: collapse;">';
-                tableHTML += '<thead><tr><th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Member Name</th>';
-                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Match Name</th></tr></thead><tbody>';
-    
-                // Populate table rows with user data, alternating background colors
-                data.users.forEach((user, index) => {
-                    let rowColor = index % 2 === 0 ? '#ffffff' : '#f9f9f9';
-                    tableHTML += `<tr style="background-color: ${rowColor};">`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.name} (<b>${user.screen}</b>)</td>`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.pair_name} (<b>${user.pair_screen}</b>)</td>`;
-                    tableHTML += '</tr>';
-                });
-    
-                tableHTML += '</tbody></table>';
-    
-                // Display the table in a FancyBox modal
-                $.fancybox.open({
-                    src: `<div style="padding: 20px; max-width: 600px;">${tableHTML}</div>`,
-                    type: 'html',
-                    opts: {
-                        afterShow: function() {
-                            console.log('Modal with user table displayed');
-                        }
-                    }
-                });
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('An unexpected error occurred: ' + error.message);
-            Theme.removeOverlay($);
+        $('#pro-actions').off('click.mmProBack').on('click.mmProBack', '.mm-prov__back', function(e){
+            e.preventDefault();
+            $('#pro-actions .pop-container__content').html('<p class="mm-prot__loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading PRO tools&hellip;</p>');
+            Theme.getProListActions($); // fresh counts after edits / removals
         });
     },
 
-    joinedFunction: function($, groupid){
-        Theme.initShowOverlay($);
-                    
-        fetch('/wp-json/custom-webhook/v1/joined', {
+    /* ---------- Small UI helpers (PRO tools) ---------- */
+
+    esc: function(v){
+        return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    },
+
+    toast: function(msg, type){
+        var $ = jQuery, wrap = $('#mm-toasts');
+        if (!wrap.length) wrap = $('<div id="mm-toasts" aria-live="polite"></div>').appendTo('body');
+
+        var t = $('<div class="mm-toast"></div>').addClass(type ? 'mm-toast--' + type : '').text(msg).appendTo(wrap);
+        setTimeout(function(){ t.addClass('is-in'); }, 10);
+        setTimeout(function(){ t.removeClass('is-in'); setTimeout(function(){ t.remove(); }, 300); }, 4000);
+    },
+
+    /**
+     * Confirm dialog: { title, body (HTML, escape user data), confirm, danger, onConfirm(done) }.
+     */
+    confirmSheet: function(o){
+        var $ = jQuery;
+        $('#mm-confirm').remove();
+
+        var box = $('<div id="mm-confirm" class="pop-container mm-upsell mm-confirm" role="alertdialog" aria-modal="true">' +
+            '<div class="pop-container__inner mm-upsell__inner"><h2></h2><p class="mm-upsell__lead"></p>' +
+            '<div class="mm-upsell__actions"><button type="button" class="mm-upsell__btn mm-confirm__ok"></button>' +
+            '<button type="button" class="mm-upsell__btn mm-upsell__btn--ghost mm-confirm__no">Cancel</button></div></div></div>');
+
+        box.find('h2').text(o.title);
+        box.find('.mm-upsell__lead').html(o.body);
+        box.find('.mm-confirm__ok').text(o.confirm || 'Continue').addClass(o.danger ? 'mm-upsell__btn--danger' : 'mm-upsell__btn--dark');
+
+        box.appendTo('body').css('display', 'flex');
+        box.on('click', function(e){ if (e.target === this) box.remove(); });
+        box.find('.mm-confirm__no').on('click', function(){ box.remove(); });
+        box.find('.mm-confirm__ok').on('click', function(){
+            $(this).prop('disabled', true).text('Please wait\u2026');
+            o.onConfirm(function(){ box.remove(); });
+        }).trigger('focus');
+    },
+
+    proApi: function(path, body){
+        return fetch('/wp-json/custom-webhook/v1/' + path, {
             method: 'POST',
+            credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ group_id: groupid })  // Replace with dynamic group ID if needed
-        })
-        .then(response => response.json())
-        .then(data => {
-            Theme.removeOverlay($);
-            
-            // Check if the response is successful
-            if (data.success) {
-                // Build HTML for the table
-                let tableHTML = '<table style="width: 100%; border-collapse: collapse;">';
-                tableHTML += '<thead><tr><th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Name</th>';
-                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Screenname</th>';
-                tableHTML += '<th style="padding: 10px; background-color: #f2f2f2; text-align: left;">Email</th></tr></thead><tbody>';
-    
-                // Populate table rows with user data, alternating background colors
-                data.users.forEach((user, index) => {
-                    let rowColor = index % 2 === 0 ? '#ffffff' : '#f9f9f9';
-                    tableHTML += `<tr style="background-color: ${rowColor};">`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.name}</td>`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.screen}</td>`;
-                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd;">${user.email}</td>`;
-                    tableHTML += '</tr>';
-                });
-    
-                tableHTML += '</tbody></table>';
-    
-                // Display the table in a FancyBox modal
-                $.fancybox.open({
-                    src: `<div style="padding: 20px; max-width: 600px;">${tableHTML}</div>`,
-                    type: 'html',
-                    opts: {
-                        afterShow: function() {
-                            console.log('Modal with user table displayed');
-                        }
+            body: JSON.stringify(body)
+        }).then(function(r){ return r.json(); }).then(function(d){
+            if (!d || d.success === false || d.code) throw new Error((d && d.message) || 'Something went wrong. Please try again.');
+            return d;
+        });
+    },
+
+    /**
+     * Show a PRO tool inside the PRO Actions sheet (with a back button to the tool list).
+     */
+    proView: function($, title, html){
+        var content = $('#pro-actions .pop-container__content');
+        content.html('<div class="mm-prov"><button type="button" class="mm-prov__back"><i class="fa-solid fa-chevron-left"></i> PRO tools</button>' +
+            '<h3 class="mm-prov__title">' + Theme.esc(title) + '</h3><div class="mm-prov__body">' + html + '</div></div>');
+        $('#pro-actions .mm-upsell__inner').scrollTop(0);
+        return content.find('.mm-prov__body');
+    },
+
+    proLoading: '<p class="mm-prot__loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading&hellip;</p>',
+
+    proSearch: function(body, placeholder){
+        body.find('.mm-prov__search input').attr('placeholder', placeholder).on('input', function(){
+            var q = jQuery.trim(jQuery(this).val()).toLowerCase(), shown = 0;
+            body.find('.mm-prov__row').each(function(){
+                var hit = !q || (jQuery(this).attr('data-name') || '').indexOf(q) !== -1;
+                jQuery(this).prop('hidden', !hit);
+                if (hit) shown++;
+            });
+            body.find('.mm-prov__none').prop('hidden', shown > 0);
+        });
+    },
+
+    /* ---------- Members manager ---------- */
+
+    proMembers: function($, gid){
+        var body = Theme.proView($, 'Members', Theme.proLoading);
+
+        Theme.proApi('members', { group_id: gid }).then(function(d){
+            var matched = d.group.matched, esc = Theme.esc, rows = '';
+
+            d.users.forEach(function(u){
+                var name = u.name || u.screen;
+                rows += '<li class="mm-prov__row" data-name="' + esc((name + ' ' + u.screen + ' ' + u.email).toLowerCase()) + '">' +
+                    '<span class="mm-avatar" aria-hidden="true">' + esc(name.charAt(0).toUpperCase()) + '</span>' +
+                    '<span class="mm-prov__txt"><strong>' + esc(name) + '</strong>' +
+                    '<small>' + esc(u.screen) + (u.email ? ' &middot; ' + esc(u.email) : '') + '</small>' +
+                    '<small>' + (u.wishes ? u.wishes + (u.wishes === 1 ? ' wish' : ' wishes') : 'No wishlist yet') + '</small></span>' +
+                    '<span class="mm-prov__acts">' +
+                    '<button type="button" class="mm-prov__mini" data-edit="' + u.ID + '"><i class="fa-solid fa-pen"></i> Edit</button>' +
+                    (matched ? '' : '<button type="button" class="mm-prov__mini mm-prov__mini--danger" data-remove="' + u.ID + '" data-label="' + esc(name) + '"><i class="fa-solid fa-user-xmark"></i> Remove</button>') +
+                    '</span></li>';
+            });
+
+            body.html(
+                '<div class="mm-prov__bar"><label class="mm-prov__search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" autocomplete="off"></label>' +
+                '<button type="button" class="mm-prov__mini" data-copy-emails><i class="fa-regular fa-copy"></i> Copy emails</button></div>' +
+                '<p class="mm-prov__meta">' + d.users.length + ' ' + (d.users.length === 1 ? 'member' : 'members') +
+                (matched ? ' &middot; members can&rsquo;t be removed after names are drawn' : '') + '</p>' +
+                '<ul class="mm-prov__list">' + (rows || '<li class="mm-prov__empty">No members yet. Share the group link to invite people.</li>') + '</ul>' +
+                '<p class="mm-prov__none" hidden>No member matches that search.</p>'
+            );
+
+            Theme.proSearch(body, 'Search name, screen name or email');
+
+            body.find('[data-copy-emails]').on('click', function(){
+                var list = d.users.map(function(u){ return u.email; }).filter(Boolean).join(', ');
+                if (navigator.clipboard && list) {
+                    navigator.clipboard.writeText(list).then(function(){ Theme.toast('Emails copied'); });
+                } else {
+                    Theme.toast(list || 'No emails yet');
+                }
+            });
+
+            body.find('[data-edit]').on('click', function(){
+                Theme.action = 'edit-member';
+                Theme.userid = $(this).attr('data-edit');
+                Theme.initCustomPopup($);
+            });
+
+            body.find('[data-remove]').on('click', function(){
+                var row = $(this).closest('.mm-prov__row'), id = $(this).attr('data-remove'), label = $(this).attr('data-label');
+                Theme.confirmSheet({
+                    title: 'Remove ' + label + '?',
+                    body: 'They will be removed from the group and won&rsquo;t be part of the draw. This can&rsquo;t be undone.',
+                    confirm: 'Remove member',
+                    danger: true,
+                    onConfirm: function(done){
+                        Theme.proApi('trash-user', { user_id: id }).then(function(){
+                            done();
+                            row.remove();
+                            Theme.toast(label + ' was removed');
+                            Theme.ajaxCardUsers($);
+                        }).catch(function(err){
+                            done();
+                            Theme.toast(err.message, 'error');
+                        });
                     }
                 });
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('An unexpected error occurred: ' + error.message);
-            Theme.removeOverlay($);
+            });
+        }).catch(function(err){
+            body.html('<p class="mm-prov__error">' + Theme.esc(err.message) + '</p>');
+        });
+    },
+
+    /* ---------- Matches (hidden until revealed) ---------- */
+
+    proMatches: function($, gid){
+        var body = Theme.proView($, 'Matches',
+            '<div class="mm-prov__spoiler"><i class="fa-solid fa-eye-slash"></i><p>Matches are hidden so you don&rsquo;t spoil your own surprise.</p>' +
+            '<button type="button" class="mm-upsell__btn mm-upsell__btn--dark" data-reveal-matches>Reveal matches</button></div>');
+
+        body.find('[data-reveal-matches]').on('click', function(){
+            body.html(Theme.proLoading);
+
+            Theme.proApi('members', { group_id: gid }).then(function(d){
+                var esc = Theme.esc, rows = '';
+
+                d.users.forEach(function(u){
+                    var a = u.name || u.screen, b = u.pair_name || u.pair_screen || '\u2014';
+                    rows += '<li class="mm-prov__row mm-prov__match" data-name="' + esc((a + ' ' + u.screen + ' ' + b + ' ' + u.pair_screen).toLowerCase()) + '">' +
+                        '<span><strong>' + esc(a) + '</strong><small>' + esc(u.screen) + '</small></span>' +
+                        '<i class="fa-solid fa-arrow-right" aria-label="buys for"></i>' +
+                        '<span><strong>' + esc(b) + '</strong><small>' + esc(u.pair_screen) + '</small></span></li>';
+                });
+
+                body.html(
+                    '<div class="mm-prov__bar"><label class="mm-prov__search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" autocomplete="off"></label>' +
+                    '<button type="button" class="mm-prov__mini" data-print><i class="fa-solid fa-print"></i> Print</button></div>' +
+                    '<p class="mm-prov__meta">Each person on the left buys a gift for the person on the right.</p>' +
+                    '<ul class="mm-prov__list">' + rows + '</ul><p class="mm-prov__none" hidden>No one matches that search.</p>'
+                );
+
+                Theme.proSearch(body, 'Search a name');
+
+                body.find('[data-print]').on('click', function(){
+                    var w = window.open('', '_blank');
+                    if (!w) return;
+                    var list = d.users.map(function(u){
+                        return '<tr><td>' + esc(u.name || u.screen) + '</td><td>&rarr;</td><td>' + esc(u.pair_name || u.pair_screen) + '</td></tr>';
+                    }).join('');
+                    w.document.write('<!doctype html><title>' + esc(d.group.name) + ' matches</title><style>body{font-family:Arial,sans-serif;padding:24px}td{padding:8px 12px;border-bottom:1px solid #ddd}</style>' +
+                        '<h2>' + esc(d.group.name) + ': matches</h2><table>' + list + '</table>');
+                    w.document.close();
+                    w.focus();
+                    w.print();
+                });
+            }).catch(function(err){
+                body.html('<p class="mm-prov__error">' + Theme.esc(err.message) + '</p>');
+            });
+        });
+    },
+
+    /* ---------- Export ---------- */
+
+    proExport: function($, gid, groupName){
+        Theme.toast('Preparing your spreadsheet\u2026');
+
+        Theme.proApi('get-user-export', { group_id: gid }).then(function(d){
+            function cell(v){ return '"' + String(v == null ? '' : v).replace(/\r?\n/g, ' ').replace(/"/g, '""') + '"'; }
+
+            var lines = [['Name', 'Screen name', 'Email', 'Match', 'Match screen name', 'Wishlist', 'Links', 'Address & contact'].map(cell).join(',')];
+
+            d.users.forEach(function(u){
+                var links = [].concat.apply([], (u.links || []).map(function(l){ return l || []; }))
+                    .map(function(l){ return l && l.link_url; }).filter(Boolean).join(' | ');
+                lines.push([u.name, u.screen, u.email, u.pair_name, u.pair_screen, (u.wishlists || []).join(' | '), links, u.address_contact].map(cell).join(','));
+            });
+
+            var slug = String(groupName).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'group',
+                blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' }),
+                a = document.createElement('a');
+
+            a.href = URL.createObjectURL(blob);
+            a.download = slug + '-members.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+
+            Theme.toast('Spreadsheet downloaded');
+        }).catch(function(err){
+            Theme.toast(err.message, 'error');
         });
     },
 
