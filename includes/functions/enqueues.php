@@ -50,7 +50,7 @@ if ( ! function_exists( 'qed_init_theme_assets' ) ) {
 			wp_enqueue_script( 'bootstraptour', PARENT_URL . '/assets/jslib/bootstrap-tour.min.js',array( 'jquery' ), '',true );
 			//wp_enqueue_script( 'jscookie', PARENT_URL . '/assets/jslib/js.cookie.min.js',array( 'jquery' ), '',true );
 			wp_enqueue_script( 'jquery-ui', PARENT_URL . '/assets/jslib/jquery-ui.js',array( 'jquery' ), '',true );
-			wp_enqueue_script( 'fontawesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/js/all.min.js',array( 'jquery' ), '',true );
+			// Font Awesome icons come from the CSS (enqueued above); the 540 KB SVG/JS build is not loaded.
 			wp_enqueue_script( 'fancybox', PARENT_URL . '/assets/jslib/jquery.fancybox.min.js',array( 'jquery' ), '',true );
 			wp_enqueue_script( 'bootstrap-select', PARENT_URL . '/assets/jslib/bootstrap-select/bootstrap-select.min.js', array( 'jquery', 'bootstrap' ), '1.12.2', true );
 			wp_enqueue_script( 'bxslider', PARENT_URL . '/assets/jslib/bxslider/jquery.bxslider.min.js', array( 'jquery' ), '4.2.12', true );

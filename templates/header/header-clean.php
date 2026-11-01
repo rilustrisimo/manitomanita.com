@@ -47,11 +47,13 @@ get_template_directory_uri().'/assets/images/loader.gif'; ?>"></div>
 <div id="loader-overlay-paypal" style="display: none;">
     <div class="loader"></div>
 </div>
+<?php if(is_page(23)): // PRO sheets (and the PayPal SDK) only on group dashboards ?>
 <?php if(!$pro): ?>
 	<?php get_template_part( 'templates/pro/pro', 'btnpop' ); ?>
 	<?php get_template_part( 'templates/pro/pro', 'try' ); ?>
 <?php else: ?>
 	<?php get_template_part( 'templates/pro/pro', 'actions' ); ?>
 	<?php get_template_part( 'templates/pro/pro', 'credits' ); ?>
+<?php endif; ?>
 <?php endif; ?>
 <div class="layout-content">
