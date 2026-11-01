@@ -139,14 +139,15 @@ class EmailCheck {
         $code = (string) random_int( 100000, 999999 );
         set_transient( 'mm_otp_' . self::key( $email ), array( 'h' => self::hashCode( $email, $code ), 'tries' => 0 ), self::CODE_TTL );
 
-        $body = '<html><body style="font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;line-height:1.5">'
-            . '<p>Your Manito Manita verification code is:</p>'
-            . '<p style="font-size:32px;font-weight:bold;letter-spacing:6px;margin:8px 0 16px">' . $code . '</p>'
-            . '<p>Enter it on the Create Group form. The code expires in 10 minutes.</p>'
-            . '<p style="color:#6d6d6d;font-size:13px">If you didn&rsquo;t try to create a group, you can ignore this email.</p>'
-            . '</body></html>';
-
-        $sent = wp_mail( $email, $code . ' is your Manito Manita code', $body, array( 'From: Manito Manita <rouie@manitomanita.com>', 'Content-Type: text/html; charset=UTF-8' ) );
+        $sent = Emails::send( $email, $code . ' is your Manito Manita code', array(
+            'preheader' => 'Enter this code to verify your email and create your group.',
+            'eyebrow'   => 'Verify your email',
+            'title'     => 'Your verification code',
+            'body'      => array( '<p>Enter this code on the Create Group form to verify your email:</p>' ),
+            'code'      => $code,
+            'note'      => 'The code expires in 10 minutes. If you didn&rsquo;t try to create a group, you can ignore this email.',
+            'footer'    => 'You&rsquo;re getting this because this address was entered on manitomanita.com.',
+        ) );
 
         if ( ! $sent ) wp_send_json_error( 'We couldn&rsquo;t send the code. Please try again.' );
 

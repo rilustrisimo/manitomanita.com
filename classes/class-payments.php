@@ -276,14 +276,19 @@ class Payments {
         $name = (string) get_field( 'group_name', $gid );
         $link = get_permalink( 23 ) . '?gid=' . $gid . '&pw=' . rawurlencode( (string) get_field( 'group_password', $gid ) );
 
-        $body = '<html><body style="font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;line-height:1.5">'
-            . '<h2 style="margin:0 0 12px">' . esc_html( $name ) . ' is now PRO</h2>'
-            . '<p>Your group has been upgraded to <strong>Manito Manita PRO</strong>. Ads are removed for everyone, and as the organizer you can now unshuffle to let late joiners in (3 unshuffles included), add exclusions, remove or edit members, see matches and export the group.</p>'
-            . '<p>Open your group and tap <strong>PRO Actions</strong>, then enter your group password.</p>'
-            . '<p><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#1b1b1b;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Open your group</a></p>'
-            . '</body></html>';
-
-        wp_mail( $to, $name . ' is now PRO', $body, array( 'From: Manito Manita <rouie@manitomanita.com>', 'Content-Type: text/html; charset=UTF-8' ) );
+        Emails::send( $to, $name . ' is now PRO', array(
+            'preheader' => 'Ads are off for everyone, and your organizer tools are unlocked.',
+            'eyebrow'   => 'Manito Manita PRO',
+            'title'     => $name . ' is now PRO',
+            'body'      => array(
+                '<p>Your group has been upgraded to <strong>Manito Manita PRO</strong>. Ads are removed for everyone, and as the organizer you can now:</p>',
+                '<ul><li>Add <strong>exclusions</strong> so couples or family don&rsquo;t get each other</li><li><strong>Unshuffle</strong> to let late joiners in (3 unshuffles included)</li><li>Remove or edit members, see matches and export the group</li><li>Send reminders and schedule an auto-shuffle</li></ul>',
+                '<p>Open your group, tap <strong>PRO Actions</strong> and enter your organizer password.</p>',
+            ),
+            'card'      => Emails::groupCard( $gid ),
+            'button'    => array( 'Open PRO Actions', $link ),
+            'footer'    => 'You&rsquo;re getting this because ' . esc_html( $name ) . ' was upgraded on Manito Manita.',
+        ) );
     }
 
     /* ------------------------------------------------------------ PayPal */

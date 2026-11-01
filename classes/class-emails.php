@@ -37,7 +37,17 @@ class Emails {
     const MUTED     = '#6d6d6d';
     const FONT      = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
+    const OPTOUT_META = '_mm_optout'; // member opted out of reminder-type emails
+
     protected static $altBody = '';
+    protected static $hooked  = false;
+
+    public static function init() {
+        if ( self::$hooked ) return;
+        self::$hooked = true;
+
+        add_action( 'init', array( __CLASS__, 'unsubscribe' ), 2 );
+    }
 
     public static function render( array $o ) {
         $f = self::FONT;
@@ -73,6 +83,22 @@ class Emails {
             $html .= self::style( $block );
         }
 
+        if ( ! empty( $o['code'] ) ) {
+            $html .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 8px;"><tr>';
+            $html .= '<td align="center" style="padding:18px;border:2px dashed #3ec7c2;border-radius:14px;background:#f2fbfb;font-family:\'SFMono-Regular\',Menlo,Consolas,monospace;font-size:34px;font-weight:700;letter-spacing:10px;color:' . self::INK . ';">' . esc_html( $o['code'] ) . '</td>';
+            $html .= '</tr></table>';
+        }
+
+        if ( ! empty( $o['highlight'] ) ) { // big name / value, e.g. the match
+            $html .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 8px;"><tr>';
+            $html .= '<td align="center" style="padding:20px 16px;border-radius:14px;background:' . self::INK . ';font-family:' . $f . ';">';
+            $html .= '<div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#9adfdc;">' . esc_html( $o['highlight'][0] ) . '</div>';
+            $html .= '<div style="margin-top:6px;font-size:26px;font-weight:800;color:#ffffff;">' . esc_html( $o['highlight'][1] ) . '</div>';
+            $html .= '</td></tr></table>';
+        }
+
+
+
         if ( ! empty( $o['card'] ) ) {
             $html .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 6px;background:#f6f8f8;border-radius:12px;">';
             foreach ( $o['card'] as $label => $value ) {
@@ -92,6 +118,8 @@ class Emails {
             $html .= '<p style="margin:0 0 4px;font-size:12px;line-height:1.5;color:' . self::MUTED . ';">Button not working? Copy this link:<br><a href="' . esc_url( $url ) . '" style="color:#1f8580;word-break:break-all;">' . esc_html( $url ) . '</a></p>';
         }
 
+        if ( ! empty( $o['raw'] ) ) $html .= $o['raw']; // trusted, already email-styled HTML (e.g. gift ideas), after the main button
+
         if ( ! empty( $o['note'] ) ) {
             $html .= '<p style="margin:16px 0 0;font-size:13px;line-height:1.5;color:' . self::MUTED . ';">' . $o['note'] . '</p>';
         }
@@ -102,6 +130,9 @@ class Emails {
         $foot = $o['footer'] ?? 'You&rsquo;re getting this email because of a Manito Manita gift exchange group.';
         $html .= '<tr><td style="padding:18px 12px 4px;text-align:center;font-family:' . $f . ';font-size:12px;line-height:1.6;color:#8a8a8a;">';
         $html .= $foot . '<br>Manito Manita &middot; free online gift exchange &middot; <a href="' . esc_url( home_url( '/' ) ) . '" style="color:#8a8a8a;">manitomanita.com</a>';
+        if ( ! empty( $o['unsubscribe'] ) ) {
+            $html .= '<br><a href="' . esc_url( self::unsubUrl( $o['unsubscribe'] ) ) . '" style="color:#8a8a8a;">Unsubscribe from reminders</a>';
+        }
         $html .= '</td></tr>';
 
         $html .= '</table></td></tr></table></body></html>';
@@ -130,18 +161,26 @@ class Emails {
             $b = preg_replace( '~</(p|li)>~i', "\n", $b );
             $lines[] = trim( html_entity_decode( wp_strip_all_tags( $b ), ENT_QUOTES, 'UTF-8' ) );
         }
+        if ( ! empty( $o['code'] ) ) $lines[] = 'Your code: ' . $o['code'];
+        if ( ! empty( $o['highlight'] ) ) $lines[] = $o['highlight'][0] . ': ' . $o['highlight'][1];
         foreach ( (array) ( $o['card'] ?? array() ) as $k => $v ) {
             if ( $v !== '' && $v !== null ) $lines[] = $k . ': ' . $v;
         }
         if ( ! empty( $o['button'] ) ) $lines[] = $o['button'][0] . ': ' . $o['button'][1];
         if ( ! empty( $o['note'] ) ) $lines[] = html_entity_decode( wp_strip_all_tags( $o['note'] ), ENT_QUOTES, 'UTF-8' );
         $lines[] = "--\nManito Manita, free online gift exchange: " . home_url( '/' );
+        if ( ! empty( $o['unsubscribe'] ) ) $lines[] = 'Unsubscribe from reminders: ' . self::unsubUrl( $o['unsubscribe'] );
 
         return implode( "\n\n", array_filter( $lines ) );
     }
 
     public static function send( $to, $subject, array $o, array $headers = array() ) {
         if ( ! is_email( $to ) ) return false;
+
+        if ( ! empty( $o['unsubscribe'] ) ) {
+            $headers[] = 'List-Unsubscribe: <' . self::unsubUrl( $o['unsubscribe'] ) . '>, <mailto:' . self::REPLY_TO . '?subject=unsubscribe>';
+            $headers[] = 'List-Unsubscribe-Post: List-Unsubscribe=One-Click';
+        }
 
         self::$altBody = self::text( $o );
         add_action( 'phpmailer_init', array( __CLASS__, 'addAltBody' ) );
@@ -160,6 +199,63 @@ class Emails {
 
     public static function addAltBody( $phpmailer ) {
         if ( self::$altBody !== '' ) $phpmailer->AltBody = self::$altBody;
+    }
+
+    /* -------------------------------------------------------- Unsubscribe */
+
+    protected static function unsubToken( $uid ) {
+        return substr( hash_hmac( 'sha256', 'unsub|' . (int) $uid, wp_salt( 'auth' ) ), 0, 24 );
+    }
+
+    public static function unsubUrl( $uid ) {
+        return add_query_arg( array( 'mm_unsub' => (int) $uid, 't' => self::unsubToken( $uid ) ), home_url( '/' ) );
+    }
+
+    public static function optedOut( $uid ) {
+        return (bool) get_post_meta( (int) $uid, self::OPTOUT_META, true );
+    }
+
+    /**
+     * /?mm_unsub=<member>&t=<token>: one-click (POST, RFC 8058) or link (GET) opt-out of reminder emails.
+     * Essential emails (confirm, your match, password) are still sent.
+     */
+    public static function unsubscribe() {
+        if ( empty( $_GET['mm_unsub'] ) || empty( $_GET['t'] ) ) return;
+
+        $uid = absint( $_GET['mm_unsub'] );
+        $valid = get_post_type( $uid ) === 'users' && hash_equals( self::unsubToken( $uid ), (string) $_GET['t'] );
+        $post = ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) === 'POST';
+
+        nocache_headers();
+
+        // Inbox one-click button (RFC 8058): no page, just do it.
+        if ( $post && ( $_POST['List-Unsubscribe'] ?? '' ) === 'One-Click' ) {
+            if ( $valid ) update_post_meta( $uid, self::OPTOUT_META, time() );
+            status_header( $valid ? 200 : 400 );
+            exit;
+        }
+
+        // Link in the email: GET only shows a button (link scanners must not unsubscribe people).
+        if ( $post && $valid ) update_post_meta( $uid, self::OPTOUT_META, time() );
+
+        $group = $valid ? (string) get_field( 'group_name', (int) get_field( 'groups', $uid, false ) ) : '';
+        $for = $group !== '' ? ' for <strong>' . esc_html( $group ) . '</strong>' : '';
+
+        if ( ! $valid ) {
+            $inner = '<h1 style="font-size:22px;margin:0 0 10px;">Link not valid</h1><p style="color:#5c5c5c;">This unsubscribe link is invalid or incomplete.</p>';
+        } elseif ( $post || self::optedOut( $uid ) ) {
+            $inner = '<h1 style="font-size:22px;margin:0 0 10px;">You&rsquo;re unsubscribed</h1><p style="color:#5c5c5c;line-height:1.6;">You won&rsquo;t get reminder emails' . $for . ' anymore. You&rsquo;ll still get essential emails, like your match.</p>';
+        } else {
+            $inner = '<h1 style="font-size:22px;margin:0 0 10px;">Unsubscribe from reminders?</h1><p style="color:#5c5c5c;line-height:1.6;">Stop reminder emails' . $for . '. You&rsquo;ll still get essential emails, like your match.</p>'
+                . '<form method="post"><button type="submit" style="margin-top:8px;padding:14px 24px;border:0;border-radius:12px;background:#1b1b1b;color:#fff;font-size:16px;font-weight:700;cursor:pointer;">Unsubscribe</button></form>';
+        }
+
+        status_header( $valid ? 200 : 400 );
+        header( 'Content-Type: text/html; charset=UTF-8' );
+        echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Manito Manita</title></head>'
+            . '<body style="margin:0;background:#f2f5f5;font-family:' . self::FONT . ';color:#1b1b1b;"><div style="max-width:460px;margin:60px auto;padding:28px;background:#fff;border-radius:16px;text-align:center;">'
+            . $inner . '<p style="margin-top:20px;"><a href="' . esc_url( home_url( '/' ) ) . '" style="color:#1f8580;">Go to Manito Manita</a></p></div></body></html>';
+        exit;
     }
 
     /* ------------------------------------------------------------ Helpers */
@@ -184,3 +280,5 @@ class Emails {
         );
     }
 }
+
+Emails::init();

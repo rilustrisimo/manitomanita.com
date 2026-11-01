@@ -1315,71 +1315,32 @@ class Groups extends Theme {
         }
     }
 
+    /**
+     * Organizer: "Your group is ready" with the share link and next steps.
+     */
     public function setEmailForCreateGroup($gid) {
-        $tag = "new-group";
+        $name = (string) get_field('group_name', $gid);
+        $organizer = trim((string) get_field('your_name', $gid));
+        $link = Emails::groupLink($gid);
 
-        $args = array(
-        'post_type'   => 'emails',
-        'posts_per_page' => -1
-        );
-        
-        $em = get_posts( $args );
-        
-        foreach($em as $epost){
-            $f = get_fields($epost->ID);
-
-            if($f['email_tag'] == $tag){
-                $e = $f;
-                break;
-            }
-        }
-
-        $creds = $this->getGroupCredentials();
-
-        $message = $e['email_body'];
-        $message = str_replace('[email_name]', get_field('your_name', $gid), $message);
-        $message = str_replace('[email_grouplink]', get_permalink(23).'?gid='.$creds[0].'&pw='.$creds[1], $message);
-        
-
-        $to = get_field('your_email', $gid);
-
-        $subject = $e['email_subject'];
-
-        parent::sendEmail($to, $subject, $message, true);
+        Emails::send((string) get_field('your_email', $gid), 'Your group '.$name.' is ready', array(
+            'preheader' => 'Share the link so everyone can join. Here&rsquo;s everything you need.',
+            'eyebrow'   => 'Group created',
+            'title'     => 'Your group is ready'.($organizer !== '' ? ', '.$organizer : '').'!',
+            'body'      => array(
+                '<p>Here&rsquo;s how it works from here:</p>',
+                '<ol><li><strong>Share the group link</strong> below on Messenger, Viber or email.</li><li>Members <strong>join and confirm their email</strong>, then add a wishlist.</li><li>When everyone is in, open the group and <strong>shuffle</strong>. Everyone gets their match by email.</li></ol>',
+                '<p><strong>Your group link</strong> (share this with members):<br><a href="'.esc_url($link).'" style="color:#1f8580;word-break:break-all;">'.esc_html($link).'</a></p>',
+            ),
+            'card'      => Emails::groupCard($gid),
+            'button'    => array('Open your group', $link),
+            'note'      => 'Keep your organizer password safe: you need it to edit the group and shuffle. Forgot it? Use &ldquo;Forgot password&rdquo; on the group page.',
+            'footer'    => 'You&rsquo;re getting this because you created '.esc_html($name).' on Manito Manita.',
+        ));
     }
 
     public function setEmailForGroupMatched($gid){
-        $tag = "group-matched";
-
-		$args = array(
-		'post_type'   => 'emails',
-        'posts_per_page' => -1
-		);
-		
-		$em = get_posts( $args );
-		
-		foreach($em as $epost){
-			$f = get_fields($epost->ID);
-
-			if($f['email_tag'] == $tag){
-				$e = $f;
-				break;
-			}
-        }
-        
-        $creds = $this->getGroupCredentials();
-
-		$message = $e['email_body'];
-		$message = str_replace('[email_group]', get_field('group_name', $gid), $message);
-        $message = str_replace('[email_grouplink]', get_permalink(23).'?gid='.$creds[0].'&pw='.$creds[1], $message);
-        $message = $this->addGiftIdeas($message, $gid, 'email-match');
-
-		$to = $this->getAllMembersEmailsPerGroupId($gid);
-
-		$subject = $e['email_subject'];
-        $subject = str_replace('[email_group]', get_field('group_name', $gid), $subject);
-        
-        parent::sendEmail($to, $subject, $message);
+        $this->setEmailForMembers($gid);
     }
 
     public function getAllMembersEmailsPerGroupId($gid){
@@ -1541,37 +1502,43 @@ class Groups extends Theme {
         $targets = ($type === 'wishlist') ? $st['no_wishlist'] : $st['not_viewed'];
 
         $name = (string) get_field('group_name', $gid);
-        $link = get_permalink(23).'?gid='.$gid.'&pw='.rawurlencode((string) get_field('group_password', $gid));
+        $link = Emails::groupLink($gid);
         $date = get_field('gift_exchange_date', $gid);
-        $dateTxt = ($date && ($d = DateTime::createFromFormat('m/d/Y', $date))) ? ' on '.$d->format('F j') : '';
-
-        if($type === 'wishlist'){
-            $subject = 'Add your wishlist for '.$name;
-            $intro = 'Your Secret Santa will have an easier time finding you a gift you&rsquo;ll love if you add a few wishes. It only takes a minute.';
-            $cta = 'Add your wishlist';
-        }else{
-            $subject = $name.': see who you&rsquo;re giving a gift to';
-            $intro = 'The group has been shuffled, but you haven&rsquo;t opened your match yet. Find your name in the group and tap <strong>See Match</strong>.';
-            $cta = 'See your match';
-        }
+        $when = ($date && ($d = DateTime::createFromFormat('m/d/Y', $date))) ? $d->format('F j') : '';
+        $ideas = ($type === 'match') ? Affiliate::giftIdeasHtml($gid, 'email-nudge', true) : '';
 
         $sent = 0;
         foreach($targets as $uid){
             $to = (string) get_field('email', $uid);
-            if(!is_email($to) || !EmailCheck::isConfirmed($uid)) continue;
+            if(!is_email($to) || !EmailCheck::isConfirmed($uid) || Emails::optedOut($uid)) continue;
 
             $first = trim((string) get_field('screen_name', $uid));
-            $body = '<html><body style="font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;line-height:1.5">'
-                .'<p>Hi '.esc_html($first !== '' ? $first : 'there').',</p>'
-                .'<p>'.$intro.'</p>'
-                .'<p>The <strong>'.esc_html($name).'</strong> gift exchange is coming up'.esc_html($dateTxt).'.</p>'
-                .'<p><a href="'.esc_url($link).'" style="display:inline-block;background:#1b1b1b;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">'.$cta.'</a></p>'
-                .'<p style="color:#6d6d6d;font-size:13px">Sent by your group organizer through Manito Manita.</p>'
-                .'</body></html>';
+            $hi = 'Hi '.esc_html($first !== '' ? $first : 'there').', ';
 
-            if($type === 'match') $body = $this->addGiftIdeas($body, $gid, 'email-nudge');
+            $ok = ($type === 'wishlist')
+                ? Emails::send($to, 'Add your wishlist for '.$name, array(
+                    'preheader'   => 'Help your Secret Santa pick something you&rsquo;ll love. It takes a minute.',
+                    'eyebrow'     => 'Friendly reminder',
+                    'title'       => 'Add your wishlist for '.$name,
+                    'body'        => array('<p>'.$hi.'your Secret Santa will have a much easier time finding you a gift you&rsquo;ll love if you add a few wishes. Links to Lazada or Shopee items work great.</p>'),
+                    'card'        => Emails::groupCard($gid),
+                    'button'      => array('Add my wishlist', $link),
+                    'unsubscribe' => $uid,
+                    'footer'      => 'Sent by your group organizer through Manito Manita.',
+                ))
+                : Emails::send($to, $name.': see who you&rsquo;re giving a gift to', array(
+                    'preheader'   => 'Your match is waiting'.($when ? ', and the exchange is on '.$when : '').'.',
+                    'eyebrow'     => 'Friendly reminder',
+                    'title'       => 'Your match is waiting',
+                    'body'        => array('<p>'.$hi.'the group has been shuffled, but you haven&rsquo;t opened your match yet. Find your name in the group and tap <strong>See Match</strong>.</p>'),
+                    'card'        => Emails::groupCard($gid),
+                    'button'      => array('See my match', $link),
+                    'raw'         => $ideas,
+                    'unsubscribe' => $uid,
+                    'footer'      => 'Sent by your group organizer through Manito Manita.',
+                ));
 
-            if(parent::sendEmail($to, html_entity_decode($subject, ENT_QUOTES, 'UTF-8'), $body)) $sent++;
+            if($ok) $sent++;
         }
 
         update_post_meta($gid, self::NUDGE_META.$type, time());
@@ -1647,14 +1614,25 @@ class Groups extends Theme {
             if(!is_email($to)) continue;
 
             $name = (string) get_field('group_name', $gid);
-            $link = get_permalink(23).'?gid='.$gid.'&pw='.rawurlencode((string) get_field('group_password', $gid));
-            $msg = $draw['result']
-                ? '<p><strong>'.esc_html($name).'</strong> was shuffled automatically as scheduled. All '.$count.' members have been emailed their match.</p>'
-                : '<p>We couldn&rsquo;t shuffle <strong>'.esc_html($name).'</strong> as scheduled: '.esc_html($draw['message']).'.</p><p>Open your group to fix it and shuffle.</p>';
-
-            parent::sendEmail($to, $draw['result'] ? $name.' has been shuffled' : $name.': the automatic shuffle didn\'t run',
-                '<html><body style="font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;line-height:1.5">'.$msg
-                .'<p><a href="'.esc_url($link).'" style="display:inline-block;background:#1b1b1b;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Open your group</a></p></body></html>');
+            Emails::send($to, $draw['result'] ? $name.' has been shuffled' : $name.': the automatic shuffle didn&rsquo;t run', $draw['result']
+                ? array(
+                    'preheader' => 'All '.$count.' members have their match.',
+                    'eyebrow'   => 'Auto-shuffle done',
+                    'title'     => $name.' has been shuffled',
+                    'body'      => array('<p>Your group was shuffled automatically as scheduled. All '.$count.' members have been emailed their match.</p>'),
+                    'card'      => Emails::groupCard($gid),
+                    'button'    => array('Open your group', Emails::groupLink($gid)),
+                    'footer'    => 'You&rsquo;re getting this because you organize '.esc_html($name).' on Manito Manita.',
+                )
+                : array(
+                    'preheader' => 'Open your group to fix it and shuffle.',
+                    'eyebrow'   => 'Action needed',
+                    'title'     => 'The automatic shuffle didn&rsquo;t run',
+                    'body'      => array('<p>We couldn&rsquo;t shuffle <strong>'.esc_html($name).'</strong> as scheduled: '.esc_html($draw['message']).'.</p>', '<p>Open your group to fix it, then shuffle from PRO Actions.</p>'),
+                    'card'      => Emails::groupCard($gid),
+                    'button'    => array('Open your group', Emails::groupLink($gid)),
+                    'footer'    => 'You&rsquo;re getting this because you organize '.esc_html($name).' on Manito Manita.',
+                ));
         }
     }
 
@@ -1662,37 +1640,33 @@ class Groups extends Theme {
         if(!wp_next_scheduled('mm_auto_draw')) wp_schedule_event(time() + 300, 'hourly', 'mm_auto_draw');
     }
 
+    /**
+     * After a shuffle: one email per member (never a shared To: list) with who they're giving to.
+     */
     public function setEmailForMembers($gid){
-        $tag = "group-matched";
+        $name = (string) get_field('group_name', $gid);
+        $link = Emails::groupLink($gid);
+        $ideas = Affiliate::giftIdeasHtml($gid, 'email-match', true);
 
-		$args = array(
-		'post_type'   => 'emails'
-		);
-		
-		$em = get_posts( $args );
-		
-		foreach($em as $epost){
-			$f = get_fields($epost->ID);
+        foreach(self::memberIds($gid) as $uid){
+            $pair = (int) get_field('pair', $uid, false);
+            $pairName = $pair ? trim((string) get_field('screen_name', $pair)) : '';
+            $first = trim((string) get_field('screen_name', $uid));
 
-			if($f['email_tag'] == $tag){
-				$e = $f;
-				break;
-			}
+            Emails::send((string) get_field('email', $uid), $name.' has been shuffled! See who you&rsquo;re giving a gift to', array(
+                'preheader' => 'Your Secret Santa match is ready. Open it to see their wishlist.',
+                'eyebrow'   => 'The group has been shuffled',
+                'title'     => 'Hi '.($first !== '' ? $first : 'there').', your match is ready!',
+                'highlight' => $pairName !== '' ? array('You&rsquo;re giving a gift to', $pairName) : array(),
+                'body'      => array(
+                    '<p>Open the group to see their <strong>wishlist</strong>, address and gift ideas within the budget. Keep it a secret!</p>',
+                ),
+                'card'      => Emails::groupCard($gid),
+                'button'    => array('See their wishlist', $link),
+                'raw'       => $ideas,
+                'footer'    => 'You&rsquo;re getting this because you&rsquo;re a member of '.esc_html($name).' on Manito Manita.',
+            ));
         }
-        
-        $creds = $this->getGroupCredentials();
-
-		$message = $e['email_body'];
-		$message = str_replace('[email_group]', get_field('group_name', $gid), $message);
-		$message = str_replace('[email_grouplink]', get_permalink(23).'?gid='.(int) $gid.'&pw='.rawurlencode((string) get_field('group_password', $gid)), $message);
-		$message = $this->addGiftIdeas($message, $gid, 'email-match');
-
-		$to = $this->getAllMembersEmailsPerGroupId($gid);
-
-		$subject = $e['email_subject'];
-		$subject = str_replace('[email_group]', get_field('group_name', $gid), $subject);
-        
-        parent::sendEmail($to, $subject, $message);
     }
 
     /**
@@ -1734,18 +1708,6 @@ class Groups extends Theme {
      * Uses the "group-reminder" email template (a built-in one when none exists). Each group is reminded once.
      */
     public function sendExchangeReminders(){
-        $e = $this->getEmailTemplate('group-reminder');
-
-        if(!$e) $e = array(
-            'email_subject' => 'Reminder: [email_group] gift exchange is in 3 days',
-            'email_body'    => '<html><body style="font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;line-height:1.5">'
-                . '<h2 style="margin:0 0 12px">Your gift exchange is coming up!</h2>'
-                . '<p>The <strong>[email_group]</strong> gift exchange is on <strong>[email_date]</strong>, 3 days from now.</p>'
-                . '<p>If you haven&rsquo;t bought your gift yet, check your match&rsquo;s wishlist:</p>'
-                . '<p><a href="[email_grouplink]" style="display:inline-block;background:#1b1b1b;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Open your group</a></p>'
-                . '</body></html>',
-        );
-
         // gift_exchange_date returns m/d/Y; compare in the site's timezone.
         $target = wp_date('m/d/Y', strtotime('+3 days'));
 
@@ -1767,22 +1729,32 @@ class Groups extends Theme {
             // Mark first so an overlapping cron run can't send twice.
             if(!add_post_meta($gid, '_mm_reminder_sent', time(), true)) continue;
 
-            $groupName = get_field('group_name', $gid);
-            $link = get_permalink(23).'?gid='.$gid.'&pw='.urlencode(get_field('group_password', $gid));
+            $name = (string) get_field('group_name', $gid);
+            $when = DateTime::createFromFormat('m/d/Y', $date)->format('l, F j');
+            $ideas = Affiliate::giftIdeasHtml($gid, 'email-reminder', true);
 
-            $message = $e['email_body'];
-            $message = str_replace('[email_group]', $groupName, $message);
-            $message = str_replace('[email_grouplink]', $link, $message);
-            $message = str_replace('[email_date]', DateTime::createFromFormat('m/d/Y', $date)->format('F j, Y'), $message);
-            $message = $this->addGiftIdeas($message, $gid, 'email-reminder');
+            // Reminders skip members who opted out or never confirmed their email.
+            foreach(self::memberIds($gid) as $uid){
+                if(!EmailCheck::isConfirmed($uid) || Emails::optedOut($uid)) continue;
 
-            $subject = str_replace('[email_group]', $groupName, $e['email_subject']);
+                $pair = (int) get_field('pair', $uid, false);
+                $pairName = $pair ? trim((string) get_field('screen_name', $pair)) : '';
+                $done = get_post_meta($uid, '_mm_gift_status', true);
 
-            // Reminders skip members who never confirmed their email (fewer bounces); the match email still goes to all.
-            $members = get_posts(array('post_type' => 'users', 'post_status' => 'publish', 'posts_per_page' => -1, 'fields' => 'ids', 'meta_query' => array(array('key' => 'groups', 'value' => $gid))));
-            foreach($members as $uid){
-                $to = get_field('email', $uid);
-                if($to && EmailCheck::isConfirmed($uid)) parent::sendEmail($to, $subject, $message);
+                Emails::send((string) get_field('email', $uid), '3 days to go: '.$name.' gift exchange', array(
+                    'preheader'   => 'The exchange is on '.$when.'. '.($done ? 'You&rsquo;re all set!' : 'Still need a gift? Here are some ideas.'),
+                    'eyebrow'     => '3 days to go',
+                    'title'       => 'The '.$name.' exchange is on '.$when,
+                    'highlight'   => $pairName !== '' ? array('Your gift is for', $pairName) : array(),
+                    'body'        => array($done
+                        ? '<p>You marked your gift as ready. Nice work! See you at the exchange.</p>'
+                        : '<p>Haven&rsquo;t bought your gift yet? Check their wishlist, or pick from the ideas below.</p>'),
+                    'card'        => Emails::groupCard($gid),
+                    'button'      => array('See their wishlist', Emails::groupLink($gid)),
+                    'raw'         => $done ? '' : $ideas,
+                    'unsubscribe' => $uid,
+                    'footer'      => 'You&rsquo;re getting this reminder because you&rsquo;re a member of '.esc_html($name).' on Manito Manita.',
+                ));
             }
         }
     }

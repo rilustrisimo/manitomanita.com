@@ -651,64 +651,35 @@ class Users extends Theme {
         return $rand;
     }
 
+    /**
+     * "Forgot password": emails a reset link to the member (or the group organizer).
+     */
     public function pass_generate(){
-        $uid = $_POST['uid'];
-        $groupId = get_field('groups', $uid);
-
-        //$newPass = $this->randString(5);
-
+        $uid = (int) ($_POST['uid'] ?? 0);
         $posttype = get_post_type($uid);
-		$email = ($posttype == "groups")?get_field('your_email', $uid):get_field('email', $uid);
 
-		if($email){
+        if(!in_array($posttype, array('users', 'groups'), true)) wp_send_json_success(false);
 
-            //$update = update_field('password', wp_hash_password($newPass), $uid);
-            
-            //if($update){
-            $tag = "pass-gen";
+        $email = ($posttype == "groups")?get_field('your_email', $uid):get_field('email', $uid);
+        if(!$email) wp_send_json_success(false);
 
-            $args = array(
-            'post_type'   => 'emails',
-            'posts_per_page' => -1
-            );
-            
-            $em = get_posts( $args );
-            
-            foreach($em as $epost){
-                $f = get_fields($epost->ID);
+        $group = new Groups();
+        $gpass = $group->getGroupPassword($uid);
+        $gid = ($posttype == "groups")?$uid:(int) get_field('groups', $uid, false);
+        $name = trim((string) (($posttype == "groups")?get_field('your_name', $uid):get_field('screen_name', $uid)));
+        $groupName = (string) get_field('group_name', $gid);
 
-                if($f['email_tag'] == $tag){
-                    $e = $f;
-                    break;
-                }
-            }
+        $sent = Emails::send((string) $email, 'Reset your Manito Manita password', array(
+            'preheader' => 'Tap the button to set a new password for '.$groupName.'.',
+            'eyebrow'   => 'Password reset',
+            'title'     => 'Reset your password',
+            'body'      => array('<p>Hi '.esc_html($name !== '' ? $name : 'there').', we got a request to reset your '.($posttype == "groups" ? 'organizer' : 'member').' password for <strong>'.esc_html($groupName).'</strong>.</p>'),
+            'button'    => array('Set a new password', get_permalink(1389).'?uid='.$uid.'&gpw='.rawurlencode((string) $gpass)),
+            'note'      => 'Didn&rsquo;t ask for this? You can ignore this email; your password stays the same.',
+            'footer'    => 'You&rsquo;re getting this because a password reset was requested on manitomanita.com.',
+        ));
 
-            $group = new Groups();
-
-            //$creds = $group->getGroupCredentials();
-            $gpass = $group->getGroupPassword($uid);
-
-            $name = ($posttype == "groups")?get_field('your_name', $uid):get_field('name', $uid);
-
-            $message = $e['email_body'];
-            $message = str_replace('[email_name]', ucwords($name), $message);
-            $message = str_replace('[email_resetpass]', get_permalink(1389).'?uid='.$uid.'&gpw='.$gpass, $message);
-            
-            $to = $email;
-
-            $subject = $e['email_subject'];
-
-            if(parent::sendEmail($to, $subject, $message)){
-                wp_send_json_success(true);
-            }else{
-                wp_send_json_success(false);
-            }
-            //}
-		}
-		else
-		{
-			wp_send_json_success(false);
-		}
+        wp_send_json_success((bool) $sent);
     }
 
     public function getWishlistCount($groupid){
