@@ -49,8 +49,8 @@ $mm_stats = Groups::siteStats();
 
         <p class="mm-upsell__fine"><i class="fa-solid fa-lock"></i><span>Secure checkout by PayPal. Pay with your PayPal account or <b>any debit/credit card</b>, no PayPal account needed.</span></p>
         <p class="mm-upsell__fine"><i class="fa-solid fa-gift"></i><span>Not the organizer? Anyone in the group can upgrade it as a gift.</span></p>
-        <?php if ( ! empty( $mm_stats['pro'] ) && $mm_stats['pro'] >= 50 ) : ?>
-            <p class="mm-upsell__fine"><i class="fa-solid fa-users"></i><span><?php echo esc_html( number_format_i18n( $mm_stats['pro'] ) ); ?> groups have upgraded to PRO.</span></p>
+        <?php if ( ! empty( $mm_stats['groups'] ) && $mm_stats['groups'] >= 100 ) : ?>
+            <p class="mm-upsell__fine"><i class="fa-solid fa-heart"></i><span>Trusted by <?php echo esc_html( number_format_i18n( $mm_stats['groups'] ) ); ?>+ groups for their gift exchange.</span></p>
         <?php endif; ?>
     </div>
 </div>

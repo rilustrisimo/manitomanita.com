@@ -48,7 +48,9 @@ class Captcha {
     }
 
     public static function enqueue() {
-        wp_enqueue_script( 'cf-turnstile', 'https://challenges.cloudflare.com/turnstile/v0/api.js', array(), null, true );
+        // Explicit rendering: the forms live in popups that Fancybox moves around the page, which breaks a
+        // widget rendered on page load. Theme.initTurnstile renders it when the popup opens.
+        wp_enqueue_script( 'cf-turnstile', 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit', array(), null, true );
     }
 
     /**
@@ -58,7 +60,7 @@ class Captcha {
         if ( ! self::enabled() ) return '';
 
         $html  = '<div class="mm-captcha">';
-        $html .= '<div class="cf-turnstile" data-sitekey="' . esc_attr( TURNSTILE_SITE_KEY ) . '" data-appearance="interaction-only" data-size="flexible" data-theme="light"></div>';
+        $html .= '<div class="mm-turnstile" data-sitekey="' . esc_attr( TURNSTILE_SITE_KEY ) . '"></div>';
         $html .= '</div>';
         $html .= '<div class="mm-hp" aria-hidden="true"><label>Leave this empty <input type="text" name="' . self::HONEYPOT_FIELD . '" value="" tabindex="-1" autocomplete="off"></label></div>';
 

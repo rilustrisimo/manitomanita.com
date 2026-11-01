@@ -28,6 +28,7 @@ var Theme = {
         this.initTracking($);
         this.initEmailChecks($);
         this.initFormAlerts($);
+        this.initTurnstile($);
         this.initHome($);
         this.initPasswordToggles($);
 
@@ -1758,6 +1759,52 @@ var Theme = {
         var target = $form.find('.acf-field.acf-error').first();
         if (!target.length && /verif|code/i.test(texts.join(' '))) target = $form.find('[data-mm-otp]');
         if (target.length && target[0].scrollIntoView) target[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    },
+
+    /**
+     * Cloudflare Turnstile, rendered explicitly. The forms sit in hidden popups that Fancybox moves
+     * when opening, which reloads (and breaks) a widget drawn at page load; so each time a popup opens
+     * its widget is (re)rendered in place. Forms visible on the page are rendered on load.
+     */
+    initTurnstile: function($){
+        if (!$('.mm-turnstile').length) return;
+
+        function ready(cb, n){
+            n = n || 0;
+            if (window.turnstile && window.turnstile.render) return cb();
+            if (n < 60) setTimeout(function(){ ready(cb, n + 1); }, 250);
+        }
+
+        function renderIn(scope){
+            ready(function(){
+                $(scope).find('.mm-turnstile').each(function(){
+                    var el = this, old = $(el).data('mmTs');
+
+                    if (old !== undefined) { try { window.turnstile.remove(old); } catch (e) {} }
+                    el.innerHTML = '';
+
+                    try {
+                        $(el).data('mmTs', window.turnstile.render(el, {
+                            sitekey: el.getAttribute('data-sitekey'),
+                            appearance: 'interaction-only',
+                            size: 'flexible',
+                            theme: 'light',
+                            'refresh-expired': 'auto'
+                        }));
+                    } catch (e) {}
+                });
+            });
+        }
+
+        if (!Theme.mmTsBound) {
+            Theme.mmTsBound = true;
+            // Fancybox fires "afterShow.fb" on the document once a popup's content is in place.
+            $(document).on('afterShow.fb', function(e, instance, slide){
+                if (slide && slide.$content) renderIn(slide.$content);
+            });
+        }
+
+        $('.mm-turnstile:visible').each(function(){ renderIn($(this).parent()); });
     },
 
     initAffiliateCap:function($){
