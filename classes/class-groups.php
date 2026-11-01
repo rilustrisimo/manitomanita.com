@@ -362,6 +362,49 @@ class Groups extends Theme {
         }));
     }
 
+    const EXCLUSIONS_MIN_OPTIONS = 2; // in groups of 4+, everyone keeps at least 2 people they could get
+
+    protected static function memberName($id){
+        $name = trim((string) get_field('name', $id));
+        return $name !== '' ? $name : (string) get_field('screen_name', $id);
+    }
+
+    /**
+     * Can the group still be shuffled fairly with these rules?
+     * Returns array('ok' => bool, 'message' => string, 'tight' => array(member ids with too few options)).
+     */
+    public static function exclusionHealth(array $ids, array $rows){
+        $n = count($ids);
+        $out = array('ok' => true, 'message' => '', 'tight' => array());
+        if(!$rows) return $out;
+
+        // People each member could still get (everyone but themselves and their rules).
+        $options = array();
+        foreach($ids as $id) $options[$id] = $n - 1;
+        foreach($rows as $r){
+            foreach(array((int) $r[0], (int) $r[1]) as $id){ if(isset($options[$id])) $options[$id]--; }
+        }
+
+        foreach($options as $id => $left){
+            if($left < 1){
+                $out['ok'] = false;
+                $out['message'] = self::memberName($id).' is excluded from everyone, so they can&rsquo;t get anyone. Remove one of their rules.';
+                return $out;
+            }
+            if($n >= 4 && $left < self::EXCLUSIONS_MIN_OPTIONS) $out['tight'][] = $id;
+        }
+
+        if($n < 3){
+            $out['ok'] = false;
+            $out['message'] = 'Exclusions need at least 3 members.';
+        }elseif(self::drawPairs($ids, self::blockedPairs(0, $rows)) === null){
+            $out['ok'] = false;
+            $out['message'] = 'With the current members, these rules make a fair shuffle impossible (often after someone was removed). Remove a rule or add members.';
+        }
+
+        return $out;
+    }
+
     public static function blockedPairs($gid, $rows = null){
         $rows = ($rows === null) ? self::exclusions($gid) : $rows;
         $blocked = array();
@@ -397,7 +440,9 @@ class Groups extends Theme {
         $gid = (int) $request->get_param('group_id');
         $op = (string) $request->get_param('op');
         $ids = self::memberIds($gid);
+        $all = self::exclusions($gid);
         $rows = self::exclusions($gid, $ids);
+        if(count($rows) !== count($all)) update_post_meta($gid, self::EXCLUSIONS_META, $rows); // drop rules of removed members
         $error = '';
 
         $a = (int) $request->get_param('a');
@@ -411,10 +456,17 @@ class Groups extends Theme {
                 $error = 'That rule already exists.';
             }elseif(count($rows) >= self::EXCLUSIONS_MAX){
                 $error = 'That&rsquo;s the maximum number of rules.';
+            }elseif(count($ids) < 4){
+                $error = 'Exclusions need at least 4 members (with 3, any rule leaves no fair way to shuffle). Invite more people first.';
             }else{
                 $try = array_merge($rows, array(array($a, $b)));
-                if(self::drawPairs($ids, self::blockedPairs($gid, $try)) === null){
-                    $error = 'With this rule nobody could be matched fairly. Try a different pair.';
+                $health = self::exclusionHealth($ids, $try);
+
+                if(!$health['ok']){
+                    $error = $health['message'];
+                }elseif(array_intersect(array($a, $b), $health['tight'])){
+                    $who = in_array($a, $health['tight'], true) ? $a : $b;
+                    $error = 'With this rule '.self::memberName($who).' could only get one person, so the shuffle wouldn&rsquo;t be a surprise. Remove another rule for them first.';
                 }else{
                     $rows = $try;
                     update_post_meta($gid, self::EXCLUSIONS_META, $rows);
@@ -430,9 +482,12 @@ class Groups extends Theme {
             return array('ID' => $id, 'name' => $name !== '' ? $name : (string) get_field('screen_name', $id), 'screen' => (string) get_field('screen_name', $id));
         };
 
+        $health = self::exclusionHealth($ids, $rows);
+
         return new WP_REST_Response(array(
             'success' => $error === '',
             'message' => $error,
+            'health'  => array('ok' => $health['ok'], 'message' => $health['message']),
             'matched' => (bool) get_field('matched', $gid),
             'members' => array_map($label, $ids),
             'rules'   => array_map(function($r) use ($label){ return array($label((int) $r[0]), $label((int) $r[1])); }, $rows),
@@ -941,8 +996,13 @@ class Groups extends Theme {
         $html .= $tool('members', 'fa-solid fa-users', 'Members', 'Names and emails, edit or remove members');
 
         $html .= '<h4 class="mm-prot__group">Shuffle</h4>';
-        $rules = count(self::exclusions($gid, self::memberIds($gid)));
-        $html .= $tool('exclusions', 'fa-solid fa-user-slash', 'Exclusions', ($rules ? $rules.' '.($rules == 1 ? 'rule' : 'rules').' &middot; ' : '').'Couples or family who shouldn&rsquo;t get each other');
+        $exIds = self::memberIds($gid);
+        $exRows = self::exclusions($gid, $exIds);
+        $rules = count($exRows);
+        $exHealth = self::exclusionHealth($exIds, $exRows);
+        $html .= $tool('exclusions', 'fa-solid fa-user-slash', 'Exclusions', $exHealth['ok']
+            ? ($rules ? $rules.' '.($rules == 1 ? 'rule' : 'rules').' &middot; ' : '').'Couples or family who shouldn&rsquo;t get each other'
+            : '<span class="mm-prot__warn">&#9888; Rules need fixing before you can shuffle</span>');
         if(!$matched){
             $html .= $tool('shuffle', 'fa-solid fa-shuffle', 'Shuffle', 'Everyone gets their match by email', ($count < 3) ? 'Needs at least 3 members' : '');
         }elseif($credits > 0){
@@ -974,6 +1034,9 @@ class Groups extends Theme {
         $html .= $tool('matches', 'fa-solid fa-handshake', 'See matches', 'Who is buying for whom', $matched ? '' : 'Available after the shuffle');
         $html .= $tool('export', 'fa-solid fa-file-arrow-down', 'Export to spreadsheet', 'Names, emails, matches, wishlists and addresses');
         $html .= '</div>';
+
+        // Let the Shuffle confirm sheet know when exclusion rules are broken.
+        $html = preg_replace('~^<div class="mm-prot"~', '<div class="mm-prot" data-ex-ok="'.($exHealth['ok'] ? '1' : '0').'"', $html, 1);
 
         wp_send_json_success($html);
     }

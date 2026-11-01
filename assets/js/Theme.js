@@ -287,6 +287,18 @@ var Theme = {
                 panel = $('#pro-actions .mm-prot'),
                 credits = parseInt(panel.attr('data-credits'), 10) || 0;
 
+            // Shuffling with broken exclusion rules would fail: send the organizer to fix them first.
+            if ((btn === 'shuffle' || btn === 'reshuffle') && panel.attr('data-ex-ok') === '0') {
+                Theme.confirmSheet({
+                    title: 'Fix your exclusions first',
+                    body: 'With the current members, your exclusion rules make a fair shuffle impossible. This usually happens after someone was removed. Remove a rule (or add members), then shuffle.',
+                    icon: 'fa-solid fa-user-slash',
+                    confirm: 'Open exclusions',
+                    onConfirm: function(done){ done(); Theme.proExclusions($, gid); }
+                });
+                return;
+            }
+
             if (btn === 'members') Theme.proMembers($, gid);
             if (btn === 'exclusions') Theme.proExclusions($, gid);
             if (btn === 'autodraw') Theme.proAutoDraw($, gid);
@@ -656,7 +668,9 @@ var Theme = {
             });
 
             body.html(
-                '<p class="mm-prov__meta">Pick two people who shouldn\u2019t get each other, like couples or family. It works both ways.' +
+                (d.health && !d.health.ok ? '<div class="mm-prov__alert"><i class="fa-solid fa-triangle-exclamation"></i><span>' + d.health.message + '</span></div>' : '') +
+                '<p class="mm-prov__meta">Pick two people who shouldn\u2019t get each other, like couples or family. It works both ways. ' +
+                'Everyone must still have at least 2 people they could get, so the shuffle stays a surprise.' +
                 (d.matched ? ' <b>Already shuffled:</b> rules apply the next time you shuffle (after an unshuffle).' : '') + '</p>' +
                 '<div class="mm-prov__pair"><select data-ex-a>' + opts + '</select><span>&amp;</span><select data-ex-b>' + opts + '</select></div>' +
                 '<button type="button" class="mm-upsell__btn mm-upsell__btn--dark" data-ex-add>Add rule</button>' +

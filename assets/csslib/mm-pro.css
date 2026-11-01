@@ -1160,3 +1160,29 @@
         animation: none;
     }
 }
+
+/* Exclusion problems */
+.mm-prot__warn {
+    color: #c42b31;
+    font-weight: 700;
+}
+
+.mm-prov__alert {
+    display: flex;
+    gap: 10px;
+    margin: 0 0 12px;
+    padding: 12px 14px;
+    border: 1px solid rgba(196, 43, 49, .25);
+    border-radius: 12px;
+    background: #fdecec;
+    color: #8f1d23;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.mm-prov__alert > i,
+.mm-prov__alert > svg {
+    flex: 0 0 auto;
+    margin-top: 2px;
+}
