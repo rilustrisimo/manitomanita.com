@@ -364,6 +364,23 @@ var Theme = {
         });
     },
 
+    /**
+     * Simple message sheet with one OK button (body is trusted HTML).
+     */
+    infoSheet: function($, title, body, icon){
+        $('#mm-info').remove();
+        var box = $('<div id="mm-info" class="pop-container mm-upsell mm-confirm" role="dialog" aria-modal="true">' +
+            '<div class="pop-container__inner mm-upsell__inner"><div class="mm-info__icon"><i></i></div><h2></h2><p class="mm-upsell__lead"></p>' +
+            '<div class="mm-upsell__actions"><button type="button" class="mm-upsell__btn mm-upsell__btn--dark">OK, got it</button></div></div></div>');
+        box.find('.mm-info__icon i').attr('class', icon || 'fa-solid fa-circle-info');
+        box.find('h2').text(title);
+        box.find('.mm-upsell__lead').html(body);
+        box.appendTo('body').css('display', 'flex');
+        box.on('click', function(e){ if (e.target === this) box.remove(); });
+        box.find('button').on('click', function(){ box.remove(); }).trigger('focus');
+        if (window.FontAwesome && FontAwesome.dom && FontAwesome.dom.i2svg) FontAwesome.dom.i2svg({ node: box[0] });
+    },
+
     toast: function(msg, type){
         var $ = jQuery, wrap = $('#mm-toasts');
         if (!wrap.length) wrap = $('<div id="mm-toasts" aria-live="polite"></div>').appendTo('body');
@@ -1657,8 +1674,20 @@ var Theme = {
      * "Email confirmed" notice after a member taps the link in their welcome email.
      */
     initEmailChecks: function($){
-        if (/[?&]mm_confirmed=1/.test(window.location.search)) {
-            setTimeout(function(){ Theme.toast('Thanks! Your email is confirmed.'); }, 600);
+        // After joining / confirming (EmailCheck): tell the member where they stand.
+        var q = window.location.search;
+        if (/[?&]mm_joined=1/.test(q)) {
+            setTimeout(function(){
+                Theme.infoSheet($, 'Check your email to confirm', 'We sent you a confirmation email. <b>Tap the button in it to be added to the group.</b> You won\u2019t appear in the member list until you confirm. Can\u2019t find it? Check your spam or promotions folder.', 'fa-solid fa-envelope-open-text');
+            }, 500);
+        } else if (/[?&]mm_confirmed=1/.test(q)) {
+            setTimeout(function(){
+                Theme.infoSheet($, 'You\u2019re in!', 'Your email is confirmed and you\u2019re now part of the group. Find your name below and <b>add your wishlist</b> so your Secret Santa knows what to get you.', 'fa-solid fa-circle-check');
+            }, 500);
+        } else if (/[?&]mm_confirmed=late/.test(q)) {
+            setTimeout(function(){
+                Theme.infoSheet($, 'Names were already drawn', 'Your email is confirmed, but the organizer drew names before you confirmed, so you couldn\u2019t be added. Ask the organizer: with PRO they can redo the draw to include you.', 'fa-solid fa-circle-info');
+            }, 500);
         }
 
         var common = ['gmail.com', 'yahoo.com', 'yahoo.com.ph', 'outlook.com', 'hotmail.com', 'icloud.com', 'ymail.com', 'live.com', 'me.com', 'rocketmail.com', 'msn.com', 'aol.com'];
@@ -1843,6 +1872,7 @@ var Theme = {
             });
 
             acf.addAction('validation_success', function(){ $('#mm-form-alert').remove(); });
+            acf.addAction('validation_begin', function(){ $('#mm-form-alert').remove(); });
         }
 
         hook(0);
@@ -1852,7 +1882,8 @@ var Theme = {
         $form = $($form);
 
         var texts = [];
-        $form.find('.acf-notice.-error p, .acf-notice.-error').each(function(){
+        // Only real, visible errors (ACF can leave hidden notices in the form).
+        $form.find('.acf-notice.-error:visible p, .acf-notice.-error:visible').each(function(){
             var t = $.trim($(this).clone().children('a, button').remove().end().text());
             if (t && texts.indexOf(t) === -1 && !$(this).find('p').length) texts.push(t);
         });

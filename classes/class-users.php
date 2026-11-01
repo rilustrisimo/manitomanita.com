@@ -520,9 +520,11 @@ class Users extends Theme {
                      * update post
                      */
 
+                    // Pending until the member confirms their email (EmailCheck::confirmLink publishes it).
                     $my_post = array(
                         'ID'           => $post_id,
-                        'post_title'   => $_POST['acf']['field_5f55f0e476675'].' - '.$_POST['acf']['field_5f55f1bc76676']
+                        'post_title'   => $_POST['acf']['field_5f55f0e476675'].' - '.$_POST['acf']['field_5f55f1bc76676'],
+                        'post_status'  => 'pending',
                     );
 
                     $group = new Groups();
@@ -598,7 +600,12 @@ class Users extends Theme {
             if (isset($_COOKIE[$cookiename])):
                 $decodecount = json_decode($_COOKIE[$cookiename], true);
 
-                if(count($decodecount) == $_COOKIE[$cookienamecount]):
+                // The cookie is only a cache: keep IDs that really are published members of this group.
+                $decodecount = array_values(array_filter(array_map('intval', (array) $decodecount), function($id) use ($groupid){
+                    return get_post_type($id) === 'users' && get_post_status($id) === 'publish' && (int) get_field('groups', $id, false) === (int) $groupid;
+                }));
+
+                if($decodecount && count($decodecount) == $_COOKIE[$cookienamecount]):
                     return $decodecount;
                 endif;
             endif;
@@ -787,50 +794,11 @@ class Users extends Theme {
         return true;
     }
 
+    /**
+     * Join email: the member isn't in the group until they confirm (EmailCheck::confirmLink).
+     */
     public function setEmailNewMember($uid){
-        $tag = "new-member";
-
-        $args = array(
-        'post_type'   => 'emails',
-        'posts_per_page' => -1
-        );
-        
-        $em = get_posts( $args );
-        
-        foreach($em as $epost){
-            $f = get_fields($epost->ID);
-
-            if($f['email_tag'] == $tag){
-                $e = $f;
-                break;
-            }
-        }
-
-        $group = new Groups();
-
-        $creds = $group->getGroupCredentials();
-
-        $message = $e['email_body'];
-        $message = str_replace('[email_name]', get_field('name', $uid), $message);
-        $message = str_replace('[email_group]', get_field('group_name', get_field('groups', $uid)), $message);
-        $message = str_replace('[email_grouplink]', get_permalink(23).'?gid='.$creds[0].'&pw='.$creds[1], $message);
-        
-        $to = get_field('email', $uid);
-
-        $subject = $e['email_subject'];
-        $subject = str_replace('[email_group]', get_field('group_name', get_field('groups', $uid)), $subject);
-
-        // "Confirm your email" button: at [email_confirm_link], otherwise before </body> (or at the end).
-        $button = EmailCheck::confirmButton($uid);
-        if(strpos($message, '[email_confirm_link]') !== false){
-            $message = str_replace('[email_confirm_link]', $button, $message);
-        }elseif(stripos($message, '</body>') !== false){
-            $message = preg_replace('~</body>~i', $button.'</body>', $message, 1);
-        }else{
-            $message .= $button;
-        }
-
-        parent::sendEmail($to, $subject, $message);
+        EmailCheck::sendJoinConfirm($uid);
     }
 
     public function generateCardUsers($userids, $groupid){

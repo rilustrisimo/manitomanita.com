@@ -197,7 +197,7 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
     <div class="popup__title">Join<span>Group</span></div>
 	<div class="popup__divider"></div>
     <?php $creds = $group->getGroupCredentials(); ?>
-    <div class="popup__inner"><?php $group->createAcfForm(42, 'users', 'Join Group', 'group-dashboard/?gid='.$creds[0].'&pw='.$creds[1]); ?></div>
+    <div class="popup__inner"><?php $group->createAcfForm(42, 'users', 'Join Group', 'group-dashboard/?gid='.$creds[0].'&pw='.$creds[1].'&mm_joined=1'); ?></div>
 </div>
 <?php endif; ?>
 <div id="input-password" class="popup">

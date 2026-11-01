@@ -63,7 +63,7 @@ class Theme {
     
 
     function __autoload() {
-        $classes = array('affiliate', 'captcha', 'email-check', 'gift-ai', 'involve', 'payments', 'groups', 'logs', 'users', 'wishlists');
+        $classes = array('affiliate', 'captcha', 'emails', 'email-check', 'gift-ai', 'involve', 'payments', 'groups', 'logs', 'users', 'wishlists');
 
         foreach($classes as $value){
             require_once PARENT_DIR . '/classes/class-'. $value .'.php';
@@ -222,6 +222,7 @@ class Theme {
             'order'				=> $order,
             'numberposts'	=> $numberposts,
             'post_type'		=> $posttype,
+            'post_status'   => 'publish', // pending (unconfirmed) members never count
             'meta_query'    => array($meta_query),
             'posts_per_page' => $numberposts
         );
@@ -238,6 +239,7 @@ class Theme {
             'order'         => $order,
             'numberposts'   => $numberposts,
             'post_type'     => $posttype,
+            'post_status'   => 'publish', // pending (unconfirmed) members never count
             'meta_query'    => array($meta_query),
             'posts_per_page'=> $numberposts
         );
@@ -253,6 +255,7 @@ class Theme {
             'orderby'         => $orderby,
             'order'           => $order,
             'post_type'       => $posttype,
+            'post_status'   => 'publish', // pending (unconfirmed) members never count
             'meta_query'      => array($meta_query),
             'posts_per_page'  => $posts_per_page,
             'offset'          => $offset

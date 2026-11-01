@@ -375,6 +375,7 @@ class Groups extends Theme {
     protected static function memberIds($gid){
         return array_map('intval', get_posts(array(
             'post_type'      => 'users',
+            'post_status'    => 'publish',
             'posts_per_page' => -1,
             'fields'         => 'ids',
             'meta_query'     => array(array('key' => 'groups', 'value' => (int) $gid)),
@@ -455,6 +456,7 @@ class Groups extends Theme {
 
         $q = new WP_Query(array(
             'post_type'      => 'users',
+            'post_status'    => 'publish',
             'posts_per_page' => -1,
             'meta_query'     => array(array('key' => 'groups', 'value' => $gid, 'compare' => '=')),
             'orderby'        => 'date',
@@ -508,6 +510,7 @@ class Groups extends Theme {
         // Query 'users' posts where 'groups' field (post object) matches the specified group_id
         $args = array(
             'post_type'      => 'users',
+            'post_status'    => 'publish',
             'posts_per_page' => -1, // Retrieve all matching posts
             'meta_query'     => array(
                 array(
@@ -576,6 +579,7 @@ class Groups extends Theme {
         // Query 'users' posts where 'groups' field (post object) matches the specified group_id
         $args = array(
             'post_type'      => 'users',
+            'post_status'    => 'publish',
             'posts_per_page' => -1, // Retrieve all matching posts
             'meta_query'     => array(
                 array(
@@ -670,6 +674,7 @@ class Groups extends Theme {
         // Query 'users' posts where 'groups' field (post object) matches the specified group_id
         $args = array(
             'post_type'      => 'users',
+            'post_status'    => 'publish',
             'posts_per_page' => -1, // Retrieve all matching posts
             'meta_query'     => array(
                 array(
@@ -723,6 +728,7 @@ class Groups extends Theme {
         // Query 'users' posts where 'groups' field (post object) matches the specified group_id
         $args = array(
             'post_type'      => 'users',
+            'post_status'    => 'publish',
             'posts_per_page' => -1, // Retrieve all matching posts
             'meta_query'     => array(
                 array(
@@ -778,6 +784,7 @@ class Groups extends Theme {
         // Query 'users' posts where 'groups' field (post object) matches the specified group_id
         $args = array(
             'post_type'      => 'users',
+            'post_status'    => 'publish',
             'posts_per_page' => -1, // Retrieve all matching posts
             'meta_query'     => array(
                 array(
@@ -878,7 +885,7 @@ class Groups extends Theme {
         $credits = (int) get_field('unshuffle_credits', $gid);
         $unconfirmed = 0;
         if(!$matched){
-            foreach(get_posts(array('post_type' => 'users', 'posts_per_page' => -1, 'fields' => 'ids', 'meta_query' => array(array('key' => 'groups', 'value' => $gid)))) as $uid){
+            foreach(get_posts(array('post_type' => 'users', 'post_status' => 'publish', 'posts_per_page' => -1, 'fields' => 'ids', 'meta_query' => array(array('key' => 'groups', 'value' => $gid)))) as $uid){
                 if(!EmailCheck::isConfirmed($uid)) $unconfirmed++;
             }
         }
@@ -1675,7 +1682,7 @@ class Groups extends Theme {
             $subject = str_replace('[email_group]', $groupName, $e['email_subject']);
 
             // Reminders skip members who never confirmed their email (fewer bounces); the match email still goes to all.
-            $members = get_posts(array('post_type' => 'users', 'posts_per_page' => -1, 'fields' => 'ids', 'meta_query' => array(array('key' => 'groups', 'value' => $gid))));
+            $members = get_posts(array('post_type' => 'users', 'post_status' => 'publish', 'posts_per_page' => -1, 'fields' => 'ids', 'meta_query' => array(array('key' => 'groups', 'value' => $gid))));
             foreach($members as $uid){
                 $to = get_field('email', $uid);
                 if($to && EmailCheck::isConfirmed($uid)) parent::sendEmail($to, $subject, $message);

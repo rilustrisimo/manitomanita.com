@@ -1002,3 +1002,21 @@
     background: rgba(31, 138, 91, .14);
     color: #1f8a5b;
 }
+
+/* Info sheet (Theme.infoSheet) */
+.mm-info__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 6px;
+    border-radius: 50%;
+    background: rgba(62, 199, 194, .14);
+    color: #2a9d99;
+    font-size: 24px;
+}
+
+#mm-info h2 {
+    margin-top: 6px;
+}

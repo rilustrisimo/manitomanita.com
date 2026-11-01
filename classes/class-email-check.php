@@ -245,10 +245,49 @@ class EmailCheck {
     }
 
     /**
-     * Button for the welcome (new-member) email.
+     * Join email: confirm to be added to the group.
      */
-    public static function confirmButton( $uid ) {
-        return '<p style="margin:20px 0"><a href="' . esc_url( self::confirmUrl( $uid ) ) . '" style="display:inline-block;background:#3ec7c2;color:#1b1b1b;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold;font-family:Arial,Helvetica,sans-serif">Confirm your email</a></p>';
+    public static function sendJoinConfirm( $uid ) {
+        $gid = (int) get_field( 'groups', $uid, false );
+        $group = (string) get_field( 'group_name', $gid );
+        $name = trim( (string) get_field( 'screen_name', $uid ) );
+
+        return Emails::send( (string) get_field( 'email', $uid ), 'Confirm your email to join ' . $group, array(
+            'preheader' => 'One tap and you&rsquo;re in. You&rsquo;ll be added to ' . $group . ' once you confirm.',
+            'eyebrow'   => 'Almost there',
+            'title'     => 'Confirm your email to join ' . $group,
+            'body'      => array(
+                '<p>Hi ' . esc_html( $name !== '' ? $name : 'there' ) . ', thanks for joining! Tap the button below to confirm this is your email.</p>',
+                '<p><strong>You&rsquo;ll be added to the group once you confirm.</strong> That way your match and reminders reach you.</p>',
+            ),
+            'card'      => Emails::groupCard( $gid ),
+            'button'    => array( 'Confirm and join the group', self::confirmUrl( $uid ) ),
+            'note'      => 'Didn&rsquo;t try to join? Just ignore this email. You won&rsquo;t be added.',
+            'footer'    => 'You&rsquo;re getting this because someone used this address to join ' . esc_html( $group ) . ' on Manito Manita.',
+        ) );
+    }
+
+    /**
+     * After confirming: welcome + next steps.
+     */
+    public static function sendWelcome( $uid ) {
+        $gid = (int) get_field( 'groups', $uid, false );
+        $group = (string) get_field( 'group_name', $gid );
+        $name = trim( (string) get_field( 'screen_name', $uid ) );
+
+        return Emails::send( (string) get_field( 'email', $uid ), 'You&rsquo;re in! Welcome to ' . $group, array(
+            'preheader' => 'Add your wishlist so your Secret Santa knows what to get you.',
+            'eyebrow'   => 'You&rsquo;re in',
+            'title'     => 'Welcome to ' . $group . ', ' . ( $name !== '' ? $name : 'friend' ) . '!',
+            'body'      => array(
+                '<p>Your email is confirmed and you&rsquo;re now part of the group. Here&rsquo;s what happens next:</p>',
+                '<ol><li><strong>Add your wishlist</strong> so your Secret Santa knows what to get you.</li><li>Wait for the organizer to <strong>draw names</strong>. We&rsquo;ll email you.</li><li>Open the group and tap <strong>See Match</strong> to see who you&rsquo;re buying for.</li></ol>',
+            ),
+            'card'      => Emails::groupCard( $gid ),
+            'button'    => array( 'Open the group and add my wishlist', Emails::groupLink( $gid ) ),
+            'note'      => 'Keep this email: the button always takes you back to your group.',
+            'footer'    => 'You&rsquo;re getting this because you joined ' . esc_html( $group ) . ' on Manito Manita.',
+        ) );
     }
 
     /**
@@ -272,8 +311,20 @@ class EmailCheck {
         }
 
         $gid = $ok ? (int) get_field( 'groups', $uid, false ) : 0;
+        $state = '1';
+
+        // Pending join: add them to the group now (unless names were already drawn without them).
+        if ( $gid && get_post_status( $uid ) === 'pending' ) {
+            if ( get_field( 'matched', $gid ) ) {
+                $state = 'late';
+            } else {
+                wp_update_post( array( 'ID' => $uid, 'post_status' => 'publish' ) );
+                self::sendWelcome( $uid );
+            }
+        }
+
         $target = $gid
-            ? add_query_arg( array( 'gid' => $gid, 'pw' => (string) get_field( 'group_password', $gid ), 'mm_confirmed' => 1 ), get_permalink( 23 ) )
+            ? add_query_arg( array( 'gid' => $gid, 'pw' => (string) get_field( 'group_password', $gid ), 'mm_confirmed' => $state ), get_permalink( 23 ) )
             : home_url( '/' );
 
         nocache_headers();
