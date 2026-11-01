@@ -25,6 +25,8 @@ var Theme = {
         this.initCardsUsers($);
         this.proScripts($);
         this.initAffiliateCap($);
+        this.initTracking($);
+        this.initHome($);
         this.initPasswordToggles($);
 
         $( '[data-toggle="tooltip"]' ).tooltip();
@@ -1420,6 +1422,79 @@ var Theme = {
 
             e.preventDefault();
             openMember($(this));
+        });
+    },
+
+    /**
+     * GA4 events via the site's gtag (ExactMetrics). Safe when blocked or missing.
+     * Links with data-mm-track="event" (+ data-mm-slot) send on click; [data-mm-promo] blocks send
+     * view_promotion once when they scroll into view.
+     */
+    track: function(name, params){
+        try {
+            if (typeof window.gtag === 'function') window.gtag('event', name, params || {});
+        } catch (e) {}
+    },
+
+    initTracking: function($){
+        $(document).off('click.mmTrack').on('click.mmTrack', '[data-mm-track]', function(){
+            var el = $(this);
+            Theme.track(el.attr('data-mm-track'), { creative_slot: el.attr('data-mm-slot') || '' });
+        });
+
+        var promos = document.querySelectorAll('[data-mm-promo]');
+        if (!promos.length || !('IntersectionObserver' in window)) return;
+
+        var seen = new IntersectionObserver(function(entries){
+            entries.forEach(function(entry){
+                if (!entry.isIntersecting) return;
+                Theme.track('view_promotion', { creative_slot: entry.target.getAttribute('data-mm-promo') });
+                seen.unobserve(entry.target);
+            });
+        }, { threshold: 0.4 });
+
+        for (var i = 0; i < promos.length; i++) seen.observe(promos[i]);
+    },
+
+    /**
+     * Homepage: sticky "Create a free group" bar on phones after the hero, and "Have a group link?".
+     */
+    initHome: function($){
+        var hero = document.querySelector('[data-mm-hero]');
+        if (!hero) return;
+
+        var sticky = $('[data-mm-sticky]');
+
+        if (sticky.length && 'IntersectionObserver' in window) {
+            new IntersectionObserver(function(entries){
+                var show = !entries[0].isIntersecting;
+                sticky.toggleClass('is-visible', show).attr('aria-hidden', show ? 'false' : 'true');
+                sticky.find('a').attr('tabindex', show ? '0' : '-1');
+            }).observe(hero);
+        }
+
+        var form = $('[data-mm-link-form]'),
+            input = form.find('input'),
+            error = form.find('[data-mm-link-error]');
+
+        $('[data-mm-open-link]').off('click.mmHome').on('click.mmHome', function(){
+            form.prop('hidden', false);
+            input.trigger('focus');
+            Theme.track('open_group_link_form', {});
+        });
+
+        form.off('submit.mmHome').on('submit.mmHome', function(e){
+            e.preventDefault();
+
+            var url = null;
+            try { url = new URL($.trim(input.val())); } catch (err) {}
+
+            var ok = url && url.hostname.replace(/^www\./, '') === window.location.hostname.replace(/^www\./, '')
+                && url.pathname.indexOf('group-dashboard') !== -1
+                && url.searchParams.get('gid') && url.searchParams.get('pw');
+
+            error.prop('hidden', !!ok);
+            if (ok) window.location.href = url.href;
         });
     },
 

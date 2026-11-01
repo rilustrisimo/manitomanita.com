@@ -15,6 +15,7 @@ define( 'QED_VERSION', '1.0.0' );
 define( 'PARENT_DIR', get_template_directory() );
 define( 'PARENT_URL', get_template_directory_uri() );
 
+require PARENT_DIR . '/includes/env.php'; // .env secrets, before the classes read them
 require PARENT_DIR . '/includes/core.php';
 require PARENT_DIR . '/classes/class-main.php';
 
@@ -65,7 +66,10 @@ function my_custom_styles() {
  */
 add_action( 'wp_enqueue_scripts', 'mm_enqueue_ui_styles', 20 );
 function mm_enqueue_ui_styles() {
-	foreach ( array( 'mm-match', 'mm-dashboard', 'mm-forms' ) as $name ) {
+	$names = array( 'mm-match', 'mm-dashboard', 'mm-forms' );
+	if ( is_page_template( 'template-homepage.php' ) ) $names[] = 'mm-home';
+
+	foreach ( $names as $name ) {
 		$file = '/assets/csslib/' . $name . '.css';
 		wp_enqueue_style( $name, PARENT_URL . $file, array(), (string) @filemtime( PARENT_DIR . $file ) );
 	}

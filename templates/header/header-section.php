@@ -13,8 +13,8 @@
  */
 defined( 'ABSPATH' ) || die();
 
-if ( is_404() ) {
-	return;
+if ( is_404() || is_page_template( 'template-homepage.php' ) ) {
+	return; // the homepage has its own hero
 }
 
 $is_home = ( 'home' === qed_check_if_home() || 'default' === qed_check_if_home() ) ? true : false;

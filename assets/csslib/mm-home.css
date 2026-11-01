@@ -1,0 +1,775 @@
+/*
+ * Homepage (template-homepage.php). Mobile-first; everything is scoped to .mm-home so theme rules
+ * (navy headings, uppercase buttons, Bootstrap inputs) don't leak in.
+ */
+
+.mm-home {
+    --mm-dark: #1b1b1b;
+    --mm-accent: #3ec7c2;
+    --mm-accent-dark: #2a9d99;
+    --mm-accent-soft: rgba(62, 199, 194, .12);
+    --mm-text: #4a4a4a;
+    --mm-muted: #6d6d6d;
+    --mm-line: #e6e6e6;
+    --mm-soft: #f5f8f8;
+    --mm-radius: 16px;
+
+    color: var(--mm-text);
+    font-size: 16px;
+    line-height: 1.55;
+    text-align: left;
+    background: #fff;
+    overflow-x: hidden;
+}
+
+.mm-home *,
+.mm-home *::before,
+.mm-home *::after {
+    box-sizing: border-box;
+}
+
+.mm-home h1,
+.mm-home h2,
+.mm-home h3 {
+    margin: 0;
+    color: var(--mm-dark);
+    font-family: inherit;
+    letter-spacing: -.01em;
+    text-align: inherit;
+    text-transform: none;
+}
+
+.mm-home p {
+    margin: 0;
+}
+
+.mm-home ul,
+.mm-home ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mmh-wrap {
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+.mmh-wrap--narrow {
+    max-width: 760px;
+}
+
+.mmh-center {
+    text-align: center;
+}
+
+/* ---------- Buttons ---------- */
+
+.mm-home .mmh-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    padding: 0 26px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: .2px;
+    text-align: center;
+    text-decoration: none;
+    text-transform: none;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
+}
+
+.mm-home .mmh-btn:active {
+    transform: translateY(1px);
+}
+
+.mm-home .mmh-btn--primary {
+    background: var(--mm-accent);
+    border-color: var(--mm-accent);
+    color: var(--mm-dark);
+}
+
+.mm-home .mmh-btn--primary:hover,
+.mm-home .mmh-btn--primary:focus-visible {
+    background: var(--mm-accent-dark);
+    border-color: var(--mm-accent-dark);
+    color: #fff;
+}
+
+.mm-home .mmh-btn--dark {
+    background: var(--mm-dark);
+    border-color: var(--mm-dark);
+    color: #fff;
+}
+
+.mm-home .mmh-btn--ghost {
+    background: transparent;
+    border-color: rgba(255, 255, 255, .35);
+    color: #fff;
+}
+
+.mm-home .mmh-btn--ghost:hover,
+.mm-home .mmh-btn--ghost:focus-visible {
+    border-color: #fff;
+}
+
+.mm-home .mmh-btn--block {
+    display: flex;
+    width: 100%;
+}
+
+.mm-home .mmh-btn:focus-visible {
+    outline: 3px solid rgba(62, 199, 194, .45);
+    outline-offset: 2px;
+}
+
+/* ---------- Hero ---------- */
+
+.mmh-hero {
+    position: relative;
+    margin-top: -60px; /* tuck under the header's curved bottom */
+    padding: 96px 0 56px;
+    background: radial-gradient(120% 80% at 85% 10%, rgba(62, 199, 194, .25), transparent 60%), var(--mm-dark);
+    color: rgba(255, 255, 255, .82);
+}
+
+.mmh-hero__grid {
+    display: grid;
+    gap: 40px;
+}
+
+.mmh-eyebrow {
+    margin-bottom: 12px !important;
+    color: var(--mm-accent);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.mm-home .mmh-hero__title {
+    color: #fff;
+    font-size: clamp(32px, 8.4vw, 54px);
+    font-weight: 800;
+    line-height: 1.08;
+}
+
+.mmh-hero__title span {
+    color: var(--mm-accent);
+}
+
+.mmh-hero__lead {
+    max-width: 520px;
+    margin-top: 16px !important;
+    font-size: 17px;
+}
+
+.mmh-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+.mmh-hero__actions .mmh-btn {
+    flex: 1 1 200px;
+}
+
+.mmh-hero__trust {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin-top: 22px !important;
+    font-size: 14px;
+}
+
+.mmh-hero__trust i {
+    margin-right: 4px;
+    color: var(--mm-accent);
+}
+
+/* Paste a group link */
+.mmh-link {
+    margin-top: 18px;
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: var(--mm-radius);
+    background: rgba(255, 255, 255, .05);
+}
+
+.mmh-link[hidden] {
+    display: none;
+}
+
+.mmh-link label {
+    display: block;
+    margin: 0 0 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.mmh-link__row {
+    display: flex;
+    gap: 8px;
+}
+
+.mm-home .mmh-link input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 48px;
+    margin: 0;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: #fff;
+    color: var(--mm-dark);
+    font-family: inherit;
+    font-size: 16px;
+    box-shadow: none;
+}
+
+.mm-home .mmh-link .mmh-btn {
+    min-height: 48px;
+    padding: 0 18px;
+}
+
+.mmh-link__error {
+    margin-top: 8px !important;
+    color: #ffb4b4;
+    font-size: 13px;
+}
+
+/* Phone mockup */
+.mmh-hero__visual {
+    display: flex;
+    justify-content: center;
+}
+
+.mmh-phone {
+    width: 100%;
+    max-width: 300px;
+    padding: 12px;
+    border-radius: 38px;
+    background: #2b2b2b;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, .35), inset 0 0 0 2px #3a3a3a;
+}
+
+.mmh-phone__screen {
+    display: grid;
+    gap: 10px;
+    padding: 18px 14px;
+    border-radius: 28px;
+    background: #f4f6f6;
+    color: var(--mm-dark);
+    font-size: 13px;
+}
+
+.mmh-mock__head {
+    padding: 12px;
+    border-radius: 14px;
+    background: var(--mm-dark);
+    color: #fff;
+}
+
+.mmh-mock__title {
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.mmh-mock__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.mmh-mock__meta span {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .12);
+    font-size: 11px;
+}
+
+.mmh-mock__status {
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: var(--mm-accent-soft);
+    color: var(--mm-accent-dark);
+    font-weight: 700;
+}
+
+.mmh-mock__match,
+.mmh-mock__ideas {
+    padding: 12px;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+}
+
+.mmh-mock__label {
+    margin-bottom: 8px;
+    color: var(--mm-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.mmh-mock__person {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mmh-mock__person strong {
+    display: block;
+    font-size: 15px;
+}
+
+.mmh-mock__person small {
+    color: var(--mm-muted);
+}
+
+.mmh-mock__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--mm-accent);
+    color: var(--mm-dark);
+    font-weight: 800;
+}
+
+.mmh-mock__wishes {
+    margin-top: 10px !important;
+    border-top: 1px solid var(--mm-line);
+}
+
+.mmh-mock__wishes li {
+    padding: 7px 0 7px 18px;
+    border-bottom: 1px solid var(--mm-line);
+    position: relative;
+}
+
+.mmh-mock__wishes li::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    margin-top: -3px;
+    border-radius: 50%;
+    background: var(--mm-accent);
+}
+
+.mmh-mock__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.mmh-mock__chips span {
+    padding: 4px 9px;
+    border: 1px solid var(--mm-line);
+    border-radius: 999px;
+    font-size: 11px;
+}
+
+/* ---------- Stats ---------- */
+
+.mmh-stats {
+    padding: 22px 0;
+    border-bottom: 1px solid var(--mm-line);
+    background: #fff;
+}
+
+.mmh-stats__row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    text-align: center;
+}
+
+.mmh-stats strong {
+    display: block;
+    color: var(--mm-dark);
+    font-size: clamp(20px, 5.5vw, 30px);
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.mmh-stats span {
+    color: var(--mm-muted);
+    font-size: 13px;
+}
+
+/* ---------- Sections ---------- */
+
+.mmh-section {
+    padding: 56px 0;
+}
+
+.mmh-section--soft {
+    background: var(--mm-soft);
+}
+
+.mm-home .mmh-h2 {
+    font-size: clamp(26px, 6vw, 38px);
+    font-weight: 800;
+    line-height: 1.15;
+    text-align: center;
+}
+
+.mmh-sub {
+    max-width: 560px;
+    margin: 10px auto 0 !important;
+    color: var(--mm-muted);
+    text-align: center;
+}
+
+/* Steps */
+.mmh-steps {
+    display: grid;
+    gap: 14px;
+    margin: 32px 0 !important;
+    counter-reset: none;
+}
+
+.mmh-steps li {
+    position: relative;
+    padding: 20px 20px 20px 72px;
+    border: 1px solid var(--mm-line);
+    border-radius: var(--mm-radius);
+    background: #fff;
+}
+
+.mmh-steps__num {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--mm-dark);
+    color: #fff;
+    font-weight: 800;
+}
+
+.mm-home .mmh-steps h3 {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.mmh-steps p {
+    margin-top: 4px !important;
+    color: var(--mm-muted);
+}
+
+/* Features */
+.mmh-features {
+    display: grid;
+    gap: 14px;
+    margin-top: 32px;
+}
+
+.mmh-feature {
+    padding: 20px;
+    border-radius: var(--mm-radius);
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+}
+
+.mmh-feature__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    background: var(--mm-accent-soft);
+    color: var(--mm-accent-dark);
+    font-size: 18px;
+}
+
+.mm-home .mmh-feature h3 {
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.mmh-feature p {
+    margin-top: 4px !important;
+    color: var(--mm-muted);
+    font-size: 15px;
+}
+
+/* Plans */
+.mmh-plans {
+    display: grid;
+    gap: 16px;
+    margin-top: 32px;
+}
+
+.mmh-plan {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 22px 22px;
+    border: 1px solid var(--mm-line);
+    border-radius: 20px;
+    background: #fff;
+}
+
+.mmh-plan--free {
+    border: 2px solid var(--mm-accent);
+}
+
+.mmh-plan--pro {
+    background: var(--mm-dark);
+    border-color: var(--mm-dark);
+    color: rgba(255, 255, 255, .82);
+}
+
+.mmh-plan__badge {
+    position: absolute;
+    top: -13px;
+    left: 22px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--mm-accent);
+    color: var(--mm-dark);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.mmh-plan__badge--pro {
+    background: #fff;
+}
+
+.mmh-plan__name {
+    color: var(--mm-dark);
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.mmh-plan--pro .mmh-plan__name {
+    color: #fff;
+}
+
+.mmh-plan__price {
+    margin: 6px 0 16px;
+    color: var(--mm-dark);
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.mmh-plan--pro .mmh-plan__price {
+    color: var(--mm-accent);
+}
+
+.mmh-plan__price small {
+    display: block;
+    color: var(--mm-muted);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.mmh-plan--pro .mmh-plan__price small {
+    color: rgba(255, 255, 255, .6);
+}
+
+.mmh-plan__note {
+    margin-bottom: 8px !important;
+    font-weight: 700;
+}
+
+.mmh-plan__list {
+    flex: 1 1 auto;
+    margin-bottom: 20px !important;
+}
+
+.mmh-plan__list li {
+    position: relative;
+    padding: 7px 0 7px 28px;
+}
+
+.mmh-plan__list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--mm-accent-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232a9d99' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") no-repeat center / 11px;
+}
+
+.mmh-plan--pro .mmh-plan__list li::before {
+    background-color: rgba(62, 199, 194, .2);
+}
+
+.mmh-plan__how {
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, .14);
+    color: rgba(255, 255, 255, .7);
+    font-size: 14px;
+}
+
+/* FAQ */
+.mmh-faq {
+    margin-top: 28px;
+}
+
+.mmh-faq details {
+    border-bottom: 1px solid var(--mm-line);
+}
+
+.mmh-faq summary {
+    position: relative;
+    padding: 18px 40px 18px 0;
+    color: var(--mm-dark);
+    font-size: 17px;
+    font-weight: 700;
+    list-style: none;
+    cursor: pointer;
+}
+
+.mmh-faq summary::-webkit-details-marker {
+    display: none;
+}
+
+.mmh-faq summary::after {
+    content: "+";
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--mm-accent-dark);
+    font-size: 24px;
+    font-weight: 400;
+}
+
+.mmh-faq details[open] summary::after {
+    content: "\2212";
+}
+
+.mmh-faq details p {
+    padding: 0 0 18px;
+    color: var(--mm-muted);
+}
+
+/* Final CTA */
+.mmh-final {
+    padding: 56px 0 64px;
+    background: var(--mm-dark);
+    color: rgba(255, 255, 255, .8);
+}
+
+.mm-home .mmh-final h2 {
+    color: #fff;
+    font-size: clamp(26px, 6vw, 36px);
+    font-weight: 800;
+}
+
+.mmh-final p {
+    margin: 8px 0 24px !important;
+}
+
+/* Sticky phone CTA (shown by Theme.initHome after the hero) */
+.mmh-sticky {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 900;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, .08);
+    transform: translateY(110%);
+    transition: transform .25s ease;
+}
+
+.mmh-sticky.is-visible {
+    transform: none;
+}
+
+/* ---------- Larger screens ---------- */
+
+@media (min-width: 640px) {
+    .mmh-features {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mmh-hero__actions .mmh-btn {
+        flex: 0 0 auto;
+    }
+}
+
+@media (min-width: 900px) {
+    .mmh-hero {
+        padding: 120px 0 80px;
+    }
+
+    .mmh-hero__grid {
+        grid-template-columns: 1.15fr .85fr;
+        align-items: center;
+        gap: 56px;
+    }
+
+    .mmh-section {
+        padding: 80px 0;
+    }
+
+    .mmh-steps {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .mmh-steps li {
+        padding: 24px;
+    }
+
+    .mmh-steps__num {
+        position: static;
+        margin-bottom: 14px;
+    }
+
+    .mmh-features {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .mmh-plans {
+        grid-template-columns: 1fr 1fr;
+        max-width: 880px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .mmh-sticky {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mm-home *,
+    .mmh-sticky {
+        transition: none !important;
+    }
+}

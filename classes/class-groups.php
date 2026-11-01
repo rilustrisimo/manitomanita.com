@@ -198,6 +198,31 @@ class Groups extends Theme {
         return $classes;
     }
 
+    /**
+     * Totals for the homepage: groups, members and PRO groups (cached for 12 hours).
+     */
+    public static function siteStats(){
+        $stats = get_transient('mm_site_stats');
+        if(is_array($stats)) return $stats;
+
+        global $wpdb;
+
+        $stats = array(
+            'groups'  => (int) wp_count_posts('groups')->publish,
+            'members' => (int) wp_count_posts('users')->publish,
+            'pro'     => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->postmeta} pm JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE p.post_type = 'groups' AND pm.meta_key = 'pro' AND pm.meta_value = '1'"),
+        );
+
+        // Round down to a clean "+" figure (1,234 -> 1,200).
+        foreach(array('groups', 'members') as $k){
+            if($stats[$k] >= 1000) $stats[$k] = (int) (floor($stats[$k] / 100) * 100);
+        }
+
+        set_transient('mm_site_stats', $stats, 12 * HOUR_IN_SECONDS);
+
+        return $stats;
+    }
+
     /* ---------------------------------------------------- Access checks */
 
     const MOD_TTL = 7200; // a moderator password check is trusted for 2 hours
@@ -1206,12 +1231,20 @@ class Groups extends Theme {
 
     /**
      * Daily cron: emails members of matched groups whose gift exchange is 3 days away.
-     * Uses the "group-reminder" email template. Each group is reminded once.
+     * Uses the "group-reminder" email template (a built-in one when none exists). Each group is reminded once.
      */
     public function sendExchangeReminders(){
         $e = $this->getEmailTemplate('group-reminder');
 
-        if(!$e) return;
+        if(!$e) $e = array(
+            'email_subject' => 'Reminder: [email_group] gift exchange is in 3 days',
+            'email_body'    => '<html><body style="font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;line-height:1.5">'
+                . '<h2 style="margin:0 0 12px">Your gift exchange is coming up!</h2>'
+                . '<p>The <strong>[email_group]</strong> gift exchange is on <strong>[email_date]</strong>, 3 days from now.</p>'
+                . '<p>If you haven&rsquo;t bought your gift yet, check your match&rsquo;s wishlist:</p>'
+                . '<p><a href="[email_grouplink]" style="display:inline-block;background:#1b1b1b;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Open your group</a></p>'
+                . '</body></html>',
+        );
 
         // gift_exchange_date returns m/d/Y; compare in the site's timezone.
         $target = wp_date('m/d/Y', strtotime('+3 days'));

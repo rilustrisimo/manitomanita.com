@@ -1,0 +1,4 @@
+# Keep secrets and repo files out of the web
+<FilesMatch "^\.(env|env\..*|git.*)$">
+    Require all denied
+</FilesMatch>
