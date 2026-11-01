@@ -1086,12 +1086,14 @@ var Theme = {
             return $('.fancybox-container:visible, .pop-container:visible').length > 0;
         }
 
-        function start(force){
-            var tries = 0;
+        // manual = "Show me around": start right away (wait at most ~1.5s for the member cards).
+        // Automatic: wait for the cards (loaded by AJAX) and for any popup to close.
+        function start(manual){
+            var tries = 0, max = manual ? 6 : 40;
             (function wait(){
-                // Wait for the member cards (loaded by AJAX) and for any popup to close.
-                if ((!$('#members-list .card.mm-member').length || blocked()) && tries++ < 40) return setTimeout(wait, 500);
-                if (blocked()) return;
+                var ready = $('#members-list .card.mm-member').length > 0;
+                if ((!ready || (!manual && blocked())) && tries++ < max) return setTimeout(wait, 250);
+                if (!manual && blocked()) return;
                 Theme.tour.run($, name, steps(name), function(done){
                     try { localStorage.setItem(key, done ? 'done' : 'skipped'); } catch (e) {}
                 });
@@ -1105,7 +1107,7 @@ var Theme = {
 
         var seen = null;
         try { seen = localStorage.getItem(key); } catch (e) {}
-        if (!seen) setTimeout(start, 1200);
+        if (!seen) setTimeout(function(){ start(false); }, 600);
     },
 
     /**
@@ -1125,7 +1127,10 @@ var Theme = {
                     '<span><button type="button" class="mm-tour__back">Back</button>' +
                     '<button type="button" class="mm-tour__next">Next</button></span></div></div></div>').appendTo('body'),
                 spot = root.find('.mm-tour__spot'),
-                card = root.find('.mm-tour__card');
+                card = root.find('.mm-tour__card'),
+                frame = null;
+
+            root.addClass('is-instant'); // first placement without the slide-in from the corner
 
             Theme.track('tour_start', { tour: name });
 
@@ -1155,11 +1160,10 @@ var Theme = {
 
                 var rect = target[0].getBoundingClientRect();
                 if (rect.top < 80 || rect.bottom > window.innerHeight - 160) {
-                    target[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
-                    setTimeout(place, 420);
-                } else {
-                    place();
+                    target[0].scrollIntoView({ block: 'center', behavior: 'auto' }); // instant: no waiting on a smooth scroll
                 }
+                place();
+                if (root.hasClass('is-instant')) setTimeout(function(){ root.removeClass('is-instant'); }, 50);
                 Theme.track('tour_step', { tour: name, step: idx + 1 });
                 card.find('.mm-tour__next').trigger('focus');
             }
@@ -1175,7 +1179,10 @@ var Theme = {
             root.on('click', '.mm-tour__next', function(){ idx < steps.length - 1 ? show(idx + 1) : end(true); });
             root.on('click', '.mm-tour__back', function(){ if (idx > 0) show(idx - 1); });
             root.on('click', '.mm-tour__skip', function(){ end(false); });
-            $(window).on('resize.mmTour scroll.mmTour', place);
+            $(window).on('resize.mmTour scroll.mmTour', function(){
+                if (frame) return;
+                frame = window.requestAnimationFrame(function(){ frame = null; place(); });
+            });
             $(document).on('keydown.mmTour', function(e){
                 if (e.key === 'Escape') end(false);
                 if (e.key === 'ArrowRight') root.find('.mm-tour__next').trigger('click');

@@ -1971,3 +1971,11 @@
         animation: none;
     }
 }
+
+.mm-tour.is-instant .mm-tour__spot {
+    transition: none;
+}
+
+.mm-tour__spot {
+    will-change: top, left, width, height;
+}
