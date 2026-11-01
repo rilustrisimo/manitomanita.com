@@ -349,8 +349,8 @@ class Affiliate {
      * @param array  $ideas     Ideas to show (e.g. from GiftAI); defaults to the Gift Ideas list.
      * @param string $subtitle  Line under the heading; defaults to the budget hint.
      */
-    public static function giftIdeasHtml( $groupId, $placement, $forEmail = false, $ideas = null, $subtitle = null ) {
-        $max      = self::budget( $groupId );
+    public static function giftIdeasHtml( $groupId, $placement, $forEmail = false, $ideas = null, $subtitle = null, $max = null ) {
+        $max      = ( $max === null ) ? self::budget( $groupId ) : (int) $max; // e.g. a weekly theme budget
         $within   = ( $max > 0 ) ? 'Within &#8369;' . number_format( $max ) : 'For any budget';
         $subtitle = $subtitle ? $subtitle . ' &middot; ' . strtolower( $within ) : $within . ' &middot; tap a store to browse';
         $ideas    = is_array( $ideas ) ? $ideas : self::giftIdeas();

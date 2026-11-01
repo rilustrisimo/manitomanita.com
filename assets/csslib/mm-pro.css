@@ -1186,3 +1186,88 @@
     flex: 0 0 auto;
     margin-top: 2px;
 }
+
+/* ---------- Weekly themes editor ---------- */
+.mm-prot-sheet ul.mm-theme-rows {
+    margin: 0 0 10px;
+    padding: 0;
+    list-style: none;
+}
+
+.mm-theme-row {
+    display: grid;
+    grid-template-columns: 138px 1fr auto;
+    gap: 8px;
+    margin: 0 0 8px;
+    line-height: 1.4;
+}
+
+.mm-prot-sheet .mm-theme-row input {
+    height: 42px;
+    min-width: 0;
+    margin: 0;
+    padding: 0 10px;
+    border: 1px solid #e3e3e3;
+    border-radius: 10px;
+    background: #fff;
+    color: #1b1b1b;
+    font-family: inherit;
+    font-size: 15px;
+    text-align: left;
+    text-transform: none;
+    box-sizing: border-box;
+}
+
+.mm-prot-sheet .mm-theme-row input:focus {
+    border-color: #D4AF37;
+    outline: none;
+}
+
+.mm-theme-row .mm-prov__mini {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    justify-content: center;
+}
+
+.mm-prov__gapb {
+    margin-bottom: 4px;
+}
+
+.mm-theme-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 14px;
+}
+
+.mm-theme-presets button {
+    padding: 7px 11px;
+    border: 1px solid #ececec;
+    border-radius: 999px;
+    background: #fff;
+    color: #1b1b1b;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.mm-theme-presets button:hover {
+    border-color: #D4AF37;
+}
+
+.mm-theme-presets button:disabled {
+    opacity: .4;
+    cursor: default;
+}
+
+@media (max-width: 400px) {
+    .mm-theme-row {
+        grid-template-columns: 1fr auto;
+    }
+
+    .mm-theme-row input[type="date"] {
+        grid-column: 1 / -1;
+    }
+}

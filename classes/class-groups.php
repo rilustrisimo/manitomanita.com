@@ -1030,6 +1030,18 @@ class Groups extends Theme {
             $html .= $tool('autodraw', 'fa-solid fa-calendar-check', 'Auto-shuffle', $at ? 'Scheduled: '.esc_html(wp_date('M j, g:i A', $at)) : 'Shuffle automatically on a date you pick');
         }
 
+        // Manito Manita mode (weekly themes) + reveal
+        $themes = Themes::get($gid);
+        $tNow = Themes::now($gid);
+        $html .= '<h4 class="mm-prot__group">Manito Manita mode</h4>';
+        $html .= $tool('themes', 'fa-solid fa-calendar-week', 'Weekly themes', $themes
+            ? count($themes).' '.(count($themes) == 1 ? 'theme' : 'themes').($tNow['current'] ? ' &middot; now: '.esc_html($tNow['current']['t']) : ' &middot; starts '.esc_html(wp_date('M j', strtotime($themes[0]['d']))))
+            : 'Something sweet, something soft&hellip; with a weekly email to everyone');
+        if($matched){
+            $html .= $tool('reveal', 'fa-solid fa-masks-theater', Themes::isRevealed($gid) ? 'Hide the reveal' : 'Reveal who gave to whom',
+                Themes::isRevealed($gid) ? 'Everyone can see all pairs on the group page' : 'For after the exchange: show all pairs to the group');
+        }
+
         $html .= '<h4 class="mm-prot__group">Results</h4>';
         $html .= $tool('matches', 'fa-solid fa-handshake', 'See matches', 'Who is buying for whom', $matched ? '' : 'Available after the shuffle');
         $html .= $tool('export', 'fa-solid fa-file-arrow-down', 'Export to spreadsheet', 'Names, emails, matches, wishlists and addresses');

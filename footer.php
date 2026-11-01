@@ -57,6 +57,8 @@ if ( qed_get_option( 'is_testimonial_enabled', 'option' ) && qed_is_display_test
 				<h3>Help</h3>
 				<ul>
 					<li><a href="mailto:rouie@manitomanita.com">Contact us</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/privacy-policy/' ) ); ?>">Privacy Policy</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/terms/' ) ); ?>">Terms of Use</a></li>
 				</ul>
 			</div>
 		</nav>

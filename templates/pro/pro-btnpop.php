@@ -34,6 +34,7 @@ $mm_stats = Groups::siteStats();
 
         <ul class="mm-upsell__list">
             <li data-reason="exclude"><i class="fa-solid fa-user-slash"></i><span><b>Exclusions:</b> couples or family won&rsquo;t get each other</span></li>
+            <li data-reason="themes"><i class="fa-solid fa-calendar-week"></i><span><b>Manito Manita mode:</b> weekly themes, a weekly email and a fun reveal</span></li>
             <li data-reason="unshuffle"><i class="fa-solid fa-rotate-left"></i><span><b>Unshuffle</b> so late joiners can get in, then shuffle again <em>(3 unshuffles included)</em></span></li>
             <li data-reason="fix"><i class="fa-solid fa-user-xmark"></i><span><b>Remove</b> duplicate or wrong members</span></li>
             <li data-reason="fix"><i class="fa-solid fa-pen-to-square"></i><span><b>Fix</b> a misspelled name or email</span></li>

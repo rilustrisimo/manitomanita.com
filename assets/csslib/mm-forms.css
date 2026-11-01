@@ -570,3 +570,17 @@
 .mm-form-alert__close:hover {
     background: rgba(143, 29, 35, .16);
 }
+
+/* "By continuing you agree..." under Create / Join Group */
+.mm-legal-note {
+    margin: 12px 0 0;
+    color: #8a8a8a;
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.mm-legal-note a {
+    color: #6d6d6d;
+    text-decoration: underline;
+}

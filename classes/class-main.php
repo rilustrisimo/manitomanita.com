@@ -63,7 +63,7 @@ class Theme {
     
 
     function __autoload() {
-        $classes = array('affiliate', 'captcha', 'emails', 'email-check', 'seo', 'landing', 'gift-ai', 'involve', 'payments', 'groups', 'logs', 'users', 'wishlists');
+        $classes = array('affiliate', 'captcha', 'emails', 'email-check', 'seo', 'landing', 'themes', 'gift-ai', 'involve', 'payments', 'groups', 'logs', 'users', 'wishlists');
 
         foreach($classes as $value){
             require_once PARENT_DIR . '/classes/class-'. $value .'.php';
@@ -342,7 +342,8 @@ class Theme {
             'return' => (is_null($redirect))?home_url():home_url('/'.$redirect),
             'updated_message' => __("Account Created", 'acf'),
             // Turnstile (when its keys are set) + the email code box on Create Group
-            'html_after_fields' => Captcha::widget().(($postType == 'groups')?EmailCheck::codeField():''),
+            'html_after_fields' => Captcha::widget().(($postType == 'groups')?EmailCheck::codeField():'')
+                .'<p class="mm-legal-note">By continuing you agree to our <a href="'.esc_url(home_url('/terms/')).'" target="_blank">Terms of Use</a> and <a href="'.esc_url(home_url('/privacy-policy/')).'" target="_blank">Privacy Policy</a>.</p>',
         ));
     }
 

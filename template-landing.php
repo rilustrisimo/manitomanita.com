@@ -19,6 +19,34 @@ $slot = 'landing:' . $p['slug'];
 $all = Landing::pages();
 
 get_header();
+
+if ( $p['type'] === 'legal' ) : ?>
+<div class="mm-home mm-landing mm-legal">
+	<section class="mmh-hero mml-hero mml-legal-hero">
+		<div class="mmh-wrap mmh-wrap--narrow">
+			<nav class="mml-crumbs" aria-label="Breadcrumb"><a href="<?php echo esc_url( home_url( '/' ) ); ?>">Home</a> <span aria-hidden="true">/</span> <span><?php echo esc_html( $p['h1'] ); ?></span></nav>
+			<h1 class="mmh-hero__title"><?php echo esc_html( $p['h1'] ); ?></h1>
+			<p class="mmh-hero__lead"><?php echo $p['lead']; ?></p>
+			<p class="mml-updated">Last updated <?php echo esc_html( date_i18n( 'F j, Y', strtotime( $p['updated'] ) ) ); ?></p>
+		</div>
+	</section>
+	<section class="mmh-section">
+		<div class="mmh-wrap mmh-wrap--narrow mml-prose">
+			<nav class="mml-toc" aria-label="Contents"><strong>Contents</strong><ol>
+				<?php foreach ( $p['sections'] as $i => $sec ) : ?><li><a href="#s<?php echo (int) $i + 1; ?>"><?php echo esc_html( $sec[0] ); ?></a></li><?php endforeach; ?>
+			</ol></nav>
+			<?php foreach ( $p['sections'] as $i => $sec ) : ?>
+				<h2 id="s<?php echo (int) $i + 1; ?>"><?php echo (int) $i + 1; ?>. <?php echo esc_html( $sec[0] ); ?></h2>
+				<?php echo $sec[1]; ?>
+			<?php endforeach; ?>
+			<p class="mml-legal-contact">Questions? Email <a href="mailto:rouie@manitomanita.com">rouie@manitomanita.com</a>.</p>
+		</div>
+	</section>
+</div>
+<?php
+	get_footer();
+	return;
+endif;
 ?>
 <div class="mm-home mm-landing">
 <script>(function(d){var r=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;if(r||!('IntersectionObserver' in window))return;d.className+=' mm-anim';setTimeout(function(){if(!window.mmRevealReady)d.className+=' mm-reveal-all';},3000);})(document.documentElement);</script>

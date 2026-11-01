@@ -32,6 +32,7 @@ $free = array(
 
 $pro = array(
 	'Exclusions: couples or family won&rsquo;t get each other',
+	'Manito Manita mode: weekly themes with an email to everyone',
 	'No ads for everyone in the group',
 	'Unshuffle to let late joiners in, then shuffle again (3 unshuffles included)',
 	'Remove duplicate or wrong members',

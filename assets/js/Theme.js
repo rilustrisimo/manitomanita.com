@@ -300,6 +300,35 @@ var Theme = {
             }
 
             if (btn === 'members') Theme.proMembers($, gid);
+            if (btn === 'themes') Theme.proThemes($, gid);
+
+            if (btn === 'reveal') {
+                var hiding = /^Hide/.test($(this).find('strong').text());
+                Theme.confirmSheet(hiding ? {
+                    title: 'Hide the reveal?',
+                    body: 'The list of who gave to whom will be hidden from the group page again.',
+                    icon: 'fa-solid fa-eye-slash',
+                    confirm: 'Hide the reveal',
+                    onConfirm: function(done){
+                        Theme.proApi('reveal', { group_id: gid, op: 'off' }).then(function(){ done(); Theme.toast('Reveal hidden'); setTimeout(function(){ $('#reload').submit(); }, 700); })
+                            .catch(function(err){ done(); Theme.toast(err.message, 'error'); });
+                    }
+                } : {
+                    title: 'Reveal who gave to whom?',
+                    points: [
+                        'Everyone who opens the group page will see <b>all pairs</b>.',
+                        'Do this <b>after the gift exchange</b>, so nobody\u2019s surprise is spoiled.',
+                        'You can hide it again anytime.'
+                    ],
+                    check: 'The gift exchange is done',
+                    icon: 'fa-solid fa-masks-theater',
+                    confirm: 'Reveal to everyone',
+                    onConfirm: function(done){
+                        Theme.proApi('reveal', { group_id: gid, op: 'on' }).then(function(){ done(); Theme.toast('Revealed! Everyone can see the pairs now.'); setTimeout(function(){ $('#reload').submit(); }, 900); })
+                            .catch(function(err){ done(); Theme.toast(err.message, 'error'); });
+                    }
+                });
+            }
             if (btn === 'exclusions') Theme.proExclusions($, gid);
             if (btn === 'autodraw') Theme.proAutoDraw($, gid);
             if (btn === 'gifts') Theme.proGifts($, gid);
@@ -840,6 +869,72 @@ var Theme = {
         });
     },
 
+    /* ---------- Manito Manita mode: weekly themes ---------- */
+
+    proThemes: function($, gid){
+        var body = Theme.proView($, 'Weekly themes', Theme.proLoading);
+
+        function addDays(d, n){
+            var x = new Date(d + 'T00:00:00'); x.setDate(x.getDate() + n);
+            return x.getFullYear() + '-' + ('0' + (x.getMonth() + 1)).slice(-2) + '-' + ('0' + x.getDate()).slice(-2);
+        }
+
+        function rowHtml(t, d){
+            return '<li class="mm-theme-row"><input type="date" value="' + Theme.esc(d) + '" aria-label="Start date">' +
+                '<input type="text" maxlength="60" placeholder="e.g. Something sweet" value="' + Theme.esc(t) + '" aria-label="Theme">' +
+                '<button type="button" class="mm-prov__mini mm-prov__mini--danger" aria-label="Remove theme"><i class="fa-solid fa-xmark"></i></button></li>';
+        }
+
+        function render(d){
+            var rows = d.themes.map(function(r){ return rowHtml(r.t, r.d); }).join('');
+            body.html(
+                '<p class="mm-prov__meta">Pick a theme for each week before the exchange. On each start date, members get an email with the theme and matching gift ideas, and the group page shows <b>This week\u2019s theme</b>.</p>' +
+                '<ul class="mm-theme-rows">' + rows + '</ul>' +
+                '<button type="button" class="mm-prov__mini mm-prov__gapb" data-th-add><i class="fa-solid fa-plus"></i> Add a theme</button>' +
+                '<h4 class="mm-prot__group">Quick add</h4>' +
+                '<div class="mm-theme-presets">' + d.presets.map(function(p){ return '<button type="button" data-th-preset="' + Theme.esc(p) + '">' + Theme.esc(p) + '</button>'; }).join('') + '</div>' +
+                '<label class="mm-prov__field">Suggested budget per weekly gift (&#8369;)<input type="number" min="0" max="5000" step="10" value="' + d.budget + '" data-th-budget></label>' +
+                '<button type="button" class="mm-upsell__btn mm-upsell__btn--dark" data-th-save>Save themes</button>'
+            );
+
+            var list = body.find('.mm-theme-rows');
+
+            function nextDate(){
+                var last = list.find('input[type="date"]').map(function(){ return this.value; }).get().filter(Boolean).sort().pop();
+                return last ? addDays(last, 7) : addDays(d.today, 1);
+            }
+
+            function add(t){
+                if (list.children().length >= 8) { Theme.toast('Up to 8 themes per group', 'error'); return; }
+                list.append(rowHtml(t || '', nextDate()));
+                if (!t) list.find('input[type="text"]').last().trigger('focus');
+            }
+
+            body.find('[data-th-add]').on('click', function(){ add(''); });
+            body.find('[data-th-preset]').on('click', function(){ add($(this).attr('data-th-preset')); $(this).prop('disabled', true); });
+            list.on('click', '.mm-prov__mini--danger', function(){ $(this).closest('li').remove(); });
+
+            body.find('[data-th-save]').on('click', function(){
+                var btn = $(this), themes = list.children().map(function(){
+                    return { t: $.trim($(this).find('input[type="text"]').val()), d: $(this).find('input[type="date"]').val() };
+                }).get();
+
+                btn.prop('disabled', true).text('Saving\u2026');
+                Theme.proApi('themes', { group_id: gid, op: 'save', themes: themes, budget: body.find('[data-th-budget]').val() }).then(function(r){
+                    render(r);
+                    Theme.toast(r.themes.length ? 'Themes saved' : 'Themes cleared');
+                }).catch(function(err){
+                    btn.prop('disabled', false).text('Save themes');
+                    Theme.toast(err.message, 'error');
+                });
+            });
+        }
+
+        Theme.proApi('themes', { group_id: gid, op: 'get' }).then(render).catch(function(err){
+            body.html('<p class="mm-prov__error">' + Theme.esc(err.message) + '</p>');
+        });
+    },
+
     /* ---------- Matches (hidden until revealed) ---------- */
 
     proMatches: function($, gid){
@@ -993,6 +1088,7 @@ var Theme = {
             welcome:   ['Extra tools for your group\u2019s organizer', 'Fix mistakes, let late joiners in and keep everything organized.'],
             unshuffle: ['More people want to join?', 'Unshuffle the group to let them in, then shuffle again. 3 unshuffles included.'],
             fix:       ['Fix your member list before shuffling', 'Remove duplicates and correct misspelled names or emails.'],
+            themes:    ['Weekly themes, Manito Manita style', 'Set a theme for each week, email everyone with matching gift ideas, then reveal who gave to whom.'],
             exclude:   ['Keep couples from getting each other', 'Add exclusions so couples or family members never get each other in the shuffle.'],
             gift:    ['Gift PRO to your group', 'Remove ads for everyone and unlock the organizer tools. One payment covers the whole group.']
         }[reason] || null;
