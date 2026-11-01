@@ -91,8 +91,8 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
                                 <span><strong>Someone left or joined late?</strong> With PRO the organizer can redo the draw.</span>
                                 <button type="button" data-mm-upsell="redo">See PRO</button>
                                 <?php else: ?>
-                                <span><strong>Organizer:</strong> need to remove a duplicate or fix a name before drawing?</span>
-                                <button type="button" data-mm-upsell="fix">See PRO</button>
+                                <span><strong>Organizer:</strong> keep couples from drawing each other, or fix a name before drawing?</span>
+                                <button type="button" data-mm-upsell="exclude">See PRO</button>
                                 <?php endif; ?>
                                 <button type="button" class="mm-pro-hint__gift" data-mm-upsell="gift">Gift PRO to the group</button>
                             </div>

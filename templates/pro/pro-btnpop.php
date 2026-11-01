@@ -33,6 +33,7 @@ $mm_stats = Groups::siteStats();
         </div>
 
         <ul class="mm-upsell__list">
+            <li data-reason="exclude"><i class="fa-solid fa-user-slash"></i><span><b>Exclusions:</b> couples or family won&rsquo;t draw each other</span></li>
             <li data-reason="redo"><i class="fa-solid fa-shuffle"></i><span><b>Redo the draw</b> if someone leaves or joins late <em>(3 redos included)</em></span></li>
             <li data-reason="fix"><i class="fa-solid fa-user-xmark"></i><span><b>Remove</b> duplicate or wrong members</span></li>
             <li data-reason="fix"><i class="fa-solid fa-pen-to-square"></i><span><b>Fix</b> a misspelled name or email</span></li>

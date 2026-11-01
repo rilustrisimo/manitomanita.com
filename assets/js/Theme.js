@@ -27,6 +27,7 @@ var Theme = {
         this.initAffiliateCap($);
         this.initTracking($);
         this.initEmailChecks($);
+        this.initFormAlerts($);
         this.initHome($);
         this.initPasswordToggles($);
 
@@ -285,6 +286,7 @@ var Theme = {
                 credits = parseInt(panel.attr('data-credits'), 10) || 0;
 
             if (btn === 'members') Theme.proMembers($, gid);
+            if (btn === 'exclusions') Theme.proExclusions($, gid);
             if (btn === 'matches') Theme.proMatches($, gid);
             if (btn === 'export') Theme.proExport($, gid, panel.attr('data-group-name') || 'group');
 
@@ -482,6 +484,62 @@ var Theme = {
         });
     },
 
+    /* ---------- Exclusions (who can't draw whom) ---------- */
+
+    proExclusions: function($, gid){
+        var body = Theme.proView($, 'Exclusions', Theme.proLoading);
+
+        function render(d){
+            var esc = Theme.esc, opts = '<option value="">Choose</option>', rules = '';
+
+            d.members.forEach(function(m){
+                opts += '<option value="' + m.ID + '">' + esc(m.name) + (m.screen && m.screen !== m.name ? ' (' + esc(m.screen) + ')' : '') + '</option>';
+            });
+
+            d.rules.forEach(function(r){
+                rules += '<li class="mm-prov__row mm-prov__match">' +
+                    '<span><strong>' + esc(r[0].name) + '</strong><small>' + esc(r[0].screen) + '</small></span>' +
+                    '<i class="fa-solid fa-arrows-left-right" aria-label="won\u2019t draw"></i>' +
+                    '<span><strong>' + esc(r[1].name) + '</strong><small>' + esc(r[1].screen) + '</small></span>' +
+                    '<button type="button" class="mm-prov__mini mm-prov__mini--danger" data-a="' + r[0].ID + '" data-b="' + r[1].ID + '" aria-label="Remove rule"><i class="fa-solid fa-xmark"></i></button></li>';
+            });
+
+            body.html(
+                '<p class="mm-prov__meta">Pick two people who shouldn\u2019t draw each other, like couples or family. It works both ways.' +
+                (d.matched ? ' <b>Names are already drawn:</b> rules apply the next time you redo the draw.' : '') + '</p>' +
+                '<div class="mm-prov__pair"><select data-ex-a>' + opts + '</select><span>&amp;</span><select data-ex-b>' + opts + '</select></div>' +
+                '<button type="button" class="mm-upsell__btn mm-upsell__btn--dark" data-ex-add>Add rule</button>' +
+                '<h4 class="mm-prot__group">' + d.rules.length + ' ' + (d.rules.length === 1 ? 'rule' : 'rules') + '</h4>' +
+                (rules ? '<ul class="mm-prov__list">' + rules + '</ul>' : '<p class="mm-prov__empty">No rules yet. Everyone can draw anyone (except themselves).</p>')
+            );
+
+            body.find('[data-ex-add]').on('click', function(){
+                var a = body.find('[data-ex-a]').val(), b = body.find('[data-ex-b]').val(), btn = $(this);
+                if (!a || !b || a === b) { Theme.toast('Pick two different members', 'error'); return; }
+
+                btn.prop('disabled', true).text('Saving\u2026');
+                Theme.proApi('exclusions', { group_id: gid, op: 'add', a: a, b: b }).then(function(r){
+                    render(r);
+                    Theme.toast('Rule added');
+                }).catch(function(err){
+                    btn.prop('disabled', false).text('Add rule');
+                    Theme.toast(err.message, 'error');
+                });
+            });
+
+            body.find('[data-a]').on('click', function(){
+                Theme.proApi('exclusions', { group_id: gid, op: 'remove', a: $(this).attr('data-a'), b: $(this).attr('data-b') }).then(function(r){
+                    render(r);
+                    Theme.toast('Rule removed');
+                }).catch(function(err){ Theme.toast(err.message, 'error'); });
+            });
+        }
+
+        Theme.proApi('exclusions', { group_id: gid, op: 'list' }).then(render).catch(function(err){
+            body.html('<p class="mm-prov__error">' + Theme.esc(err.message) + '</p>');
+        });
+    },
+
     /* ---------- Matches (hidden until revealed) ---------- */
 
     proMatches: function($, gid){
@@ -621,6 +679,7 @@ var Theme = {
             welcome: ['Extra tools for your group\u2019s organizer', 'Fix mistakes, redo the draw and keep everything organized.'],
             redo:    ['Someone left or joined late?', 'Redo the draw so everyone gets a fresh match. 3 redos included.'],
             fix:     ['Fix your member list before drawing', 'Remove duplicates and correct misspelled names or emails.'],
+            exclude: ['Keep couples from drawing each other', 'Add exclusions so couples or family members never get each other in the draw.'],
             gift:    ['Gift PRO to your group', 'Remove ads for everyone and unlock the organizer tools. One payment covers the whole group.']
         }[reason] || null;
 
@@ -1532,20 +1591,46 @@ var Theme = {
             send = otp.find('[data-mm-otp-send]'),
             resend = otp.find('[data-mm-otp-resend]'),
             sentTo = '',
-            timer = null;
+            verified = false,
+            timer = null,
+            form = otp.closest('form'),
+            submitWrap = form.find('.acf-form-submit'),
+            submitBtn = submitWrap.find('input[type="submit"], button[type="submit"], .button'),
+            gate = form.find('[data-mm-otp-gate]');
 
         if (emailField.length) otp.insertAfter(emailField);
+
+        if (!gate.length) {
+            gate = $('<p class="mm-otp__gate" data-mm-otp-gate><i class="fa-solid fa-lock" aria-hidden="true"></i> <span>Verify your email above to create your group.</span></p>').insertBefore(submitWrap);
+        }
+
+        // "Create Group" stays locked until the email is verified (the server checks again on submit).
+        function lock(on){
+            submitBtn.prop('disabled', on).toggleClass('is-locked', on).attr('aria-disabled', on ? 'true' : 'false');
+            gate.prop('hidden', !on);
+        }
+
+        form.off('submit.mmOtp').on('submit.mmOtp', function(e){
+            if (verified) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            gate.removeClass('is-shake');
+            setTimeout(function(){ gate.addClass('is-shake'); }, 10);
+            (send.is(':visible') ? send : box.find('input')).trigger('focus');
+        });
 
         function looksValid(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
 
         function refresh(){
             var v = $.trim(emailInput.val()).toLowerCase();
             otp.prop('hidden', !looksValid(v));
-            if (sentTo && v !== sentTo) { // email changed after sending: start over
+            if (sentTo && v !== sentTo) { // email changed after sending or verifying: start over
                 sentTo = '';
+                verified = false;
                 box.prop('hidden', true);
                 send.prop('hidden', false);
-                msg.text('');
+                msg.removeClass('is-error is-ok').text('');
+                lock(true);
             }
         }
 
@@ -1592,8 +1677,87 @@ var Theme = {
         resend.off('click.mmOtp').on('click.mmOtp', function(){ request(resend); });
         box.find('input').off('input.mmOtp').on('input.mmOtp', function(){
             this.value = this.value.replace(/\D/g, '').slice(0, 6);
+            if (this.value.length !== 6) return;
+
+            var input = $(this).prop('disabled', true);
+            msg.removeClass('is-error is-ok').text('Checking\u2026');
+
+            $.post($('#ajax-url').val(), { action: 'mm_check_otp', email: $.trim(emailInput.val()), code: this.value, nonce: otp.find('input[name="mm_otp_nonce"]').val() })
+                .done(function(resp){
+                    if (resp && resp.success) {
+                        verified = true;
+                        clearInterval(timer);
+                        box.prop('hidden', true);
+                        msg.addClass('is-ok').html('<i class="fa-solid fa-circle-check"></i> Email verified. You can create your group now.');
+                        lock(false);
+                        Theme.track('otp_verified', {});
+                    } else {
+                        msg.addClass('is-error').html((resp && resp.data) || 'That code isn\u2019t right.');
+                        input.val('');
+                    }
+                })
+                .fail(function(){ msg.addClass('is-error').text('Network error. Please try again.'); })
+                .always(function(){ input.prop('disabled', false); if (!verified) input.trigger('focus'); });
         });
+
+        lock(true);
         refresh();
+    },
+
+    /**
+     * ACF form errors: the message ACF puts at the top of the form is easy to miss in a long popup, so
+     * the same messages also float over the form (with a close button) and the first problem field
+     * scrolls into view.
+     */
+    initFormAlerts: function($){
+        function hook(tries){
+            if (!(window.acf && acf.addAction)) {
+                if (tries < 20) setTimeout(function(){ hook(tries + 1); }, 250);
+                return;
+            }
+
+            acf.addAction('validation_failure', function($form){
+                setTimeout(function(){ Theme.showFormAlert($, $form); }, 50);
+            });
+
+            acf.addAction('validation_success', function(){ $('#mm-form-alert').remove(); });
+        }
+
+        hook(0);
+    },
+
+    showFormAlert: function($, $form){
+        $form = $($form);
+
+        var texts = [];
+        $form.find('.acf-notice.-error p, .acf-notice.-error').each(function(){
+            var t = $.trim($(this).clone().children('a, button').remove().end().text());
+            if (t && texts.indexOf(t) === -1 && !$(this).find('p').length) texts.push(t);
+        });
+
+        // Drop ACF's generic summary when there is a specific message.
+        var specific = texts.filter(function(t){ return !/^validation failed/i.test(t); });
+        if (specific.length) texts = specific;
+        if (!texts.length) return;
+
+        $('#mm-form-alert').remove();
+
+        var box = $('<div id="mm-form-alert" class="mm-form-alert" role="alert">' +
+            '<i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><div class="mm-form-alert__txt"></div>' +
+            '<button type="button" class="mm-form-alert__close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>');
+
+        texts.forEach(function(t){ $('<p></p>').text(t).appendTo(box.find('.mm-form-alert__txt')); });
+
+        box.appendTo('body');
+        setTimeout(function(){ box.addClass('is-in'); }, 10);
+
+        box.find('.mm-form-alert__close').on('click', function(){ box.remove(); });
+        $(document).one('afterClose.fb', function(){ box.remove(); });
+
+        // Bring the first field with a problem into view (or the code box on Create Group).
+        var target = $form.find('.acf-field.acf-error').first();
+        if (!target.length && /verif|code/i.test(texts.join(' '))) target = $form.find('[data-mm-otp]');
+        if (target.length && target[0].scrollIntoView) target[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
     },
 
     initAffiliateCap:function($){

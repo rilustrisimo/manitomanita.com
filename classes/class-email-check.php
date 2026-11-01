@@ -54,6 +54,8 @@ class EmailCheck {
 
         add_action( 'wp_ajax_mm_send_otp', array( __CLASS__, 'ajaxSendCode' ) );
         add_action( 'wp_ajax_nopriv_mm_send_otp', array( __CLASS__, 'ajaxSendCode' ) );
+        add_action( 'wp_ajax_mm_check_otp', array( __CLASS__, 'ajaxCheckCode' ) );
+        add_action( 'wp_ajax_nopriv_mm_check_otp', array( __CLASS__, 'ajaxCheckCode' ) );
         add_action( 'acf/validate_save_post', array( __CLASS__, 'validateGroupForm' ), 6 );
         add_action( 'acf/save_post', array( __CLASS__, 'markNewGroup' ), 20 );
         add_action( 'init', array( __CLASS__, 'confirmLink' ), 2 );
@@ -149,6 +151,25 @@ class EmailCheck {
         if ( ! $sent ) wp_send_json_error( 'We couldn&rsquo;t send the code. Please try again.' );
 
         wp_send_json_success( 'Code sent to ' . $email . '. Check your inbox (and spam folder).' );
+    }
+
+    /**
+     * Checks the code as soon as it is typed, so the form can unlock "Create Group" (the server check on
+     * submit stays: a pass is remembered for the form's validation).
+     */
+    public static function ajaxCheckCode() {
+        check_ajax_referer( 'mm_otp', 'nonce' );
+
+        $email = sanitize_email( wp_unslash( (string) ( $_POST['email'] ?? '' ) ) );
+        $code  = preg_replace( '/\D/', '', (string) ( $_POST['code'] ?? '' ) );
+
+        if ( ! is_email( $email ) || strlen( $code ) !== 6 ) wp_send_json_error( 'Enter the 6-digit code from the email.' );
+
+        $error = self::checkCode( $email, $code );
+
+        if ( $error ) wp_send_json_error( $error );
+
+        wp_send_json_success( 'Email verified.' );
     }
 
     /**

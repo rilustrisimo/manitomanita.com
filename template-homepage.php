@@ -31,6 +31,7 @@ $free = array(
 );
 
 $pro = array(
+	'Exclusions: couples or family won&rsquo;t draw each other',
 	'No ads for everyone in the group',
 	'Redo the draw if someone leaves or joins late (3 redos included)',
 	'Remove duplicate or wrong members',
@@ -45,6 +46,7 @@ $faq = array(
 	array( 'Do members need to create an account?', 'No. Members open the group link, enter their name, a screen name, their email and a password for that group. No app to install and no sign-up.' ),
 	array( 'How does the draw work?', 'When everyone has joined, the organizer draws names in one tap. Each member is matched with someone else at random, never themselves, and each person only sees their own match.' ),
 	array( 'What does PRO add, and how much is it?', 'PRO is a one-time &#8369;199 per group. It removes ads for the whole group and gives the organizer tools to redo the draw, remove or edit members, see matches and export the group data. You can pay with PayPal or any debit or credit card.' ),
+	array( 'Can couples or family avoid drawing each other?', 'Yes, with PRO. The organizer adds exclusions, like a couple or siblings, and the draw makes sure they never get each other.' ),
 	array( 'Who can see my address and wishlist?', 'Your wishlist is visible to your group. Your address and contact details are shown only to the person who drew you, and to the organizer of a PRO group in the export.' ),
 );
 ?>

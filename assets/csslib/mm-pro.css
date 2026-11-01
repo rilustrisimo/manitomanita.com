@@ -851,3 +851,47 @@
     font-weight: 700;
     white-space: nowrap;
 }
+
+/* Exclusions: member pickers */
+.mm-prov__pair {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+}
+
+.mm-prov__pair span {
+    flex: 0 0 auto;
+    color: #9a7b17;
+    font-weight: 800;
+}
+
+.mm-prot-sheet .mm-prov__pair select {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 44px;
+    margin: 0;
+    padding: 0 10px;
+    border: 1px solid #e3e3e3;
+    border-radius: 10px;
+    background: #fff;
+    color: #1b1b1b;
+    font-family: inherit;
+    font-size: 15px;
+}
+
+.mm-prot-sheet .mm-prov__pair select:focus {
+    border-color: #D4AF37;
+    outline: none;
+}
+
+.mm-prot-sheet [data-ex-add] {
+    margin-bottom: 6px;
+}
+
+.mm-prov__match .mm-prov__mini {
+    flex: 0 0 auto;
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+}

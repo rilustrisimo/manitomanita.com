@@ -52,6 +52,7 @@ class Groups extends Theme {
         add_action('rest_api_init', array($this, 'edit_user'));
         add_action('rest_api_init', array($this, 'get_user_export'));
         add_action('rest_api_init', array($this, 'members_group'));
+        add_action('rest_api_init', array($this, 'exclusions_route'));
 
         // Groups is instantiated in several places; register the cron hooks once.
         static $cronHooked = false;
@@ -282,6 +283,156 @@ class Groups extends Theme {
         if((int) get_field('unshuffle_credits', $gid) < 1) return new WP_Error('mm_no_credits', 'No unshuffle credits left.', array('status' => 403));
 
         return true;
+    }
+
+    /* ---------------------------------------------------------- Exclusions */
+
+    const EXCLUSIONS_META = '_mm_exclusions'; // array of array(memberA, memberB): they don't draw each other
+    const EXCLUSIONS_MAX  = 50;
+
+    /**
+     * Random assignment giver => receiver where nobody gets themselves or a blocked receiver.
+     * $blocked is a set: $blocked["giver|receiver"] = true. Returns null when impossible.
+     * Random tries first (fast for normal groups), then a randomized backtracking search.
+     */
+    public static function drawPairs(array $ids, array $blocked = array()){
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        $n = count($ids);
+        if($n < 2) return null;
+
+        $ok = function($giver, $receiver) use ($blocked){
+            return $giver !== $receiver && empty($blocked[$giver.'|'.$receiver]);
+        };
+
+        for($try = 0; $try < 300; $try++){
+            $receivers = $ids;
+            shuffle($receivers);
+            $good = true;
+            foreach($ids as $k => $g){
+                if(!$ok($g, $receivers[$k])){ $good = false; break; }
+            }
+            if($good) return array_combine($ids, $receivers);
+        }
+
+        // Backtracking: most constrained givers first.
+        $options = array();
+        foreach($ids as $g){
+            $options[$g] = array_values(array_filter($ids, function($r) use ($g, $ok){ return $ok($g, $r); }));
+            if(!$options[$g]) return null;
+            shuffle($options[$g]);
+        }
+        $order = $ids;
+        usort($order, function($a, $b) use ($options){ return count($options[$a]) - count($options[$b]); });
+
+        $result = array();
+        $used = array();
+        $steps = 0;
+
+        $solve = function($i) use (&$solve, &$result, &$used, &$steps, $order, $options, $n){
+            if($i === $n) return true;
+            if(++$steps > 200000) return false; // safety valve
+            $g = $order[$i];
+            foreach($options[$g] as $r){
+                if(isset($used[$r])) continue;
+                $used[$r] = true;
+                $result[$g] = $r;
+                if($solve($i + 1)) return true;
+                unset($used[$r], $result[$g]);
+            }
+            return false;
+        };
+
+        return $solve(0) ? $result : null;
+    }
+
+    /**
+     * Exclusions of a group, limited to current members, as rows array(a, b).
+     */
+    public static function exclusions($gid, $memberIds = null){
+        $rows = get_post_meta((int) $gid, self::EXCLUSIONS_META, true);
+        $rows = is_array($rows) ? $rows : array();
+        if($memberIds === null) return $rows;
+
+        $members = array_flip(array_map('intval', $memberIds));
+        return array_values(array_filter($rows, function($r) use ($members){
+            return isset($members[(int) $r[0]], $members[(int) $r[1]]);
+        }));
+    }
+
+    public static function blockedPairs($gid, $rows = null){
+        $rows = ($rows === null) ? self::exclusions($gid) : $rows;
+        $blocked = array();
+        foreach($rows as $r){
+            $blocked[(int) $r[0].'|'.(int) $r[1]] = true;
+            $blocked[(int) $r[1].'|'.(int) $r[0]] = true;
+        }
+        return $blocked;
+    }
+
+    protected static function memberIds($gid){
+        return array_map('intval', get_posts(array(
+            'post_type'      => 'users',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'meta_query'     => array(array('key' => 'groups', 'value' => (int) $gid)),
+        )));
+    }
+
+    public function exclusions_route() {
+        register_rest_route('custom-webhook/v1', '/exclusions', array(
+            'methods'             => 'POST',
+            'callback'            => array($this, 'handle_exclusions'),
+            'permission_callback' => array($this, 'canUsePro'),
+        ));
+    }
+
+    /**
+     * op: list | add (a, b) | remove (a, b). Adding is refused when it would make the draw impossible.
+     */
+    public function handle_exclusions($request){
+        $gid = (int) $request->get_param('group_id');
+        $op = (string) $request->get_param('op');
+        $ids = self::memberIds($gid);
+        $rows = self::exclusions($gid, $ids);
+        $error = '';
+
+        $a = (int) $request->get_param('a');
+        $b = (int) $request->get_param('b');
+        $same = function($r) use ($a, $b){ return ((int) $r[0] === $a && (int) $r[1] === $b) || ((int) $r[0] === $b && (int) $r[1] === $a); };
+
+        if($op === 'add'){
+            if(!in_array($a, $ids, true) || !in_array($b, $ids, true) || $a === $b){
+                $error = 'Pick two different members.';
+            }elseif(array_filter($rows, $same)){
+                $error = 'That rule already exists.';
+            }elseif(count($rows) >= self::EXCLUSIONS_MAX){
+                $error = 'That&rsquo;s the maximum number of rules.';
+            }else{
+                $try = array_merge($rows, array(array($a, $b)));
+                if(self::drawPairs($ids, self::blockedPairs($gid, $try)) === null){
+                    $error = 'With this rule nobody could be matched fairly. Try a different pair.';
+                }else{
+                    $rows = $try;
+                    update_post_meta($gid, self::EXCLUSIONS_META, $rows);
+                }
+            }
+        }elseif($op === 'remove'){
+            $rows = array_values(array_filter($rows, function($r) use ($same){ return !$same($r); }));
+            update_post_meta($gid, self::EXCLUSIONS_META, $rows);
+        }
+
+        $label = function($id){
+            $name = trim((string) get_field('name', $id));
+            return array('ID' => $id, 'name' => $name !== '' ? $name : (string) get_field('screen_name', $id), 'screen' => (string) get_field('screen_name', $id));
+        };
+
+        return new WP_REST_Response(array(
+            'success' => $error === '',
+            'message' => $error,
+            'matched' => (bool) get_field('matched', $gid),
+            'members' => array_map($label, $ids),
+            'rules'   => array_map(function($r) use ($label){ return array($label((int) $r[0]), $label((int) $r[1])); }, $rows),
+        ), 200);
     }
 
     public function members_group() {
@@ -747,6 +898,8 @@ class Groups extends Theme {
         $html .= $tool('members', 'fa-solid fa-users', 'Members', 'Names and emails, edit or remove members');
 
         $html .= '<h4 class="mm-prot__group">Draw</h4>';
+        $rules = count(self::exclusions($gid, self::memberIds($gid)));
+        $html .= $tool('exclusions', 'fa-solid fa-user-slash', 'Exclusions', ($rules ? $rules.' '.($rules == 1 ? 'rule' : 'rules').' &middot; ' : '').'Couples or family who shouldn&rsquo;t draw each other');
         if(!$matched){
             $html .= $tool('shuffle', 'fa-solid fa-shuffle', 'Draw names', 'Everyone gets their match by email', ($count < 3) ? 'Needs at least 3 members' : '');
         }elseif($credits > 0){
@@ -1186,18 +1339,16 @@ class Groups extends Theme {
                 wp_send_json_success(array('result' => false, 'message' => 'At least 2 members are needed to draw names'));
             }
 
-            // Ensure no users match with themselves
-            while ($dontStop) {
-                shuffle($match2);
-                $i = 0;
-                
-                foreach ($match1 as $k => $u) {
-                    if ($u == $match2[$k]) {
-                        $i++;
-                    }
-                }
+            // Nobody draws themselves; PRO groups also respect their exclusions.
+            $blocked = get_field('pro', $gid) ? self::blockedPairs($gid) : array();
+            $draw = self::drawPairs($match1, $blocked);
 
-                if ($i == 0) $dontStop = false; // Stop if no matches are the same
+            if ($draw === null) {
+                wp_send_json_success(array('result' => false, 'message' => 'These exclusions make a draw impossible. Remove one in PRO Actions > Exclusions and try again'));
+            }
+
+            foreach ($match1 as $k => $u) {
+                $match2[$k] = $draw[$u];
             }
 
             // Update field for each matched pair using reliable_update_field
