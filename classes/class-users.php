@@ -84,7 +84,10 @@ class Users extends Theme {
 
             // Lets save_wishlist() trust this member for the rest of the session.
             if(get_post_type($uid) == 'users') $_SESSION['mm_verified'][(int) $uid] = time();
-            if(get_post_type($uid) == 'groups') Groups::markModerator($uid); // moderator tools / PRO actions
+            if(get_post_type($uid) == 'groups'){ Groups::markModerator($uid); GroupExtras::markOrganizer($uid); } // moderator tools / PRO actions
+		} elseif(get_post_type($uid) == 'groups' && GroupExtras::checkCoOrganizer($uid, (string) $password)) {
+		    $result = true; // PRO co-organizer: same tools, except managing the co-organizer
+		    Groups::markModerator($uid);
 		} else {
 		    $result = false;
         }

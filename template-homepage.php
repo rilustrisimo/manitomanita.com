@@ -61,6 +61,7 @@ $pro = array(
 	'One-click reminders and an auto-shuffle on the date you pick',
 	'Gift status board: see who has bought or given (never who drew whom)',
 	'Remove or fix members, see all matches and export everything',
+	'A co-organizer and your own colors for the group page',
 	'No ads for everyone in the group',
 );
 
@@ -68,7 +69,7 @@ $faq = array(
 	array( 'Is Manito Manita really free?', 'Yes. Creating a group, inviting everyone, shuffling names, wishlists, gift ideas and emails are free, with no limit on members. PRO is an optional one-time add-on for organizers who want extra tools.' ),
 	array( 'Do members need to create an account?', 'No. Members open the group link, enter their name, a screen name, their email and a password for that group. No app to install and no sign-up.' ),
 	array( 'How does the shuffle work?', 'When everyone has joined, the organizer shuffles names in one tap. Each member is matched with someone else at random, never themselves, and each person only sees their own match.' ),
-	array( 'What does PRO add, and how much is it?', 'PRO is a one-time &#8369;199 per group. It adds exclusions for couples, Weekly Drops (a themed mini-gift each week) with a reveal at the end, anonymous questions to your match, unshuffle for late joiners, reminders and auto-shuffle, a gift status board, member editing, matches and export, and removes ads for the whole group. You can pay with PayPal or any debit or credit card.' ),
+	array( 'What does PRO add, and how much is it?', 'PRO is a one-time &#8369;199 per group. It adds exclusions for couples, Weekly Drops (a themed mini-gift each week) with a reveal at the end, anonymous questions to your match, unshuffle for late joiners, reminders and auto-shuffle, a gift status board, member editing, matches and export, a co-organizer, group page colors, and removes ads for the whole group. You can pay with PayPal or any debit or credit card.' ),
 	array( 'Can couples or family avoid getting each other?', 'Yes, with PRO. The organizer adds exclusions, like a couple or siblings, and the shuffle makes sure they never get each other.' ),
 	array( 'Who can see my address and wishlist?', 'Your wishlist is visible to your group. Your address and contact details are shown only to the person who drew you, and to the organizer of a PRO group in the export.' ),
 );

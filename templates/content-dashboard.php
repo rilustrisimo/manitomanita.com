@@ -49,6 +49,9 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
                             <div class="col-md-12">
                                 <h2>Group<span>Moderator</span></h2>
                                 <div class="big"><?php echo $fields['your_name']; ?></div>
+                                <?php $mmCo = !empty($fields['pro']) ? GroupExtras::coOrganizer($group->getGroupId()) : null; if($mmCo): ?>
+                                <div class="mm-coorg"><i class="fas fa-user-plus"></i> Co-organizer: <?php echo esc_html($mmCo['name']); ?></div>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="row metrics">

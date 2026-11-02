@@ -2228,3 +2228,82 @@
     line-height: 1.45 !important;
     text-align: left !important;
 }
+
+/* ---------- Group themes (PRO, GroupExtras::themes(); body.mm-gtheme.mm-gtheme-{key}) ----------
+ * Each theme sets an accent (--gt-a), its darker shade (--gt-ad), the card colour (--gt-c) and a faint
+ * pattern (--gt-p). They recolour the summary cards, the members header and the accent buttons,
+ * overriding the PRO gold (body.pro-version) from the theme's LESS. */
+
+body.mm-gtheme-noche {
+    --gt-a: #ff5a5f; --gt-ad: #d93c42; --gt-c: #3a0f14;
+    --gt-p: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cg stroke='%23fff' stroke-opacity='.08' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M22 10v24M10 22h24M13.5 13.5l17 17M30.5 13.5l-17 17'/%3E%3Cpath d='M68 56v16M60 64h16M62.3 58.3l11.4 11.4M73.7 58.3L62.3 69.7'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+body.mm-gtheme-evergreen {
+    --gt-a: #34c38f; --gt-ad: #219a6d; --gt-c: #0d2a20;
+    --gt-p: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cg fill='%23fff' fill-opacity='.07'%3E%3Cpath d='M22 8l9 13h-5l7 10H11l7-10h-5z'/%3E%3Cpath d='M68 50l6 9h-3.5l5 7H60.5l5-7H62z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+body.mm-gtheme-parol {
+    --gt-a: #ffb020; --gt-ad: #d98e00; --gt-c: #2e1c06;
+    --gt-p: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cg fill='%23fff' fill-opacity='.07'%3E%3Crect x='16' y='16' width='12' height='12'/%3E%3Crect x='16' y='16' width='12' height='12' transform='rotate(45 22 22)'/%3E%3Crect x='63' y='60' width='8' height='8'/%3E%3Crect x='63' y='60' width='8' height='8' transform='rotate(45 67 64)'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+body.mm-gtheme-midnight {
+    --gt-a: #7aa2ff; --gt-ad: #4f7ef0; --gt-c: #111a38;
+    --gt-p: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cg fill='%23fff'%3E%3Ccircle cx='14' cy='18' r='1.6' fill-opacity='.22'/%3E%3Ccircle cx='52' cy='10' r='1' fill-opacity='.18'/%3E%3Ccircle cx='74' cy='40' r='1.8' fill-opacity='.16'/%3E%3Ccircle cx='30' cy='62' r='1.2' fill-opacity='.2'/%3E%3Ccircle cx='66' cy='78' r='1' fill-opacity='.18'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+body.mm-gtheme-candy {
+    --gt-a: #ff7ac0; --gt-ad: #e5509f; --gt-c: #3a1030;
+    --gt-p: repeating-linear-gradient(135deg, rgba(255, 255, 255, .045) 0 14px, transparent 14px 34px);
+}
+
+body.mm-gtheme-teal {
+    --gt-a: #3ec7c2; --gt-ad: #2a9d99; --gt-c: #10302f;
+    --gt-p: radial-gradient(rgba(255, 255, 255, .07) 1.2px, transparent 1.4px) 0 0 / 22px 22px;
+}
+
+body.mm-gtheme .dashboard,
+body.mm-gtheme #member-popup {
+    --mm-accent: var(--gt-a);
+    --mm-accent-dark: var(--gt-ad);
+    --mm-accent-soft: color-mix(in srgb, var(--gt-a) 14%, transparent);
+}
+
+body.mm-gtheme .dashboard .dashboard__ed,
+body.mm-gtheme .dashboard .dashboard__gd,
+body.mm-gtheme .dashboard .dashboard__ma .header-dash {
+    background: var(--gt-p), linear-gradient(150deg, var(--gt-c) 0%, #151515 100%) !important;
+}
+
+body.mm-gtheme .dashboard .dashboard__ed .day,
+body.mm-gtheme .dashboard .dashboard__ed h2 span,
+body.mm-gtheme .dashboard .dashboard__gd h2 span,
+body.mm-gtheme .dashboard .dashboard__ma .header-dash h2 span,
+body.mm-gtheme .dashboard .dashboard__gd a:hover,
+body.mm-gtheme .popup__title span {
+    color: var(--gt-a) !important;
+}
+
+body.mm-gtheme .dashboard .dashboard__gd .mm-cur {
+    color: var(--gt-a);
+}
+
+/* Co-organizer line under the organizer's name */
+.dashboard .dashboard__gd .mm-coorg {
+    margin-top: 6px;
+    color: rgba(255, 255, 255, .72);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .3px;
+}
+
+.dashboard .dashboard__gd .mm-coorg i {
+    margin-right: 4px;
+    color: var(--mm-accent, #d4af37);
+}
+
+body.pro-version:not(.mm-gtheme) .dashboard .dashboard__gd .mm-coorg i {
+    color: #d4af37;
+}

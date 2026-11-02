@@ -40,6 +40,7 @@ $mm_stats = Groups::siteStats();
             <li data-reason="remind"><i class="fa-solid fa-bell"></i><span><b>Reminders and auto-shuffle</b> on the date you pick</span></li>
             <li data-reason="status"><i class="fa-solid fa-list-check"></i><span><b>Gift status:</b> see who has bought or given</span></li>
             <li data-reason="fix"><i class="fa-solid fa-user-pen"></i><span><b>Remove or fix</b> members, names and emails</span></li>
+            <li data-reason="comod"><i class="fa-solid fa-user-plus"></i><span><b>Co-organizer</b> and <b>group colors</b> for your group page</span></li>
             <li data-reason="matches"><i class="fa-solid fa-handshake"></i><span><b>See matches</b> and <b>export</b> everything</span></li>
             <li data-reason="gift"><i class="fa-solid fa-ban"></i><span><b>No ads</b> for everyone in the group</span></li>
         </ul>

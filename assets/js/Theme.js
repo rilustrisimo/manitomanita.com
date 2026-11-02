@@ -332,6 +332,8 @@ var Theme = {
             }
             if (btn === 'exclusions') Theme.proExclusions($, gid);
             if (btn === 'autodraw') Theme.proAutoDraw($, gid);
+            if (btn === 'gtheme') Theme.proGroupTheme($, gid);
+            if (btn === 'comod') Theme.proCoOrganizer($, gid);
             if (btn === 'gifts') Theme.proGifts($, gid);
 
             if (btn === 'nudge-wishlist' || btn === 'nudge-match') {
@@ -912,6 +914,111 @@ var Theme = {
                 if (btn.length) { $('html, body').animate({ scrollTop: btn.closest('.card').offset().top - 90 }, 300); btn.trigger('click'); }
             }, 900);
         }
+    },
+
+    /* ---------- Group theme (colors of the group page) ---------- */
+
+    proGroupTheme: function($, gid){
+        var body = Theme.proView($, 'Group theme', Theme.proLoading);
+
+        function apply(key){
+            document.body.className = document.body.className.replace(/\s?mm-gtheme(-[a-z]+)?/g, '');
+            if (key) $('body').addClass('mm-gtheme mm-gtheme-' + key);
+        }
+
+        function render(d){
+            var html = '<p class="mm-prov__meta">Pick the colors everyone sees on your group page. You can change it anytime.</p><div class="mm-gth">';
+            d.themes.forEach(function(t){
+                html += '<button type="button" class="mm-gth__opt' + (t.key === d.current ? ' is-on' : '') + '" data-key="' + Theme.esc(t.key) + '" style="--gth-a:' + t.accent + ';--gth-c:' + t.card + '" aria-pressed="' + (t.key === d.current) + '">' +
+                    '<span class="mm-gth__card"><small>DEC</small><b>19</b><i></i></span>' +
+                    '<span class="mm-gth__name">' + Theme.esc(t.label) + '</span>' +
+                    (t.key === d.current ? '<span class="mm-gth__check"><i class="fa-solid fa-check"></i></span>' : '') +
+                    '</button>';
+            });
+            body.html(html + '</div>');
+
+            body.find('.mm-gth__opt').on('click', function(){
+                var key = $(this).attr('data-key');
+                body.find('.mm-gth__opt').prop('disabled', true);
+                Theme.proApi('group-theme', { group_id: gid, op: 'set', theme: key }).then(function(r){
+                    render(r);
+                    apply(r.current);
+                    Theme.toast('Theme saved. Everyone sees it on the group page');
+                    Theme.track('group_theme', { theme: r.current || 'classic' });
+                }).catch(function(err){ body.find('.mm-gth__opt').prop('disabled', false); Theme.toast(err.message, 'error'); });
+            });
+        }
+
+        Theme.proApi('group-theme', { group_id: gid }).then(render)
+            .catch(function(err){ body.html('<p class="mm-prov__error">' + Theme.esc(err.message) + '</p>'); });
+    },
+
+    /* ---------- Co-organizer ---------- */
+
+    proCoOrganizer: function($, gid){
+        var body = Theme.proView($, 'Co-organizer', Theme.proLoading);
+
+        function render(d){
+            var html = '';
+            if (d.co) {
+                html += '<div class="mm-coorg-card"><span class="mm-coorg-card__av">' + Theme.esc(d.co.name.charAt(0).toUpperCase()) + '</span>' +
+                    '<div><strong>' + Theme.esc(d.co.name) + '</strong><small>' + Theme.esc(d.co.email) + ' &middot; added ' + Theme.esc(d.co.added) + '</small></div></div>' +
+                    '<p class="mm-prov__meta">They open <b>PRO Actions</b> with their own password and can use every tool, except changing the co-organizer.</p>';
+                if (d.isCo) {
+                    html += '<p class="mm-prov__meta">Only the main organizer can change or remove the co-organizer.</p>';
+                } else {
+                    html += '<button type="button" class="mm-upsell__btn mm-upsell__btn--dark" data-co-reset>Email them a new password</button>' +
+                        '<button type="button" class="mm-upsell__btn mm-upsell__btn--ghost mm-prov__gap" data-co-remove>Remove co-organizer</button>';
+                }
+            } else {
+                html += '<p class="mm-prov__meta">Add someone to help you run the group, like a co-worker or a family member.</p>' +
+                    '<ul class="mm-coorg-how"><li><i class="fa-solid fa-envelope"></i> They get an email with their own password</li>' +
+                    '<li><i class="fa-solid fa-screwdriver-wrench"></i> They can shuffle, manage members and send reminders</li>' +
+                    '<li><i class="fa-solid fa-user-minus"></i> You can remove them anytime</li></ul>' +
+                    '<label class="mm-prov__field">Their name<input type="text" maxlength="60" autocomplete="off" data-co-name placeholder="e.g. Ana Santos"></label>' +
+                    '<label class="mm-prov__field">Their email<input type="email" maxlength="120" autocomplete="off" data-co-email placeholder="ana@example.com"></label>' +
+                    '<button type="button" class="mm-upsell__btn mm-upsell__btn--dark" data-co-add>Add co-organizer</button>';
+            }
+            body.html(html);
+
+            body.find('[data-co-add]').on('click', function(){
+                var btn = $(this), name = $.trim(body.find('[data-co-name]').val()), email = $.trim(body.find('[data-co-email]').val());
+                if (!name) { Theme.toast('Please enter their name', 'error'); return; }
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { Theme.toast('Please enter a valid email', 'error'); return; }
+                btn.prop('disabled', true).text('Sending\u2026');
+                Theme.proApi('co-organizer', { group_id: gid, op: 'add', name: name, email: email }).then(function(r){
+                    render(r);
+                    Theme.toast('Added! We emailed ' + name + ' their password');
+                    Theme.track('co_organizer_add', {});
+                }).catch(function(err){ btn.prop('disabled', false).text('Add co-organizer'); Theme.toast($('<div>').html(err.message).text(), 'error'); });
+            });
+
+            body.find('[data-co-reset]').on('click', function(){
+                var btn = $(this);
+                btn.prop('disabled', true);
+                Theme.proApi('co-organizer', { group_id: gid, op: 'reset' }).then(function(r){
+                    render(r);
+                    Theme.toast('New password sent to ' + r.co.email);
+                }).catch(function(err){ btn.prop('disabled', false); Theme.toast($('<div>').html(err.message).text(), 'error'); });
+            });
+
+            body.find('[data-co-remove]').on('click', function(){
+                Theme.confirmSheet({
+                    title: 'Remove ' + d.co.name + '?',
+                    body: 'Their password stops working right away. You can add a co-organizer again later.',
+                    icon: 'fa-solid fa-user-minus',
+                    danger: true,
+                    confirm: 'Remove',
+                    onConfirm: function(done){
+                        Theme.proApi('co-organizer', { group_id: gid, op: 'remove' }).then(function(r){ done(); render(r); Theme.toast('Co-organizer removed'); })
+                            .catch(function(err){ done(); Theme.toast($('<div>').html(err.message).text(), 'error'); });
+                    }
+                });
+            });
+        }
+
+        Theme.proApi('co-organizer', { group_id: gid }).then(render)
+            .catch(function(err){ body.html('<p class="mm-prov__error">' + Theme.esc(err.message) + '</p>'); });
     },
 
     /* ---------- Weekly Drops (optional weekly themes) ---------- */

@@ -990,7 +990,7 @@ class Groups extends Theme {
         $html  = '<div class="mm-prot" data-group-name="'.esc_attr((string) ($fields['group_name'] ?? '')).'" data-matched="'.($matched ? '1' : '0').'" data-credits="'.$credits.'" data-unconfirmed="'.$unconfirmed.'">';
         $html .= '<div class="mm-prot__head"><div><span class="mm-prot__badge"><i class="fa-solid fa-star"></i> PRO</span>';
         $html .= '<h3>'.esc_html((string) ($fields['group_name'] ?? 'Your group')).'</h3>';
-        $html .= '<p>'.$count.' '.($count == 1 ? 'member' : 'members').' &middot; '.($matched ? 'Shuffled' : 'Not shuffled yet').'</p></div>';
+        $html .= '<p>'.$count.' '.($count == 1 ? 'member' : 'members').' &middot; '.($matched ? 'Shuffled' : 'Not shuffled yet').'</p>'.(GroupExtras::isCo($gid) ? '<p class="mm-prot__co"><i class="fa-solid fa-user-shield"></i> Signed in as co-organizer</p>' : '').'</div>';
         $html .= '<div class="mm-prot__credits"><strong>'.$credits.'</strong><span>'.($credits == 1 ? 'unshuffle' : 'unshuffles').' left</span></div></div>';
 
         $html .= '<h4 class="mm-prot__group">Members</h4>';
@@ -1042,6 +1042,16 @@ class Groups extends Theme {
             $html .= $tool('reveal', 'fa-solid fa-masks-theater', Themes::isRevealed($gid) ? 'Hide the reveal' : 'Reveal who gave to whom',
                 Themes::isRevealed($gid) ? 'Everyone can see all pairs on the group page' : 'For after the exchange: show all pairs to the group');
         }
+
+        // Group page look + co-organizer
+        $gThemes = GroupExtras::themes();
+        $gTheme = GroupExtras::theme($gid);
+        $co = GroupExtras::coOrganizer($gid);
+        $html .= '<h4 class="mm-prot__group">Group page &amp; organizers</h4>';
+        $html .= $tool('gtheme', 'fa-solid fa-palette', 'Group theme', 'Colors for your group page &middot; now: '.esc_html($gThemes[$gTheme][0]));
+        $html .= $tool('comod', 'fa-solid fa-user-plus', 'Co-organizer', $co
+            ? esc_html($co['name']).' can help run the group'
+            : 'Add someone to help you run the group');
 
         $html .= '<h4 class="mm-prot__group">Results</h4>';
         $html .= $tool('matches', 'fa-solid fa-handshake', 'See matches', 'Who is buying for whom', $matched ? '' : 'Available after the shuffle');
