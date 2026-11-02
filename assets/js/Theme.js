@@ -925,7 +925,12 @@ var Theme = {
         Theme.toast('Opening the new group form\u2026');
         $.post($('#ajax-url').val(), { action: 'mm_repeat_start', gid: gid })
             .done(function(resp){
-                if (resp && resp.success) { Theme.track('repeat_group_start', {}); window.location.href = resp.data.url; }
+                if (resp && resp.success) {
+                    // Typing the password counts as an ACF form change; nothing is lost here, so skip ACF's 'Leave site?' prompt.
+                    if (window.acf && acf.unload) { acf.unload.reset(); acf.unload.disable(); }
+                    Theme.track('repeat_group_start', {});
+                    window.location.href = resp.data.url;
+                }
                 else Theme.toast($('<div>').html((resp && resp.data) || 'Please try again.').text(), 'error');
             })
             .fail(function(){ Theme.toast('Network error. Please try again.', 'error'); });
