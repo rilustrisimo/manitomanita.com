@@ -21,6 +21,10 @@ class Season {
     const QUEUE  = 'mm_season_queue';   // option: array( 'ids' => [...], 'sent' => n, 'failed' => n, 'started' => t )
     const BATCH  = 40;                  // per minute
     const PAGE   = 'mm-season-email';
+    const SENT   = 'mm_season_sent_';   // option + season year: inbox keys already emailed (backup to the group meta)
+
+    /** Why addresses were left out on the last audience() run: reason => count. */
+    public static $skipped = array();
 
     protected static $hooked = false;
 
@@ -53,6 +57,53 @@ class Season {
     }
 
     /**
+     * One key per inbox: lowercase, "+tag" removed, and Gmail dots removed (a.b@gmail.com = ab@gmail.com).
+     */
+    public static function inboxKey( $email ) {
+        $email = strtolower( trim( (string) $email ) );
+        if ( strpos( $email, '@' ) === false ) return $email;
+        list( $user, $domain ) = explode( '@', $email, 2 );
+        $user = preg_replace( '/\+.*$/', '', $user );
+        if ( in_array( $domain, array( 'gmail.com', 'googlemail.com' ), true ) ) { $user = str_replace( '.', '', $user ); $domain = 'gmail.com'; }
+
+        return $user . '@' . $domain;
+    }
+
+    /** Domains that receive mail (MX or A record); cached for a week per domain. */
+    protected static function domainOk( $domain ) {
+        static $seen = array();
+        if ( isset( $seen[ $domain ] ) ) return $seen[ $domain ];
+
+        $cached = get_transient( 'mm_mx_' . md5( $domain ) );
+        if ( $cached !== false ) return $seen[ $domain ] = ( $cached === 'y' );
+
+        $ok = function_exists( 'checkdnsrr' ) ? ( checkdnsrr( $domain, 'MX' ) || checkdnsrr( $domain, 'A' ) ) : true;
+        set_transient( 'mm_mx_' . md5( $domain ), $ok ? 'y' : 'n', WEEK_IN_SECONDS );
+
+        return $seen[ $domain ] = $ok;
+    }
+
+    /**
+     * Strict check before a bulk send. Returns '' when deliverable, otherwise the reason.
+     */
+    public static function badEmail( $email ) {
+        $email = strtolower( trim( (string) $email ) );
+        if ( ! is_email( $email ) || ! preg_match( '/^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$/', $email ) ) return 'invalid';
+
+        list( $user, $domain ) = explode( '@', $email, 2 );
+        $typos = array( 'gmial.com', 'gmai.com', 'gamil.com', 'gnail.com', 'gmail.co', 'gmail.con', 'gmail.cm', 'gmaill.com', 'gmal.com', 'gmali.com',
+            'yaho.com', 'yahooo.com', 'yahoo.con', 'yahoo.co', 'yhoo.com', 'hotmial.com', 'hotmai.com', 'hotmail.co', 'hotmail.con', 'hotnail.com',
+            'outlok.com', 'outlook.co', 'outloo.com', 'iclod.com', 'icloud.co', 'ymail.co' );
+        if ( in_array( $domain, $typos, true ) ) return 'typo';
+        if ( preg_match( '/(^|\.)(example|test|invalid|localhost|mailinator)\.(com|net|org)$|\.(test|invalid|local|example)$/', $domain ) ) return 'test';
+        if ( preg_match( '/^(no-?reply|do-?not-?reply|test|asdf|qwerty|sample|dummy|abc|xxx+)$/', $user ) ) return 'placeholder';
+        if ( class_exists( 'EmailCheck' ) && EmailCheck::isDisposable( $email ) ) return 'disposable';
+        if ( ! self::domainOk( $domain ) ) return 'no-mail-server';
+
+        return '';
+    }
+
+    /**
      * Eligible organizers: array( email => array( 'gid' => latest past group, 'name' => organizer, 'group' => group name, 'date' => Ymd ) ).
      */
     public static function audience( $includeOlder = false ) {
@@ -77,27 +128,42 @@ class Season {
             Emails::OPTOUT_META, $sent, Emails::OPTOUT_META, $sent
         ) );
 
-        $active = array();   // organized something this season already
-        $blocked = array();  // unsubscribed or already emailed this season
+        $active = array();   // organized something this season already (by inbox)
+        $blocked = (array) get_option( self::SENT . substr( $start, 0, 4 ), array() ); // inboxes already emailed this season
+        $unsub = array();    // unsubscribed from any of their groups
         $out = array();
+        $skipped = array();
+        $count = function ( $why ) use ( &$skipped ) { $skipped[ $why ] = ( $skipped[ $why ] ?? 0 ) + 1; };
 
         foreach ( $rows as $r ) {
-            $email = strtolower( trim( (string) $r->email ) );
-            if ( ! is_email( $email ) ) continue;
-            if ( $r->optout || $r->sent ) $blocked[ $email ] = true;
-            if ( (string) $r->d >= $start || substr( str_replace( '-', '', $r->post_date ), 0, 8 ) >= $start ) $active[ $email ] = true;
+            $key = self::inboxKey( $r->email );
+            if ( $r->optout ) $unsub[ $key ] = true;
+            if ( $r->sent ) $blocked[ $key ] = true;
+            if ( (string) $r->d >= $start || substr( str_replace( '-', '', $r->post_date ), 0, 8 ) >= $start ) $active[ $key ] = true;
         }
 
+        $bad = array(); // inbox => reason (checked once per inbox)
         foreach ( $rows as $r ) {
             $email = strtolower( trim( (string) $r->email ) );
+            $key = self::inboxKey( $email );
             $d = (string) $r->d;
-            if ( ! is_email( $email ) || isset( $active[ $email ] ) || isset( $blocked[ $email ] ) ) continue;
-            if ( ! preg_match( '/^\d{8}$/', $d ) || $d >= $start ) continue;
+            if ( ! preg_match( '/^\d{8}$/', $d ) || $d >= $start ) continue;       // not a past season
             if ( ! $includeOlder && $d < $prevStart ) continue;
-            if ( isset( $out[ $email ] ) && $out[ $email ]['date'] >= $d ) continue;
 
-            $out[ $email ] = array( 'gid' => (int) $r->ID, 'name' => (string) $r->name, 'group' => (string) $r->gname, 'date' => $d );
+            if ( isset( $active[ $key ] ) ) { $count( 'already started this season' ); continue; }
+            if ( isset( $unsub[ $key ] ) ) { $count( 'unsubscribed' ); continue; }
+            if ( isset( $blocked[ $key ] ) ) { $count( 'already emailed this season' ); continue; }
+            if ( ! isset( $bad[ $key ] ) ) $bad[ $key ] = self::badEmail( $email );
+            if ( $bad[ $key ] !== '' ) { $count( 'undeliverable: ' . $bad[ $key ] ); continue; }
+            if ( isset( $out[ $key ] ) ) {
+                $count( 'duplicate (same inbox)' );
+                if ( $out[ $key ]['date'] >= $d ) continue;
+            }
+
+            $out[ $key ] = array( 'gid' => (int) $r->ID, 'email' => $email, 'name' => (string) $r->name, 'group' => (string) $r->gname, 'date' => $d );
         }
+
+        self::$skipped = $skipped;
 
         return $out;
     }
@@ -136,11 +202,20 @@ class Season {
         }
 
         $meta = self::sentMeta();
+        $optKey = self::SENT . substr( self::seasonStart(), 0, 4 );
+        $done = (array) get_option( $optKey, array() );
         $batch = array_splice( $q['ids'], 0, self::BATCH );
 
         foreach ( $batch as $gid ) {
-            if ( get_post_meta( $gid, $meta, true ) || Emails::optedOut( $gid ) ) continue;
-            update_post_meta( $gid, $meta, time() ); // mark first: a crash never sends twice
+            $email = (string) get_field( 'your_email', $gid );
+            $key = self::inboxKey( $email );
+            if ( isset( $done[ $key ] ) || get_post_meta( $gid, $meta, true ) || Emails::optedOut( $gid ) || self::badEmail( $email ) !== '' ) continue;
+
+            // Mark first, so a crash or a second click never sends twice.
+            $done[ $key ] = time();
+            update_option( $optKey, $done, false );
+            update_post_meta( $gid, $meta, time() );
+
             if ( self::send( $gid ) ) $q['sent']++;
             else $q['failed']++;
         }
@@ -224,11 +299,18 @@ class Season {
 
         echo '<h2 style="margin-top:24px;">Who gets it</h2>';
         echo '<p style="font-size:16px;"><strong>' . number_format( count( $aud ) ) . '</strong> organizers ' . ( $older ? 'from earlier seasons' : 'from last season (exchange between Sep 1 and Aug 31)' ) . '. Already excluded: anyone who made a group this season, unsubscribed, or already got this email.</p>';
+        if ( self::$skipped ) {
+            echo '<p class="description" style="max-width:720px;">Left out: ';
+            $parts = array();
+            foreach ( self::$skipped as $why => $n ) $parts[] = number_format( $n ) . ' ' . esc_html( $why );
+            echo implode( ' &middot; ', $parts ) . '. Each person gets at most one email, even with several groups or address variations (dots or +tags in Gmail).</p>';
+        }
         echo '<p><a href="' . esc_url( add_query_arg( array( 'page' => self::PAGE, 'older' => $older ? 0 : 1 ), admin_url( 'tools.php' ) ) ) . '">' . ( $older ? 'Only last season' : 'Include all earlier seasons too' ) . '</a></p>';
 
         if ( $aud ) {
             echo '<table class="widefat striped" style="max-width:720px;"><thead><tr><th>Organizer</th><th>Group</th><th>Exchange</th></tr></thead><tbody>';
-            foreach ( array_slice( $aud, 0, 8 ) as $email => $a ) {
+            foreach ( array_slice( $aud, 0, 8 ) as $a ) {
+                $email = $a['email'];
                 $at = strpos( $email, '@' );
                 echo '<tr><td>' . esc_html( $a['name'] ) . ' &middot; ' . esc_html( substr( $email, 0, 2 ) . '&hellip;' . substr( $email, $at ) ) . '</td><td>' . esc_html( $a['group'] ) . '</td><td>' . esc_html( wp_date( 'M j, Y', strtotime( $a['date'] ) ) ) . '</td></tr>';
             }
