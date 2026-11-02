@@ -965,11 +965,19 @@ var Theme = {
             }).join('') + '</div>';
         };
 
-        var list, chips, input;
+        var list, input, chipsData = [];
         var scroll = function(){ list.scrollTop(list[0].scrollHeight); };
-        var setChips = function(qs){
-            chips.html((qs || []).map(function(q){ return '<button type="button" data-mm-sq>' + Theme.esc(q) + '</button>'; }).join('')).prop('hidden', !(qs && qs.length));
+        // Suggestions live in the conversation: a "Popular questions" list under the welcome message,
+        // then "Related" pills under each answer.
+        var renderChips = function(){
+            list.find('.mm-support__suggest').remove();
+            if (!chipsData.length) return;
+            var first = !state.msgs.length;
+            list.append('<div class="mm-support__suggest' + (first ? ' is-first' : '') + '"><p class="mm-support__suggest-label">' + (first ? 'Popular questions' : 'Related questions') + '</p>' +
+                chipsData.map(function(q){ return '<button type="button" data-mm-sq><span>' + Theme.esc(q) + '</span>' + (first ? '<i class="fa-solid fa-chevron-right" aria-hidden="true"></i>' : '') + '</button>'; }).join('') + '</div>');
+            scroll();
         };
+        var setChips = function(qs){ chipsData = qs || []; renderChips(); };
         var bubble = function(m, i){
             var bot = m.r === 'b';
             var html = '<div class="mm-support__msg mm-support__msg--' + (bot ? 'bot' : 'me') + '" data-i="' + i + '"><div class="mm-support__bubble">' + (bot ? fmt(m.t) : '<p>' + Theme.esc(m.t) + '</p>') + '</div>';
@@ -983,8 +991,9 @@ var Theme = {
             return html + '</div>';
         };
         var render = function(){
-            list.html('<div class="mm-support__msg mm-support__msg--bot"><div class="mm-support__bubble"><p>Hi! I\u2019m <b>Manito</b>. Ask me anything about creating a group, joining, the shuffle, wishlists or PRO.</p></div></div>' +
+            list.html('<div class="mm-support__msg mm-support__msg--bot"><div class="mm-support__bubble"><p>Hi! I\u2019m <b>Manito</b> \ud83d\udc4b Ask me anything about creating a group, joining, the shuffle, wishlists or PRO.</p></div></div>' +
                 state.msgs.map(bubble).join(''));
+            renderChips();
             scroll();
         };
         var maybeSocial = function(){
@@ -1038,11 +1047,12 @@ var Theme = {
             panel.html('<div class="mm-support__head"><span class="mm-support__avatar"><i class="fa-solid fa-gift"></i></span><div><strong>Ask Manito</strong><small>Help with Manito Manita &middot; usually instant</small></div>' +
                 '<button type="button" class="mm-support__close" data-mm-support-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>' +
                 '<div class="mm-support__list" aria-live="polite"></div>' +
-                '<div class="mm-support__chips"></div>' +
-                '<form class="mm-support__composer"><textarea rows="1" maxlength="500" placeholder="Type your question\u2026" aria-label="Your question"></textarea><button type="submit" aria-label="Send"><i class="fa-solid fa-paper-plane"></i></button></form>' +
-                '<div class="mm-support__foot"><button type="button" class="mm-support__link" data-mm-handoff>Talk to a person</button>' + socialHtml('mm-support__icons') + '</div>' +
-                '<p class="mm-support__note">Please don\u2019t share passwords or personal details.</p>');
-            list = panel.find('.mm-support__list'); chips = panel.find('.mm-support__chips'); input = panel.find('.mm-support__composer textarea');
+                '<div class="mm-support__bottom">' +
+                    '<form class="mm-support__composer"><textarea rows="1" maxlength="500" placeholder="Type your question\u2026" aria-label="Your question"></textarea><button type="submit" aria-label="Send"><i class="fa-solid fa-paper-plane"></i></button></form>' +
+                    '<p class="mm-support__note">Please don\u2019t share passwords or personal details.</p>' +
+                    '<div class="mm-support__foot"><button type="button" class="mm-support__person-btn" data-mm-handoff><i class="fa-regular fa-envelope"></i> Talk to a person</button>' + socialHtml('mm-support__icons') + '</div>' +
+                '</div>');
+            list = panel.find('.mm-support__list'); input = panel.find('.mm-support__composer textarea');
             render();
             setChips(suggest);
 
