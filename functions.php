@@ -76,6 +76,15 @@ function mm_enqueue_ui_styles() {
 }
 
 /**
+ * Date picker: the gift exchange date can't be in the past, and days of the neighbouring months show
+ * (and can be picked) so the grid never looks half empty. Styles: mm-forms.css "Date picker".
+ */
+add_action( 'acf/input/admin_enqueue_scripts', 'mm_date_picker_args' );
+function mm_date_picker_args() {
+	wp_add_inline_script( 'acf-input', "acf.add_filter('date_picker_args',function(args,field){args.showOtherMonths=true;args.selectOtherMonths=true;var \$f=field&&field.jquery?field:(field&&field.\$el);if(\$f&&\$f.closest('.acf-field').attr('data-name')==='gift_exchange_date'){args.minDate=0;}return args;});" );
+}
+
+/**
  * Page speed on the public marketing pages (homepage, landing pages): every script prints in the footer,
  * and styles that are only used by popups and forms (Create Group, Fancybox, ACF) load without blocking
  * the first paint. Analytics and ads keep their own async tags.
@@ -96,7 +105,30 @@ function mm_scripts_to_footer() {
 
 add_filter( 'style_loader_tag', 'mm_async_popup_styles', 10, 2 );
 function mm_async_popup_styles( $tag, $handle ) {
-	static $popup = array( 'fancybox', 'jquery-ui', 'bxslider', 'bootstrap-select', 'acf-global', 'acf-input', 'acf-pro-input', 'select2', 'acf-datepicker', 'acf-timepicker', 'wp-color-picker', 'chaty-front-css', 'mm-forms', 'mm-match', 'mm-dashboard', 'mm-pro' );
+	static $popup = array( 'fontawesome', 'icons-font-daf285204f208daff44cf703ef74f361', 'fancybox', 'jquery-ui', 'bxslider', 'bootstrap-select', 'acf-global', 'acf-input', 'acf-pro-input', 'select2', 'acf-datepicker', 'acf-timepicker', 'wp-color-picker', 'chaty-front-css', 'mm-forms', 'mm-match', 'mm-dashboard', 'mm-pro' );
 	if ( ! in_array( $handle, $popup, true ) || ! mm_is_marketing_page() || strpos( $tag, "media='all'" ) === false ) return $tag;
 	return str_replace( "media='all'", "media='print' onload=\"this.media='all'\"", $tag ) . '<noscript>' . $tag . '</noscript>';
+}
+
+/**
+ * Early hints on marketing pages: open connections to the font/icon hosts, start the chained font CSS
+ * (main-custom.css @imports it), and fetch the homepage banner photo first (it is the largest paint).
+ */
+add_action( 'wp_head', 'mm_marketing_head_hints', 1 );
+function mm_marketing_head_hints() {
+	if ( ! mm_is_marketing_page() ) return;
+
+	echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
+	echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
+	echo '<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>' . "\n";
+	echo '<link rel="preload" as="style" href="' . esc_url( PARENT_URL . '/assets/fonts/stylesheet.css' ) . '">' . "\n";
+
+	$hero = is_page_template( 'template-homepage.php' ) && function_exists( 'get_field' ) ? get_field( 'mm_hero_image', get_queried_object_id() ) : 0;
+	if ( ! $hero ) return;
+
+	// Same tag as the template prints, so the preload uses the exact URLs the page will request.
+	$img = wp_get_attachment_image( $hero, 'full', false, array( 'sizes' => '100vw' ) );
+	if ( ! preg_match( '~\ssrc="([^"]+)"~', $img, $src ) ) return;
+	$set = preg_match( '~\ssrcset="([^"]+)"~', $img, $m ) ? ' imagesrcset="' . esc_attr( $m[1] ) . '" imagesizes="100vw"' : '';
+	echo '<link rel="preload" as="image" href="' . esc_url( $src[1] ) . '"' . $set . ' fetchpriority="high">' . "\n";
 }

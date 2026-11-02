@@ -24,15 +24,14 @@ $stats = Groups::siteStats();
 /*
  * Optional photos and looping videos (ACF "Homepage photos & videos"). Empty slots keep the plain design.
  * Videos only load on tablets and desktops, when motion is allowed and data saver is off (script at the end);
- * phones keep the photo, which is the poster.
+ * phones keep the photo. The photo <img> sits under the video, so no poster is needed (it would be a second download).
  */
 $hf = function ( $name ) { return function_exists( 'get_field' ) ? get_field( $name ) : ''; };
 $bg = function ( $img, $video, $eager = false ) {
 	if ( ! $img && ! $video ) return '';
-	$poster = $img ? wp_get_attachment_image_url( $img, 'full' ) : '';
 	$out = '<div class="mmh-bg" aria-hidden="true">';
 	if ( $img ) $out .= wp_get_attachment_image( $img, 'full', false, array( 'class' => 'mmh-bg__media', 'alt' => '', 'sizes' => '100vw', 'loading' => $eager ? 'eager' : 'lazy', 'decoding' => 'async' ) );
-	if ( $video ) $out .= '<video class="mmh-bg__media mmh-bg__video" muted loop playsinline preload="none" data-mm-bgvideo="' . esc_url( $video ) . '"' . ( $poster ? ' poster="' . esc_url( $poster ) . '"' : '' ) . '></video>';
+	if ( $video ) $out .= '<video class="mmh-bg__media mmh-bg__video" muted loop playsinline preload="none" data-mm-bgvideo="' . esc_url( $video ) . '"></video>';
 	return $out . '</div>';
 };
 $heroBg  = $bg( $hf( 'mm_hero_image' ), $hf( 'mm_hero_video' ), true );

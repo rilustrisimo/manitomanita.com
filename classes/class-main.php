@@ -430,10 +430,41 @@ class Theme {
     }
 
     public function initSession() {
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
+        if (session_status() != PHP_SESSION_NONE) return true;
+
+        // First visit to a page that may be a marketing page: decide at template_redirect, so the
+        // homepage and landing pages can be cached by the CDN (a session adds no-store and a cookie).
+        if ($this->canDeferSession()) {
+            if (!isset($_SESSION)) $_SESSION = array();
+            add_action('template_redirect', array($this, 'startDeferredSession'), 0);
+            return true;
         }
 
+        session_start();
+
         return true;
+    }
+
+    /**
+     * Plain GET, no session cookie yet, no query (gid/pw, confirm links...), not admin/ajax/REST/cron.
+     */
+    protected function canDeferSession() {
+        if (is_admin() || wp_doing_ajax() || wp_doing_cron()) return false;
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') return false;
+        if (isset($_COOKIE[session_name()])) return false;
+
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        if (preg_match('~/wp-(json|login|admin|cron)|xmlrpc|rest_route~', $uri)) return false;
+
+        $query = array_diff_key($_GET, array_flip(array('utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid')));
+        return empty($query);
+    }
+
+    public function startDeferredSession() {
+        if (function_exists('mm_is_marketing_page') && mm_is_marketing_page()) {
+            header('Cache-Control: public, max-age=0, s-maxage=300');
+            return;
+        }
+        if (session_status() == PHP_SESSION_NONE && !headers_sent()) session_start();
     }
 }
