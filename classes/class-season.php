@@ -171,22 +171,29 @@ class Season {
     /* ------------------------------------------------------------------ The email */
 
     public static function send( $gid, $to = '' ) {
+        list( $subject, $o ) = self::message( $gid );
+
+        return Emails::send( $to ?: (string) get_field( 'your_email', (int) $gid ), $subject, $o );
+    }
+
+    /** Subject and content of the email for one organizer's group (used for sending and the preview). */
+    public static function message( $gid ) {
         $gid = (int) $gid;
         $name = trim( (string) get_field( 'your_name', $gid ) );
         $group = (string) get_field( 'group_name', $gid );
-        $start = add_query_arg( 'mm_start', '1', Emails::groupLink( $gid ) );
+        $start = Repeat::signedLink( $gid ); // opens the New Group form, pre-filled, with last year's members to invite
         $first = $name !== '' ? strtok( $name, ' ' ) : 'there';
 
-        return Emails::send( $to ?: (string) get_field( 'your_email', $gid ), 'Ready for this year&rsquo;s exchange, ' . $first . '?', array(
+        return array( 'Ready for this year&rsquo;s exchange, ' . $first . '?', array(
             'preheader'   => 'Start this year&rsquo;s group from ' . $group . ' and invite everyone back in a few taps.',
             'eyebrow'     => 'Christmas is coming',
             'title'       => 'Ready for this year&rsquo;s exchange?',
             'body'        => array(
                 '<p>Hi ' . esc_html( $first ) . '! Last year you organized <strong>' . esc_html( $group ) . '</strong> on Manito Manita. Thank you!</p>',
-                '<p>Doing it again? Start this year&rsquo;s group from last year&rsquo;s: enter the new date and budget, and invite last year&rsquo;s members with one tap. It&rsquo;s free, as always.</p>',
+                '<p>Doing it again? Tap the button to set up this year&rsquo;s group: enter the new name, date and budget, then choose which of last year&rsquo;s members to invite. It&rsquo;s free, as always.</p>',
             ),
             'button'      => array( 'Start this year&rsquo;s group', $start ),
-            'note'        => 'Prefer a fresh start? <a href="' . esc_url( home_url( '/' ) ) . '" style="color:#1f8580;">Create a brand-new group</a>. You&rsquo;ll need your moderator password from last year; tap &ldquo;Forgot password&rdquo; if you don&rsquo;t remember it.',
+            'note'        => 'Prefer a fresh start without inviting anyone? <a href="' . esc_url( home_url( '/' ) ) . '" style="color:#1f8580;">Create a brand-new group</a>.',
             'unsubscribe' => $gid,
             'footer'      => 'You&rsquo;re getting this once a year because you organized ' . esc_html( $group ) . ' on Manito Manita.',
         ) );
@@ -295,7 +302,7 @@ class Season {
         echo '<div class="wrap"><h1>Season email</h1>';
         if ( isset( $notes[ $msg ] ) ) echo '<div class="notice notice-' . $notes[ $msg ][0] . ' is-dismissible"><p>' . $notes[ $msg ][1] . '</p></div>';
 
-        echo '<p style="max-width:720px;">One friendly email to people who organized a group last season: <em>&ldquo;Ready for this year&rsquo;s exchange?&rdquo;</em> with a button that starts this year&rsquo;s group from their old one (they enter their moderator password, then the new details; last year&rsquo;s members are invited only if they tick them). Each organizer gets it once per season, with an unsubscribe link.</p>';
+        echo '<p style="max-width:720px;">One friendly email to people who organized a group last season: <em>&ldquo;Ready for this year&rsquo;s exchange?&rdquo;</em> with a button that opens the New Group form, pre-filled with their email and last year&rsquo;s members to invite (they verify their email with a code, enter the new details, and choose who to invite). Each organizer gets it once per season, with an unsubscribe link.</p>';
 
         echo '<h2 style="margin-top:24px;">Who gets it</h2>';
         echo '<p style="font-size:16px;"><strong>' . number_format( count( $aud ) ) . '</strong> organizers ' . ( $older ? 'from earlier seasons' : 'from last season (exchange between Sep 1 and Aug 31)' ) . '. Already excluded: anyone who made a group this season, unsubscribed, or already got this email.</p>';
@@ -316,6 +323,17 @@ class Season {
             }
             echo '</tbody></table>';
             if ( count( $aud ) > 8 ) echo '<p class="description">Showing 8 of ' . number_format( count( $aud ) ) . '.</p>';
+        }
+
+        if ( $aud ) {
+            $sample = reset( $aud );
+            list( $subject, $o ) = self::message( $sample['gid'] );
+            echo '<h2 style="margin-top:24px;">Preview</h2>';
+            echo '<p class="description">Exactly what ' . esc_html( $sample['name'] ?: 'the first organizer' ) . ' will get (each person sees their own name and group).</p>';
+            echo '<div style="max-width:720px;margin:10px 0 6px;padding:12px 14px;border:1px solid #dcdcde;border-radius:8px;background:#fff;">';
+            echo '<div style="font-size:13px;color:#646970;">Subject</div><div style="font-size:15px;font-weight:600;margin-bottom:6px;">' . esc_html( html_entity_decode( $subject, ENT_QUOTES, 'UTF-8' ) ) . '</div>';
+            echo '<div style="font-size:13px;color:#646970;">Inbox preview text</div><div style="font-size:14px;">' . esc_html( html_entity_decode( (string) $o['preheader'], ENT_QUOTES, 'UTF-8' ) ) . '</div></div>';
+            echo '<iframe title="Email preview" sandbox="" srcdoc="' . esc_attr( Emails::render( $o ) ) . '" style="width:100%;max-width:720px;height:820px;border:1px solid #dcdcde;border-radius:8px;background:#f2f5f5;"></iframe>';
         }
 
         echo '<h2 style="margin-top:24px;">Send</h2>';

@@ -90,16 +90,57 @@ class Repeat {
         wp_send_json_success( array( 'url' => add_query_arg( 'mm_repeat', $token, home_url( '/' ) ) ) );
     }
 
+    /**
+     * Signed link for emails (Season): /?mm_repeat=<gid>.<sig>. Opening the inbox proves it's the organizer;
+     * creating the group still needs the 6-digit code sent to the same email. Valid for this season only.
+     */
+    public static function signedLink( $gid ) {
+        return add_query_arg( 'mm_repeat', (int) $gid . '.' . self::sig( $gid ), home_url( '/' ) );
+    }
+
+    protected static function sig( $gid ) {
+        $season = class_exists( 'Season' ) ? Season::seasonStart() : wp_date( 'Y' );
+
+        return substr( hash_hmac( 'sha256', 'repeat|' . (int) $gid . '|' . $season, wp_salt( 'auth' ) ), 0, 24 );
+    }
+
+    protected static function isSigned( $token ) {
+        return strpos( (string) $token, '.' ) !== false;
+    }
+
+    /** Group id from a one-time token (dashboard, after the moderator password) or a signed email link. */
     protected static function fromToken( $token ) {
-        $token = preg_replace( '/[^A-Za-z0-9]/', '', (string) $token );
-        $gid = $token !== '' ? (int) get_transient( 'mm_repeat_' . $token ) : 0;
+        $token = preg_replace( '/[^A-Za-z0-9.]/', '', (string) $token );
+        if ( $token === '' ) return 0;
+
+        if ( self::isSigned( $token ) ) {
+            list( $gid, $sig ) = array_pad( explode( '.', $token, 2 ), 2, '' );
+            $gid = (int) $gid;
+            if ( ! hash_equals( self::sig( $gid ), $sig ) ) return 0;
+        } else {
+            $gid = (int) get_transient( 'mm_repeat_' . $token );
+        }
 
         return ( $gid && get_post_type( $gid ) === 'groups' ) ? $gid : 0;
     }
 
+    /** The group already started from this one this season (signed links work once), or 0. */
+    protected static function startedThisSeason( $gid ) {
+        $next = (int) get_post_meta( $gid, self::NEXT_META, true );
+        if ( ! $next || get_post_type( $next ) !== 'groups' ) return 0;
+        $start = class_exists( 'Season' ) ? Season::seasonStart() : '00000000';
+
+        return str_replace( '-', '', substr( (string) get_post_field( 'post_date', $next ), 0, 10 ) ) >= $start ? $next : 0;
+    }
+
     public static function ajaxPrep() {
-        $gid = self::fromToken( $_POST['token'] ?? '' );
+        $token = (string) ( $_POST['token'] ?? '' );
+        $gid = self::fromToken( $token );
         if ( ! $gid ) wp_send_json_error( 'This link has expired. Open your old group and tap &ldquo;Start a new group&rdquo; again.' );
+
+        if ( self::isSigned( $token ) && ( $next = self::startedThisSeason( $gid ) ) ) {
+            wp_send_json_error( array( 'message' => 'You already started this year&rsquo;s group: ' . get_field( 'group_name', $next ) . '.', 'url' => Emails::groupLink( $next ) ) );
+        }
 
         $members = array();
         foreach ( self::invitable( $gid ) as $uid => $name ) $members[] = array( 'id' => $uid, 'name' => $name );
@@ -117,10 +158,15 @@ class Repeat {
     /* ------------------------------------------------------------------ After the new group is saved */
 
     public static function afterCreate( $newGid ) {
-        $from = self::fromToken( $_POST['mm_repeat'] ?? '' );
+        $token = (string) ( $_POST['mm_repeat'] ?? '' );
+        $from = self::fromToken( $token );
         if ( ! $from || (int) $from === (int) $newGid ) return;
 
-        delete_transient( 'mm_repeat_' . preg_replace( '/[^A-Za-z0-9]/', '', (string) $_POST['mm_repeat'] ) );
+        if ( self::isSigned( $token ) ) {
+            if ( self::startedThisSeason( $from ) ) return; // the email link already started a group: no second round of invites
+        } else {
+            delete_transient( 'mm_repeat_' . preg_replace( '/[^A-Za-z0-9]/', '', $token ) );
+        }
 
         // Only the same organizer: the email was carried over and verified with the code.
         if ( strtolower( trim( (string) get_field( 'your_email', $newGid ) ) ) !== strtolower( trim( (string) get_field( 'your_email', $from ) ) ) ) return;

@@ -1080,11 +1080,19 @@ var Theme = {
             setTimeout(function(){ var b = $('.repeat-btn').first(); if (b.length) { $('html, body').animate({ scrollTop: b.offset().top - 120 }, 300); b.trigger('click'); } }, 900);
         }
 
-        var m = /[?&]mm_repeat=([A-Za-z0-9]+)/.exec(window.location.search);
+        var m = /[?&]mm_repeat=([A-Za-z0-9.]+)/.exec(window.location.search); // one-time token, or <gid>.<sig> from the season email
         if (!m || !$('#create-group').length) return;
 
         $.post($('#ajax-url').val(), { action: 'mm_repeat_prep', token: m[1] }).done(function(resp){
-            if (!resp || !resp.success) { Theme.toast($('<div>').html((resp && resp.data) || 'This link has expired.').text(), 'error'); return; }
+            if (!resp || !resp.success) {
+                var e = (resp && resp.data) || 'This link has expired.';
+                if (e && e.url) {
+                    Theme.confirmSheet({ title: 'Already started', body: $('<div>').html(e.message).text(), icon: 'fa-solid fa-circle-check', confirm: 'Open that group', onConfirm: function(done){ done(); window.location.href = e.url; } });
+                } else {
+                    Theme.toast($('<div>').html(e.message || e).text(), 'error');
+                }
+                return;
+            }
             var d = resp.data, box = $('#create-group'), form = box.find('form');
 
             box.find('.popup__title').html('New<span>Group</span>');
