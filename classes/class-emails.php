@@ -223,7 +223,7 @@ class Emails {
         if ( empty( $_GET['mm_unsub'] ) || empty( $_GET['t'] ) ) return;
 
         $uid = absint( $_GET['mm_unsub'] );
-        $valid = get_post_type( $uid ) === 'users' && hash_equals( self::unsubToken( $uid ), (string) $_GET['t'] );
+        $valid = in_array( get_post_type( $uid ), array( 'users', 'groups' ), true ) && hash_equals( self::unsubToken( $uid ), (string) $_GET['t'] ); // groups: organizer emails (Season)
         $post = ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) === 'POST';
 
         nocache_headers();
@@ -238,7 +238,7 @@ class Emails {
         // Link in the email: GET only shows a button (link scanners must not unsubscribe people).
         if ( $post && $valid ) update_post_meta( $uid, self::OPTOUT_META, time() );
 
-        $group = $valid ? (string) get_field( 'group_name', (int) get_field( 'groups', $uid, false ) ) : '';
+        $group = $valid ? (string) get_field( 'group_name', get_post_type( $uid ) === 'groups' ? $uid : (int) get_field( 'groups', $uid, false ) ) : '';
         $for = $group !== '' ? ' for <strong>' . esc_html( $group ) . '</strong>' : '';
 
         if ( ! $valid ) {

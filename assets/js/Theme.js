@@ -1075,6 +1075,11 @@ var Theme = {
 
     /** Homepage ?mm_repeat=<token>: Create Group with the organizer's email kept and last year's members to invite. */
     initRepeat: function($){
+        // Season email button: open the old group with "Start a new group" (moderator password) ready.
+        if (/[?&]mm_start=1/.test(window.location.search)) {
+            setTimeout(function(){ var b = $('.repeat-btn').first(); if (b.length) { $('html, body').animate({ scrollTop: b.offset().top - 120 }, 300); b.trigger('click'); } }, 900);
+        }
+
         var m = /[?&]mm_repeat=([A-Za-z0-9]+)/.exec(window.location.search);
         if (!m || !$('#create-group').length) return;
 
