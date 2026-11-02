@@ -1513,3 +1513,65 @@
         display: none;
     }
 }
+
+/* ---------- My Wishlist band (homepage, between free features and Weekly Drops) ---------- */
+
+.mmh-wlband {
+    margin-top: -24px; /* sits right under the free features (same soft background) */
+    padding: 0 0 48px;
+    background: var(--mm-soft);
+}
+
+.mmh-wlband__card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px 18px;
+    padding: 20px 22px;
+    border: 1px solid var(--mm-line);
+    border-radius: var(--mm-radius);
+    background: #fff;
+}
+
+.mmh-wlband__icon {
+    display: grid;
+    flex: 0 0 48px;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(229, 80, 159, .1);
+    color: #e5509f;
+    font-size: 20px;
+}
+
+.mmh-wlband__txt {
+    flex: 1 1 280px;
+    color: var(--mm-text);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.mmh-wlband__txt strong {
+    display: block;
+    color: var(--mm-dark);
+    font-size: 18px;
+}
+
+.mm-home .mmh-btn--ghost-dark {
+    border: 1px solid var(--mm-dark);
+    background: #fff;
+    color: var(--mm-dark);
+}
+
+.mm-home .mmh-btn--ghost-dark:hover {
+    background: var(--mm-dark);
+    color: #fff;
+}
+
+@media (max-width: 639px) {
+    .mmh-wlband__card .mmh-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

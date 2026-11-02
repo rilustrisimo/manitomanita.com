@@ -1333,3 +1333,36 @@
     color: var(--mm-accent-dark);
     font-weight: 700;
 }
+
+/* See Match: My Wishlist suggestion (one quiet line) */
+.mm-match-wl {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    margin: 14px 0;
+    padding: 10px 14px;
+    border: 1px dashed rgba(229, 80, 159, .45);
+    border-radius: 12px;
+    background: rgba(229, 80, 159, .05);
+    color: #1b1b1b;
+    font-size: 14px;
+    line-height: 1.45;
+    text-align: left;
+}
+
+.mm-match-wl > i {
+    color: #e5509f;
+}
+
+.mm-match-wl span {
+    flex: 1 1 200px;
+}
+
+.mm-match-wl a {
+    color: #c23d86;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}

@@ -67,6 +67,17 @@ class Repeat {
             . '</div>';
     }
 
+    /** For everyone once the exchange is over: keep a wishlist for birthdays (My Wishlist). */
+    public static function wishlistCard( $gid ) {
+        if ( ! self::exchangeDone( $gid ) ) return '';
+
+        return '<div class="mm-repeat-card mm-repeat-card--wl">'
+            . '<span class="mm-repeat-card__icon"><i class="fas fa-heart"></i></span>'
+            . '<div class="mm-repeat-card__txt"><strong>The exchange is done, but birthdays aren&rsquo;t</strong><span>Keep a wishlist you can share all year, for any occasion. Free.</span></div>'
+            . '<a href="' . esc_url( home_url( '/my-wishlist/' ) ) . '" class="mm-repeat-card__btn mm-repeat-card__btn--ghost" data-mm-track="wishlist_cta" data-mm-slot="dashboard-after">Make my wishlist</a>'
+            . '</div>';
+    }
+
     /* ------------------------------------------------------------------ AJAX */
 
     public static function ajaxStart() {

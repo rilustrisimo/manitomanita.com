@@ -185,6 +185,16 @@ $faq = array(
 		</div>
 	</section>
 
+	<section class="mmh-wlband" aria-label="My Wishlist">
+		<div class="mmh-wrap">
+			<div class="mmh-wlband__card" data-reveal>
+				<span class="mmh-wlband__icon"><i class="fas fa-heart"></i></span>
+				<div class="mmh-wlband__txt"><strong>Not just for Christmas</strong><span>Make one wishlist for birthdays, debuts and every occasion, and share it with a single link. Friends can reserve a gift so nobody buys the same thing.</span></div>
+				<a href="<?php echo esc_url( home_url( '/my-wishlist/' ) ); ?>" class="mmh-btn mmh-btn--ghost-dark" data-mm-track="wishlist_cta" data-mm-slot="home-band">Make my wishlist</a>
+			</div>
+		</div>
+	</section>
+
 	<section class="mmh-section mmh-drops" id="weekly-drops">
 		<div class="mmh-wrap mmh-drops__grid">
 			<div class="mmh-drops__copy" data-reveal>

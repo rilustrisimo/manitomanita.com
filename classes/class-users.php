@@ -452,6 +452,11 @@ class Users extends Theme {
             ? Affiliate::giftIdeasHtml($gid, 'ai-gift-ideas', false, $aiIdeas, 'Picked for '.esc_html($pairName).' from their wishlist')
             : Affiliate::giftIdeasHtml($gid, 'match-gift-ideas');
 
+        /** My Wishlist: they just shopped from someone's list, the best moment to suggest one of their own */
+        if($this->isVerifiedMember($uid)){
+            echo '<p class="mm-match-wl"><i class="fas fa-heart" aria-hidden="true"></i> <span>Like having a wishlist to go by? Make your own for your birthday or any day.</span> <a href="'.esc_url(home_url('/my-wishlist/')).'" target="_blank" rel="noopener" data-mm-track="wishlist_cta" data-mm-slot="see-match">Make my wishlist</a></p>';
+        }
+
         /** ASK ANONYMOUSLY (PRO; free groups get a locked teaser that opens Gift PRO) */
         if($this->isVerifiedMember($uid)){
             echo QA::askSection($uid, $pair, $gid);

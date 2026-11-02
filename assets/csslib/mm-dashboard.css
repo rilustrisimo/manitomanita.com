@@ -2314,12 +2314,25 @@ body.pro-version:not(.mm-gtheme) .dashboard .dashboard__gd .mm-coorg i {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 12px 14px;
-    margin: 14px 16px 0;
-    padding: 14px 16px;
-    border: 1px solid var(--mm-line);
-    border-radius: 14px;
+    gap: 12px 16px;
+    margin: 0 0 12px; /* same edges and rhythm as the member cards below */
+    padding: 16px 20px;
+    border: 1px solid #e6e6e6;
+    border-radius: 16px;
     background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+}
+
+@media (max-width: 767px) {
+    .dashboard .mm-repeat-card {
+        margin-bottom: 10px;
+        padding: 14px 16px;
+    }
+
+    .dashboard .mm-repeat-card a.mm-repeat-card__btn {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 .dashboard .mm-repeat-card__icon {
@@ -2362,4 +2375,27 @@ body.pro-version:not(.mm-gtheme) .dashboard .dashboard__gd .mm-coorg i {
 
 .dashboard .mm-repeat-card a.mm-repeat-card__btn:hover {
     background: var(--mm-accent-dark);
+}
+
+.dashboard .mm-repeat-card--wl .mm-repeat-card__icon {
+    background: rgba(229, 80, 159, .1);
+    color: #e5509f;
+}
+
+.dashboard .mm-repeat-card a.mm-repeat-card__btn--ghost {
+    border: 1px solid #d9d9d9;
+    background: #fff;
+    color: var(--mm-dark) !important;
+}
+
+.dashboard .mm-repeat-card a.mm-repeat-card__btn--ghost:hover {
+    border-color: var(--mm-dark);
+    background: #fff;
+}
+
+/* Both "after the exchange" cards, then the "Show me around" button with the same gap */
+.dashboard .mm-repeat-card + .mm-tour-again,
+.dashboard .mm-repeat-card + .mm-reveal,
+.dashboard .mm-repeat-card + .mm-themes {
+    margin-top: 2px;
 }

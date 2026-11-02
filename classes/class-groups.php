@@ -1674,6 +1674,7 @@ class Groups extends Theme {
         $name = (string) get_field('group_name', $gid);
         $link = Emails::groupLink($gid);
         $ideas = Affiliate::giftIdeasHtml($gid, 'email-match', true);
+        $wlLine = 'Birthday coming up? <a href="'.esc_url(home_url('/my-wishlist/')).'" style="color:#1f8580;">Make a wishlist</a> you can share all year, free.';
         $proLine = get_field('pro', $gid) ? '' : 'Want extra fun this season? Add <a href="'.esc_url($link.'&pop=pro-drops').'" style="color:#1f8580;">Weekly Drops</a> to your group: a themed mini-gift each week, plus a reveal at the end (PRO).';
 
         foreach(self::memberIds($gid) as $uid){
@@ -1692,7 +1693,7 @@ class Groups extends Theme {
                 'card'      => Emails::groupCard($gid),
                 'button'    => array('See their wishlist', $link),
                 'raw'       => $ideas,
-                'note'      => $proLine,
+                'note'      => trim($proLine.($proLine ? '<br><br>' : '').$wlLine),
                 'footer'    => 'You&rsquo;re getting this because you&rsquo;re a member of '.esc_html($name).' on Manito Manita.',
             ));
         }
