@@ -1509,3 +1509,183 @@
 .mm-upsell .mm-upsell__social {
     justify-content: center;
 }
+
+/* ---------- Upgrade sheet v3: buy first, tiles, "see all", phone-friendly ---------- */
+
+html.mm-noscroll,
+html.mm-noscroll body {
+    overflow: hidden !important;
+}
+
+.mm-upsell .mm-upsell__inner {
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    overscroll-behavior: contain;
+}
+
+/* Close button stays reachable while scrolling */
+.mm-upsell .pop-container__close {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    float: right;
+    height: 0;
+    margin: -10px -8px 0 0;
+}
+
+.mm-upsell .pop-container__close a {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .12);
+}
+
+.mm-upsell--buy .mm-upsell__buy {
+    margin: 16px 0 6px;
+    padding: 14px;
+    border: 1px solid var(--mmu-line);
+    border-radius: 16px;
+    background: #fbfbfb;
+}
+
+.mm-upsell--buy .mm-upsell__price {
+    margin: 0 0 12px;
+}
+
+.mm-upsell--buy .mm-upsell__price span b {
+    color: #fff;
+}
+
+.mm-upsell--buy .mm-upsell__pay {
+    margin: 0;
+}
+
+.mm-upsell .mm-pay__or {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 0 8px;
+    color: #9a9a9a;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.mm-upsell .mm-pay__or::before,
+.mm-upsell .mm-pay__or::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--mmu-line);
+}
+
+.mm-upsell p.mm-upsell__secure {
+    margin: 8px 0 0;
+    color: var(--mmu-text);
+    font-size: 12.5px;
+    text-align: center;
+}
+
+.mm-upsell p.mm-upsell__secure i {
+    color: #1f8a5b;
+}
+
+.mm-upsell h3.mm-upsell__h3 {
+    margin: 18px 0 10px;
+    color: var(--mmu-ink);
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 800;
+    text-align: left;
+    text-transform: none;
+}
+
+.mm-upsell__tiles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.mm-upsell__tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px;
+    border: 1px solid var(--mmu-line);
+    border-radius: 14px;
+    background: #fff;
+    color: var(--mmu-ink);
+    transition: border-color .2s ease, background .2s ease;
+}
+
+.mm-upsell__tile i {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    background: var(--mmu-gold-soft);
+    color: #9a7b17;
+    font-size: 13px;
+}
+
+.mm-upsell__tile b {
+    font-size: 14px;
+    line-height: 1.25;
+}
+
+.mm-upsell__tile span {
+    color: var(--mmu-text);
+    font-size: 12.5px;
+    line-height: 1.35;
+}
+
+.mm-upsell__tile.is-focus {
+    border-color: var(--mmu-gold);
+    background: var(--mmu-gold-soft);
+}
+
+.mm-upsell__tile.is-focus i {
+    background: var(--mmu-gold);
+    color: var(--mmu-ink);
+}
+
+.mm-upsell details.mm-upsell__all {
+    margin: 10px 0 8px;
+    border: 1px solid var(--mmu-line);
+    border-radius: 14px;
+}
+
+.mm-upsell details.mm-upsell__all summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    color: var(--mmu-ink);
+    font-size: 14px;
+    font-weight: 700;
+    list-style: none;
+    cursor: pointer;
+}
+
+.mm-upsell details.mm-upsell__all summary::-webkit-details-marker {
+    display: none;
+}
+
+.mm-upsell details.mm-upsell__all summary i {
+    color: #9a9a9a;
+    transition: transform .2s ease;
+}
+
+.mm-upsell details.mm-upsell__all[open] summary i {
+    transform: rotate(180deg);
+}
+
+.mm-upsell details.mm-upsell__all ul.mm-upsell__list {
+    margin: 0;
+    padding: 0 6px 8px;
+}
+
+@media (max-width: 575px) {
+    .mm-upsell .mm-upsell__inner {
+        max-height: 94vh;
+        max-height: 94dvh;
+    }
+}

@@ -72,7 +72,10 @@ class Payments {
         $group = new Groups();
         $gid = (int) $group->getGroupId();
 
-        echo '<div id="paypal-button-container"></div>';
+        // Card first (most Filipino buyers don't have PayPal), then PayPal. Both are PayPal checkouts.
+        echo '<div id="paypal-card-container" class="mm-pay__card"></div>';
+        echo '<div class="mm-pay__or"><span>or</span></div>';
+        echo '<div id="paypal-button-container" class="mm-pay__paypal"></div>';
         echo '<script src="https://www.paypal.com/sdk/js?client-id=' . esc_attr( PAYPAL_CLIENT_ID ) . '&currency=' . self::CURRENCY . '"></script>';
         ?>
 <script>
@@ -102,7 +105,7 @@ class Payments {
             alert(message || 'There was an issue processing your payment. Please try again.');
         }
 
-        paypal.Buttons({
+        var cfg = {
             locale: 'en_PH',
             createOrder: function(){
                 track('begin_checkout', { currency: 'PHP', value: item.price, items: [item] });
@@ -130,7 +133,17 @@ class Payments {
             onError: function(err){
                 fail(err && err.message ? err.message : '');
             }
-        }).render('#paypal-button-container');
+        };
+
+        function buttons(source, style, el){
+            var b = paypal.Buttons(Object.assign({ fundingSource: source, style: style }, cfg));
+            if (b.isEligible()) { b.render(el); return true; }
+            return false;
+        }
+
+        var card = buttons(paypal.FUNDING.CARD, { layout: 'vertical', shape: 'rect', height: 48 }, '#paypal-card-container');
+        buttons(paypal.FUNDING.PAYPAL, { layout: 'vertical', shape: 'rect', color: 'gold', label: 'paypal', height: 44 }, '#paypal-button-container');
+        if (!card) { var or = document.querySelector('.mm-pay__or'); if (or) or.style.display = 'none'; }
     })();
 </script>
         <?php

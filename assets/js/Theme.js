@@ -453,7 +453,7 @@ var Theme = {
             }
 
             if (btn === 'add-credits') {
-                $('#pro-credits').css('display', 'flex');
+                $('#pro-credits').css('display', 'flex'); Theme.lockScroll($);
                 Theme.popClose($);
                 Theme.track('view_promotion', { creative_slot: 'credits', promotion_name: 'unshuffle_credits' });
             }
@@ -1606,7 +1606,7 @@ var Theme = {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('pop') === 'try-pro') {
                 // Set #pro-try container to display:flex
-                $('#pro-try').css('display', 'flex');
+                $('#pro-try').css('display', 'flex'); Theme.lockScroll($);
                 Theme.popClose($);
 
                 $('#try-pro-btn').click(function(e){
@@ -1658,7 +1658,10 @@ var Theme = {
 
         sheet.find('[data-mm-upsell-title]').text(copy[0]);
         sheet.find('[data-mm-upsell-lead]').text(copy[1]);
-        sheet.find('.mm-upsell__list li').removeClass('is-focus').filter('[data-reason="' + reason + '"]').addClass('is-focus');
+        sheet.find('[data-reason]').removeClass('is-focus').filter('[data-reason="' + reason + '"]').addClass('is-focus');
+        // The reason that opened the sheet is visible: a tile, or the full list opened at that feature.
+        sheet.find('.mm-upsell__all').prop('open', !sheet.find('.mm-upsell__tile.is-focus').length && sheet.find('.mm-upsell__list li.is-focus').length > 0);
+        Theme.lockScroll($);
 
         $('.pop-container').hide();
         if ($.fancybox && $.fancybox.getInstance && $.fancybox.getInstance()) $.fancybox.close(true);
@@ -1666,6 +1669,15 @@ var Theme = {
         sheet.find('.mm-upsell__inner').scrollTop(0);
 
         Theme.track('view_promotion', { creative_slot: reason, promotion_name: 'pro_upgrade' });
+    },
+
+    /** While an upgrade sheet is open the page behind doesn't scroll (iOS scrolls it otherwise). */
+    lockScroll: function($){
+        $('html').addClass('mm-noscroll');
+        if (Theme._lockObs) return;
+        var check = function(){ if (!$('.mm-upsell:visible').length) $('html').removeClass('mm-noscroll'); };
+        Theme._lockObs = new MutationObserver(check);
+        $('.mm-upsell').each(function(){ Theme._lockObs.observe(this, { attributes: true, attributeFilter: ['style', 'class'] }); });
     },
 
     popClose: function($){

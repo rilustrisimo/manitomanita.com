@@ -558,6 +558,11 @@
     }
 }
 
+/* Out of the way while an upgrade sheet is open */
+html.mm-noscroll .mm-support {
+    display: none;
+}
+
 /* ---------- Follow buttons (Theme::socialLinks) ---------- */
 
 .mm-social {
