@@ -40,7 +40,7 @@ if ( ! function_exists( 'qed_init_theme_assets' ) ) {
 			wp_enqueue_style( 'fancybox', PARENT_URL . '/assets/csslib/jquery.fancybox.min.css', array());
 			wp_enqueue_style( 'jquery-ui', PARENT_URL . '/assets/csslib/jquery-ui.css', array());
 			// Bootstrap Tour replaced by Theme.tour (no extra CSS/JS).
-			wp_enqueue_style( 'dashicons' );
+			// Dashicons are only needed for the admin bar, which enqueues them itself.
 			wp_register_style( 'magnific-popup', PARENT_URL . '/assets/csslib/magnific-popup.css', array(), '1.1.0' );
 
 			wp_register_style( 'swipebox', PARENT_URL . '/assets/csslib/swipebox.css' );
@@ -62,7 +62,7 @@ if ( ! function_exists( 'qed_init_theme_assets' ) ) {
 			wp_enqueue_script( 'vivus', PARENT_URL . '/assets/jslib/vivus.min.js', array(), '0.4.2', true );
 			wp_register_script( 'fitvid', PARENT_URL . '/assets/jslib/bxslider/vendor/jquery.fitvids.js', array( 'jquery' ), '1.0', true );
 			wp_register_script( 'magnific-popup', PARENT_URL . '/assets/jslib/jquery.magnific-popup.min.js', array( 'jquery' ), '1.1.0', true );
-			wp_register_script( 'theme', PARENT_URL . '/assets/js/Theme.js', array( 'jquery' ), rand(), true );
+			wp_register_script( 'theme', PARENT_URL . '/assets/js/Theme.js', array( 'jquery' ), (string) @filemtime( PARENT_DIR . '/assets/js/Theme.js' ), true );
 			wp_localize_script( 'theme', 'AjaxHelper', array(
 					'ajaxurl' => admin_url( 'admin-ajax.php' ),
 					'headerSectionNonce' => wp_create_nonce( 'swish-header-section-nonce' ),

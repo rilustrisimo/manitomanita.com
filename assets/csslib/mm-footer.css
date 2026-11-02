@@ -53,6 +53,7 @@
 .mm-footer #logoLink img {
     width: 28px;
     max-width: none;
+    height: auto;
     margin: 0 8px 0 0;
 }
 

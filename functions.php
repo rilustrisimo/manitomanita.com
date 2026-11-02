@@ -74,3 +74,29 @@ function mm_enqueue_ui_styles() {
 		wp_enqueue_style( $name, PARENT_URL . $file, array(), (string) @filemtime( PARENT_DIR . $file ) );
 	}
 }
+
+/**
+ * Page speed on the public marketing pages (homepage, landing pages): every script prints in the footer,
+ * and styles that are only used by popups and forms (Create Group, Fancybox, ACF) load without blocking
+ * the first paint. Analytics and ads keep their own async tags.
+ */
+function mm_is_marketing_page() {
+	return ! is_admin() && ( is_page_template( 'template-homepage.php' ) || ( class_exists( 'Landing' ) && Landing::isActive() ) );
+}
+
+add_action( 'wp_print_scripts', 'mm_scripts_to_footer', 1 );
+function mm_scripts_to_footer() {
+	if ( ! mm_is_marketing_page() ) return;
+	$scripts = wp_scripts();
+	foreach ( $scripts->registered as $handle => $script ) {
+		if ( $script->src && preg_match( '~gtag|googletagmanager|googlesyndication~', $script->src ) ) continue;
+		$scripts->add_data( $handle, 'group', 1 );
+	}
+}
+
+add_filter( 'style_loader_tag', 'mm_async_popup_styles', 10, 2 );
+function mm_async_popup_styles( $tag, $handle ) {
+	static $popup = array( 'fancybox', 'jquery-ui', 'bxslider', 'bootstrap-select', 'acf-global', 'acf-input', 'acf-pro-input', 'select2', 'acf-datepicker', 'acf-timepicker', 'wp-color-picker', 'chaty-front-css', 'mm-forms', 'mm-match', 'mm-dashboard', 'mm-pro' );
+	if ( ! in_array( $handle, $popup, true ) || ! mm_is_marketing_page() || strpos( $tag, "media='all'" ) === false ) return $tag;
+	return str_replace( "media='all'", "media='print' onload=\"this.media='all'\"", $tag ) . '<noscript>' . $tag . '</noscript>';
+}

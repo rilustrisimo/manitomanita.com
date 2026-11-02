@@ -39,7 +39,18 @@ class Captcha {
         add_filter( 'acf/prepare_field/type=recaptcha', '__return_false' );
 
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
+        add_action( 'wp_print_scripts', array( __CLASS__, 'dropRecaptcha' ), 0 );
         add_action( 'acf/validate_save_post', array( __CLASS__, 'validateAcf' ), 5 );
+    }
+
+    /**
+     * The ACF reCAPTCHA plugin loads Google's 350 KB script on every page even though its fields are hidden.
+     * (Dashboard comments load their own reCAPTCHA in header-dashboard.php.)
+     */
+    public static function dropRecaptcha() {
+        if ( is_admin() ) return;
+        wp_dequeue_script( 'acf-recaptcha-grecaptcha-api' );
+        wp_dequeue_script( 'acf-recaptcha-input' );
     }
 
     public static function enabled() {

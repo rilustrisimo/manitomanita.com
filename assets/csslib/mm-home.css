@@ -1307,13 +1307,13 @@
 
 .mmh-drops__line li span {
     display: block;
-    color: rgba(255, 255, 255, .55);
+    color: rgba(255, 255, 255, .72);
     font-size: 12px;
     font-weight: 700;
 }
 
 .mmh-drops__line li.is-done {
-    opacity: .5;
+    color: rgba(255, 255, 255, .7);
 }
 
 .mmh-drops__line li.is-now {

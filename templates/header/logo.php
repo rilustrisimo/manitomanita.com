@@ -15,10 +15,10 @@ defined( 'ABSPATH' ) || die();
 
 if ( 'image' !== qed_get_option( 'logo_type', 'option' ) ) {
 	echo strtr(
-		'<div class="logo"><a id="logoLink" href="{home_url}"><img src="{logo}">{name}</a></div>',
+		'<div class="logo"><a id="logoLink" href="{home_url}"><img src="{logo}" width="96" height="96" alt="">{name}</a></div>',
 		array(
 			'{home_url}' => esc_url( home_url( '/' ) ),
-			'{logo}'	=> get_template_directory_uri().'/assets/images/logo.png',
+			'{logo}'	=> get_template_directory_uri().'/assets/images/logo-96.png',
 			'{name}' => 'Manito<span>Manita</span>',
 		)
 	);

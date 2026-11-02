@@ -23,7 +23,8 @@ $stats = Groups::siteStats();
 
 /*
  * Optional photos and looping videos (ACF "Homepage photos & videos"). Empty slots keep the plain design.
- * Videos only load when motion is allowed and data saver is off (script at the end); the photo is the poster.
+ * Videos only load on tablets and desktops, when motion is allowed and data saver is off (script at the end);
+ * phones keep the photo, which is the poster.
  */
 $hf = function ( $name ) { return function_exists( 'get_field' ) ? get_field( $name ) : ''; };
 $bg = function ( $img, $video, $eager = false ) {
@@ -273,7 +274,7 @@ $faq = array(
 </div>
 
 <?php if ( strpos( $heroBg . $finalBg, 'data-mm-bgvideo' ) !== false ) : ?>
-<script>(function(){var c=navigator.connection,m=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;if(m||(c&&(c.saveData||/2g/.test(c.effectiveType||''))))return;var v=document.querySelectorAll('video[data-mm-bgvideo]');var go=function(el){if(el.src)return;el.src=el.getAttribute('data-mm-bgvideo');el.addEventListener('playing',function(){el.classList.add('is-playing');});var p=el.play();if(p&&p.catch)p.catch(function(){});};if(!('IntersectionObserver' in window)){[].forEach.call(v,go);return;}var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){go(e.target);e.target.play&&e.target.src&&e.target.play().catch(function(){});}else if(e.target.src){e.target.pause();}});},{rootMargin:'200px'});[].forEach.call(v,function(el){io.observe(el);});})();</script>
+<script>(function(){var c=navigator.connection,m=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;if(m||window.innerWidth<768||(c&&(c.saveData||/2g/.test(c.effectiveType||''))))return;var v=document.querySelectorAll('video[data-mm-bgvideo]');var go=function(el){if(el.src)return;el.src=el.getAttribute('data-mm-bgvideo');el.addEventListener('playing',function(){el.classList.add('is-playing');});var p=el.play();if(p&&p.catch)p.catch(function(){});};if(!('IntersectionObserver' in window)){[].forEach.call(v,go);return;}var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){go(e.target);e.target.play&&e.target.src&&e.target.play().catch(function(){});}else if(e.target.src){e.target.pause();}});},{rootMargin:'200px'});[].forEach.call(v,function(el){io.observe(el);});})();</script>
 <?php endif; ?>
 <script type="application/ld+json"><?php
 echo wp_json_encode( array(
