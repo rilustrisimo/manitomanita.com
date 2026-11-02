@@ -1,7 +1,10 @@
 <?php
 /**
- * Search landing page (Landing class): tool pages per search term and gift guides.
- * Uses the homepage styles (mm-home.css) plus a few .mml-* additions.
+ * Template Name: Landing
+ *
+ * Landing pages edited in WordPress: generator pages, gift guides, theme lists and legal pages.
+ * Fields: includes/acf-json/group_mm_landing.json (read by Landing::fromPage). Titles, descriptions,
+ * breadcrumbs and the sitemap come from Yoast. Uses mm-home.css plus .mml-* additions.
  *
  * @author    eyorsogood.com, Rouie Ilustrisimo
  * @version   1.0.0
@@ -14,9 +17,9 @@
  */
 defined( 'ABSPATH' ) || die();
 
-$p = Landing::current();
+the_post();
+$p = Landing::fromPage( get_the_ID() );
 $slot = 'landing:' . $p['slug'];
-$all = Landing::pages();
 
 get_header();
 
@@ -27,18 +30,18 @@ if ( $p['type'] === 'legal' ) : ?>
 			<nav class="mml-crumbs" aria-label="Breadcrumb"><a href="<?php echo esc_url( home_url( '/' ) ); ?>">Home</a> <span aria-hidden="true">/</span> <span><?php echo esc_html( $p['h1'] ); ?></span></nav>
 			<h1 class="mmh-hero__title"><?php echo esc_html( $p['h1'] ); ?></h1>
 			<p class="mmh-hero__lead"><?php echo $p['lead']; ?></p>
-			<p class="mml-updated">Last updated <?php echo esc_html( date_i18n( 'F j, Y', strtotime( $p['updated'] ) ) ); ?></p>
+			<?php if ( $p['updated'] ) : ?><p class="mml-updated">Last updated <?php echo esc_html( date_i18n( 'F j, Y', strtotime( $p['updated'] ) ) ); ?></p><?php endif; ?>
 		</div>
 	</section>
 	<section class="mmh-section">
 		<div class="mmh-wrap mmh-wrap--narrow mml-prose">
+			<?php list( $legal, $toc ) = Landing::legalContent( $p['intro']['body'] ); ?>
+			<?php if ( count( $toc ) > 2 ) : ?>
 			<nav class="mml-toc" aria-label="Contents"><strong>Contents</strong><ol>
-				<?php foreach ( $p['sections'] as $i => $sec ) : ?><li><a href="#s<?php echo (int) $i + 1; ?>"><?php echo esc_html( $sec[0] ); ?></a></li><?php endforeach; ?>
+				<?php foreach ( $toc as $t ) : ?><li><a href="#<?php echo esc_attr( $t[0] ); ?>"><?php echo esc_html( $t[1] ); ?></a></li><?php endforeach; ?>
 			</ol></nav>
-			<?php foreach ( $p['sections'] as $i => $sec ) : ?>
-				<h2 id="s<?php echo (int) $i + 1; ?>"><?php echo (int) $i + 1; ?>. <?php echo esc_html( $sec[0] ); ?></h2>
-				<?php echo $sec[1]; ?>
-			<?php endforeach; ?>
+			<?php endif; ?>
+			<?php echo $legal; ?>
 			<p class="mml-legal-contact">Questions? Email <a href="mailto:rouie@manitomanita.com">rouie@manitomanita.com</a>.</p>
 		</div>
 	</section>
@@ -78,9 +81,9 @@ endif;
 
 	<section class="mmh-section mmh-section--soft">
 		<div class="mmh-wrap mmh-wrap--narrow mml-prose" data-reveal>
-			<h2 class="mmh-h2 mml-left"><?php echo $p['intro']['title']; ?></h2>
+			<?php if ( $p['intro']['title'] ) : ?><h2 class="mmh-h2 mml-left"><?php echo $p['intro']['title']; ?></h2><?php endif; ?>
 			<?php echo $p['intro']['body']; ?>
-			<p class="mml-updated">Updated <?php echo esc_html( date_i18n( 'F Y', strtotime( Landing::UPDATED ) ) ); ?></p>
+			<?php if ( $p['updated'] ) : ?><p class="mml-updated">Updated <?php echo esc_html( date_i18n( 'F Y', strtotime( $p['updated'] ) ) ); ?></p><?php endif; ?>
 		</div>
 	</section>
 
@@ -175,10 +178,10 @@ endif;
 		<div class="mmh-wrap">
 			<h2 class="mmh-h2" data-reveal>More free tools and guides</h2>
 			<div class="mml-related">
-				<?php foreach ( $p['related'] as $i => $r ) : if ( empty( $all[ $r ] ) ) continue; ?>
-				<a class="mml-related__card" href="<?php echo esc_url( Landing::url( $r ) ); ?>" data-reveal style="--d:<?php echo esc_attr( $i * 0.08 ); ?>s">
-					<span class="mmh-eyebrow"><?php echo $all[ $r ]['eyebrow']; ?></span>
-					<strong><?php echo wp_strip_all_tags( $all[ $r ]['h1'] ); ?></strong>
+				<?php foreach ( $p['related'] as $i => $r ) : if ( get_post_status( $r ) !== 'publish' ) continue; $rp = Landing::fromPage( $r ); ?>
+				<a class="mml-related__card" href="<?php echo esc_url( get_permalink( $r ) ); ?>" data-reveal style="--d:<?php echo esc_attr( $i * 0.08 ); ?>s">
+					<span class="mmh-eyebrow"><?php echo $rp['eyebrow']; ?></span>
+					<strong><?php echo wp_strip_all_tags( $rp['h1'] ); ?></strong>
 					<span class="mml-related__go">Open <i class="fas fa-arrow-right"></i></span>
 				</a>
 				<?php endforeach; ?>

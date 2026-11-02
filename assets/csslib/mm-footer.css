@@ -144,7 +144,8 @@
 /* Room for the homepage's / landing pages' sticky phone CTA */
 @media (max-width: 899px) {
     .page-template-template-homepage .mm-footer__wrap--bottom,
-    .mm-landing-page .mm-footer__wrap--bottom {
+    .mm-landing-page .mm-footer__wrap--bottom,
+    .page-template-template-landing .mm-footer__wrap--bottom {
         padding-bottom: 90px;
     }
 }

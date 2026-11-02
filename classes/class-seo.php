@@ -50,6 +50,7 @@ class SEO {
         add_filter( 'wpseo_opengraph_image', array( __CLASS__, 'image' ), 20 );
         add_filter( 'wpseo_twitter_image', array( __CLASS__, 'image' ), 20 );
         add_filter( 'wpseo_twitter_card_type', array( __CLASS__, 'cardType' ), 20 );
+        add_action( 'wpseo_add_opengraph_images', array( __CLASS__, 'defaultImage' ) );
 
         // Utility pages: noindex + not in the sitemap.
         add_filter( 'wpseo_robots', array( __CLASS__, 'robots' ), 20 );
@@ -83,6 +84,15 @@ class SEO {
     public static function image( $img ) {
         // Homepage and any page without its own image get the branded card.
         return ( self::isHome() || ! $img ) ? self::imageUrl() : $img;
+    }
+
+    /**
+     * Pages without their own image (e.g. landing pages) still get the branded share card.
+     */
+    public static function defaultImage( $images ) {
+        if ( is_object( $images ) && method_exists( $images, 'has_images' ) && ! $images->has_images() ) {
+            $images->add_image( array( 'url' => self::imageUrl(), 'width' => 1200, 'height' => 630, 'type' => 'image/jpeg' ) );
+        }
     }
 
     public static function cardType( $type ) {
