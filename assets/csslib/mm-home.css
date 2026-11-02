@@ -1333,3 +1333,176 @@
         gap: 56px;
     }
 }
+
+/* ---------- Photos & looping videos (ACF "Homepage photos & videos"; empty slots render nothing) ---------- */
+
+/* Background media for the hero and the final band: under the teal glows, behind a dark overlay */
+.mmh-final {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.mmh-bg {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    overflow: hidden;
+    background: var(--mm-dark);
+}
+
+.mmh-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(90deg, rgba(27, 27, 27, .94) 0%, rgba(27, 27, 27, .82) 45%, rgba(27, 27, 27, .55) 100%),
+        linear-gradient(0deg, rgba(27, 27, 27, .7), rgba(27, 27, 27, 0) 40%);
+}
+
+.mmh-final .mmh-bg::after {
+    background: radial-gradient(ellipse at center, rgba(27, 27, 27, .72) 0%, rgba(27, 27, 27, .88) 75%);
+}
+
+.mm-home .mmh-bg__media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    object-position: 70% center;
+    animation: mmhDrift 28s ease-in-out infinite alternate;
+}
+
+/* The video stays invisible until it is actually playing, so the photo never flashes black */
+.mmh-bg__video {
+    opacity: 0;
+    transition: opacity 1.2s ease;
+}
+
+.mmh-bg__video.is-playing {
+    opacity: 1;
+}
+
+@keyframes mmhDrift {
+    from { transform: scale(1.08) translate3d(1.5%, 0, 0); }
+    to   { transform: scale(1) translate3d(0, 0, 0); }
+}
+
+/* On phones the overlay is even, since text spans the full width */
+@media (max-width: 899px) {
+    .mmh-hero .mmh-bg::after {
+        background: linear-gradient(180deg, rgba(27, 27, 27, .9), rgba(27, 27, 27, .8) 60%, rgba(27, 27, 27, .92));
+    }
+}
+
+/* Who it's for: three photo cards */
+.mmh-section--tight {
+    padding-top: 8px;
+}
+
+.mmh-aud {
+    display: grid;
+    gap: 14px;
+    margin-top: 28px;
+}
+
+.mm-home .mmh-aud__card {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--mm-radius);
+    aspect-ratio: 4 / 3;
+    background: var(--mm-soft);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+}
+
+.mm-home .mmh-aud__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    transition: transform .8s cubic-bezier(.2, .7, .2, 1);
+}
+
+.mmh-aud__card figcaption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 48px 18px 16px;
+    background: linear-gradient(0deg, rgba(0, 0, 0, .78), rgba(0, 0, 0, 0));
+    color: rgba(255, 255, 255, .85);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.mmh-aud__card figcaption strong {
+    display: block;
+    margin-bottom: 2px;
+    color: #fff;
+    font-size: 18px;
+}
+
+/* Weekly Drops photo above the timeline */
+.mmh-drops__side {
+    display: grid;
+    gap: 14px;
+}
+
+.mm-home .mmh-drops__img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    border-radius: 18px;
+    box-shadow: 0 14px 34px rgba(138, 109, 18, .16);
+}
+
+/* Scroll-in: photos unveil from a soft zoom (uses the existing [data-reveal] observer) */
+.mm-anim .mm-home [data-reveal] .mmh-aud__img,
+.mm-anim .mm-home [data-reveal] .mmh-drops__img {
+    transform: scale(1.12);
+    transition: transform 1.4s cubic-bezier(.2, .7, .2, 1);
+}
+
+.mm-anim .mm-home [data-reveal].is-in .mmh-aud__img,
+.mm-anim .mm-home [data-reveal].is-in .mmh-drops__img,
+.mm-reveal-all .mm-home [data-reveal] .mmh-aud__img,
+.mm-reveal-all .mm-home [data-reveal] .mmh-drops__img {
+    transform: none;
+}
+
+@media (hover: hover) {
+    .mm-home .mmh-aud__card:hover .mmh-aud__img {
+        transform: scale(1.05);
+        transition-duration: .8s;
+    }
+}
+
+@media (min-width: 640px) {
+    .mmh-aud {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .mm-home .mmh-aud__card {
+        aspect-ratio: 4 / 5;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mm-home .mmh-bg__media,
+    .mm-home .mmh-aud__img,
+    .mm-home .mmh-drops__img {
+        animation: none !important;
+        transform: none !important;
+        transition: none !important;
+    }
+
+    .mmh-bg__video {
+        display: none;
+    }
+}

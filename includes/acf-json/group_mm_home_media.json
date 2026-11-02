@@ -1,0 +1,136 @@
+{
+    "key": "group_mm_home_media",
+    "title": "Homepage photos & videos",
+    "fields": [
+        {
+            "key": "field_mm_home_tab_hero",
+            "label": "Top banner",
+            "name": "",
+            "type": "tab",
+            "placement": "top"
+        },
+        {
+            "key": "field_mm_home_hero_image",
+            "label": "Background photo",
+            "name": "mm_hero_image",
+            "type": "image",
+            "instructions": "Shown behind the headline under a dark overlay (also the still frame for the video). Landscape, at least 1920 x 1080, under 400 KB (WebP or JPG). Ideas: friends laughing while opening gifts, hands passing a wrapped gift, a Christmas table with gifts and parol lights. Keep the main subject on the right half.",
+            "return_format": "id",
+            "preview_size": "medium",
+            "mime_types": "jpg,jpeg,png,webp"
+        },
+        {
+            "key": "field_mm_home_hero_video",
+            "label": "Background video (optional)",
+            "name": "mm_hero_video",
+            "type": "file",
+            "instructions": "Short silent loop that plays instead of the photo. MP4 (H.264), 6 to 12 seconds, 1280 x 720, under 3 MB, slow movement (bokeh lights, gift wrapping, a party table). Phones on data saver and visitors who turn off motion see the photo instead.",
+            "return_format": "url",
+            "mime_types": "mp4"
+        },
+        {
+            "key": "field_mm_home_tab_aud",
+            "label": "Who it's for",
+            "name": "",
+            "type": "tab",
+            "placement": "top"
+        },
+        {
+            "key": "field_mm_home_aud_msg",
+            "label": "",
+            "name": "",
+            "type": "message",
+            "message": "Three photo cards shown after \"How it works\". The section appears once at least one photo is added. Use the same shape for all three: portrait 4:5, about 900 x 1125, under 200 KB."
+        },
+        {
+            "key": "field_mm_home_aud_office",
+            "label": "Office party",
+            "name": "mm_aud_office",
+            "type": "image",
+            "instructions": "Coworkers at an office Christmas party or exchanging gifts at work.",
+            "return_format": "id",
+            "preview_size": "medium",
+            "mime_types": "jpg,jpeg,png,webp",
+            "wrapper": { "width": "33" }
+        },
+        {
+            "key": "field_mm_home_aud_family",
+            "label": "Family",
+            "name": "mm_aud_family",
+            "type": "image",
+            "instructions": "A family at Noche Buena or opening gifts together (lolo, lola, kids).",
+            "return_format": "id",
+            "preview_size": "medium",
+            "mime_types": "jpg,jpeg,png,webp",
+            "wrapper": { "width": "33" }
+        },
+        {
+            "key": "field_mm_home_aud_friends",
+            "label": "Barkada",
+            "name": "mm_aud_friends",
+            "type": "image",
+            "instructions": "A group of friends at a holiday get-together, a selfie with gifts, or a classroom exchange.",
+            "return_format": "id",
+            "preview_size": "medium",
+            "mime_types": "jpg,jpeg,png,webp",
+            "wrapper": { "width": "33" }
+        },
+        {
+            "key": "field_mm_home_tab_drops",
+            "label": "Weekly Drops",
+            "name": "",
+            "type": "tab",
+            "placement": "top"
+        },
+        {
+            "key": "field_mm_home_drops_image",
+            "label": "Weekly Drops photo",
+            "name": "mm_drops_image",
+            "type": "image",
+            "instructions": "Shown above the example timeline. Small wrapped gifts or treats (chocolates, socks, a mug) with a little name tag. Landscape 3:2, about 1200 x 800, under 250 KB.",
+            "return_format": "id",
+            "preview_size": "medium",
+            "mime_types": "jpg,jpeg,png,webp"
+        },
+        {
+            "key": "field_mm_home_tab_final",
+            "label": "Bottom banner",
+            "name": "",
+            "type": "tab",
+            "placement": "top"
+        },
+        {
+            "key": "field_mm_home_final_image",
+            "label": "Background photo",
+            "name": "mm_final_image",
+            "type": "image",
+            "instructions": "Behind \"Ready for this year's exchange?\" under a dark overlay. Landscape 1920 x 800, under 300 KB. Ideas: close-up of wrapped gifts with warm string lights, a Christmas tree with presents.",
+            "return_format": "id",
+            "preview_size": "medium",
+            "mime_types": "jpg,jpeg,png,webp"
+        },
+        {
+            "key": "field_mm_home_final_video",
+            "label": "Background video (optional)",
+            "name": "mm_final_video",
+            "type": "file",
+            "instructions": "Silent MP4 loop, 6 to 12 seconds, 1280 x 720, under 3 MB. Ideas: twinkling lights, a ribbon being tied, snow-like bokeh.",
+            "return_format": "url",
+            "mime_types": "mp4"
+        }
+    ],
+    "location": [
+        [
+            { "param": "page_template", "operator": "==", "value": "template-homepage.php" }
+        ]
+    ],
+    "menu_order": 0,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "hide_on_screen": "",
+    "active": true,
+    "description": "Optional photos and looping videos for template-homepage.php. Empty slots keep the current design.",
+    "modified": 1793664000
+}

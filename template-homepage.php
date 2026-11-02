@@ -21,6 +21,28 @@ get_header();
 
 $stats = Groups::siteStats();
 
+/*
+ * Optional photos and looping videos (ACF "Homepage photos & videos"). Empty slots keep the plain design.
+ * Videos only load when motion is allowed and data saver is off (script at the end); the photo is the poster.
+ */
+$hf = function ( $name ) { return function_exists( 'get_field' ) ? get_field( $name ) : ''; };
+$bg = function ( $img, $video, $eager = false ) {
+	if ( ! $img && ! $video ) return '';
+	$poster = $img ? wp_get_attachment_image_url( $img, 'full' ) : '';
+	$out = '<div class="mmh-bg" aria-hidden="true">';
+	if ( $img ) $out .= wp_get_attachment_image( $img, 'full', false, array( 'class' => 'mmh-bg__media', 'alt' => '', 'sizes' => '100vw', 'loading' => $eager ? 'eager' : 'lazy', 'decoding' => 'async' ) );
+	if ( $video ) $out .= '<video class="mmh-bg__media mmh-bg__video" muted loop playsinline preload="none" data-mm-bgvideo="' . esc_url( $video ) . '"' . ( $poster ? ' poster="' . esc_url( $poster ) . '"' : '' ) . '></video>';
+	return $out . '</div>';
+};
+$heroBg  = $bg( $hf( 'mm_hero_image' ), $hf( 'mm_hero_video' ), true );
+$finalBg = $bg( $hf( 'mm_final_image' ), $hf( 'mm_final_video' ) );
+$dropsImg = $hf( 'mm_drops_image' );
+$audience = array_filter( array(
+	array( $hf( 'mm_aud_office' ), 'Office parties', 'Kris Kringle for the whole team, even across branches and remote staff.' ),
+	array( $hf( 'mm_aud_family' ), 'Family', 'Noche Buena exchanges with titos, titas and cousins, near or abroad.' ),
+	array( $hf( 'mm_aud_friends' ), 'Barkada &amp; class', 'Friends, org mates or classmates, all on one link.' ),
+), function ( $a ) { return ! empty( $a[0] ); } );
+
 $free = array(
 	array( 'fas fa-users',               'Unlimited members',          'Invite the whole office, family or barkada with one link.' ),
 	array( 'fas fa-shuffle',             'Fair, private shuffle',      'Nobody gets themselves, and only you can see your match.' ),
@@ -53,7 +75,8 @@ $faq = array(
 <div class="mm-home">
 <script>(function(d){var r=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;if(r||!('IntersectionObserver' in window))return;d.className+=' mm-anim';setTimeout(function(){if(!window.mmRevealReady)d.className+=' mm-reveal-all';},3000);})(document.documentElement);</script>
 
-	<section class="mmh-hero" data-mm-hero>
+	<section class="mmh-hero<?php echo $heroBg ? ' has-bg' : ''; ?>" data-mm-hero>
+		<?php echo $heroBg; ?>
 		<span class="mmh-hero__glow mmh-hero__glow--3" aria-hidden="true"></span>
 		<div class="mmh-wrap mmh-hero__grid">
 			<div class="mmh-hero__copy">
@@ -128,6 +151,22 @@ $faq = array(
 		</div>
 	</section>
 
+	<?php if ( $audience ) : ?>
+	<section class="mmh-section mmh-section--tight" id="who-its-for">
+		<div class="mmh-wrap">
+			<h2 class="mmh-h2" data-reveal>Made for every kind of group</h2>
+			<div class="mmh-aud">
+				<?php foreach ( array_values( $audience ) as $i => $a ) : ?>
+				<figure class="mmh-aud__card" data-reveal style="--d:<?php echo esc_attr( $i * 0.1 ); ?>s">
+					<?php echo wp_get_attachment_image( $a[0], 'large', false, array( 'class' => 'mmh-aud__img', 'loading' => 'lazy', 'decoding' => 'async', 'sizes' => '(min-width: 900px) 360px, 100vw' ) ); ?>
+					<figcaption><strong><?php echo $a[1]; ?></strong><span><?php echo $a[2]; ?></span></figcaption>
+				</figure>
+				<?php endforeach; ?>
+			</div>
+		</div>
+	</section>
+	<?php endif; ?>
+
 	<section class="mmh-section mmh-section--soft">
 		<div class="mmh-wrap">
 			<h2 class="mmh-h2" data-reveal>Everything you need, free</h2>
@@ -161,12 +200,15 @@ $faq = array(
 					<a href="<?php echo esc_url( home_url( '/monito-monita-themes/' ) ); ?>" class="mmh-drops__link">See 50+ theme ideas <i class="fas fa-arrow-right"></i></a>
 				</div>
 			</div>
-			<ol class="mmh-drops__line" data-reveal style="--d:.12s" aria-label="Example Weekly Drops">
+			<div class="mmh-drops__side" data-reveal style="--d:.12s">
+			<?php if ( $dropsImg ) echo wp_get_attachment_image( $dropsImg, 'large', false, array( 'class' => 'mmh-drops__img', 'loading' => 'lazy', 'decoding' => 'async', 'sizes' => '(min-width: 900px) 420px, 100vw' ) ); ?>
+			<ol class="mmh-drops__line" aria-label="Example Weekly Drops">
 				<li class="is-done"><span>Nov 28</span>Something sweet</li>
 				<li class="is-now"><span>Dec 5</span>Something soft</li>
 				<li><span>Dec 12</span>Something red</li>
 				<li class="is-final"><span>Dec 19</span>Main gift &amp; reveal</li>
 			</ol>
+			</div>
 		</div>
 	</section>
 
@@ -216,7 +258,8 @@ $faq = array(
 		</div>
 	</section>
 
-	<section class="mmh-final">
+	<section class="mmh-final<?php echo $finalBg ? ' has-bg' : ''; ?>">
+		<?php echo $finalBg; ?>
 		<div class="mmh-wrap mmh-center" data-reveal>
 			<h2>Ready for this year&rsquo;s exchange?</h2>
 			<p>Set it up in 2 minutes. Free forever.</p>
@@ -229,6 +272,9 @@ $faq = array(
 	</div>
 </div>
 
+<?php if ( strpos( $heroBg . $finalBg, 'data-mm-bgvideo' ) !== false ) : ?>
+<script>(function(){var c=navigator.connection,m=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;if(m||(c&&(c.saveData||/2g/.test(c.effectiveType||''))))return;var v=document.querySelectorAll('video[data-mm-bgvideo]');var go=function(el){if(el.src)return;el.src=el.getAttribute('data-mm-bgvideo');el.addEventListener('playing',function(){el.classList.add('is-playing');});var p=el.play();if(p&&p.catch)p.catch(function(){});};if(!('IntersectionObserver' in window)){[].forEach.call(v,go);return;}var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){go(e.target);e.target.play&&e.target.src&&e.target.play().catch(function(){});}else if(e.target.src){e.target.pause();}});},{rootMargin:'200px'});[].forEach.call(v,function(el){io.observe(el);});})();</script>
+<?php endif; ?>
 <script type="application/ld+json"><?php
 echo wp_json_encode( array(
 	'@context'   => 'https://schema.org',
