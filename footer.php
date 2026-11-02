@@ -33,6 +33,8 @@ if ( qed_get_option( 'is_testimonial_enabled', 'option' ) && qed_is_display_test
 			<?php get_template_part( 'templates/header/logo' ); ?>
 			<p>The free online Manito Manita and Secret Santa organizer for offices, families and barkadas.</p>
 			<a href="#create-group" class="mm-footer__cta" data-mm-track="create_group_click" data-mm-slot="footer">Create a free group</a>
+			<p class="mm-footer__follow-label">Follow us for gift ideas and party themes</p>
+			<?php echo Theme::socialLinks( 'footer', 'mm-social' ); ?>
 		</div>
 		<nav class="mm-footer__cols" aria-label="Footer">
 			<div>
@@ -58,6 +60,7 @@ if ( qed_get_option( 'is_testimonial_enabled', 'option' ) && qed_is_display_test
 				<h3>Help</h3>
 				<ul>
 					<li><a href="mailto:rouie@manitomanita.com">Contact us</a></li>
+					<li><a href="#ask-manito" data-mm-support-open>Ask Manito (help chat)</a></li>
 					<li><a href="<?php echo esc_url( home_url( '/privacy-policy/' ) ); ?>">Privacy Policy</a></li>
 					<li><a href="<?php echo esc_url( home_url( '/terms/' ) ); ?>">Terms of Use</a></li>
 				</ul>
@@ -71,6 +74,17 @@ if ( qed_get_option( 'is_testimonial_enabled', 'option' ) && qed_is_display_test
 		</div>
 	</div>
 </footer>
+<?php
+// "Ask Manito" help chat (SupportBot). The panel is filled by Theme.initSupport on first open.
+$mmPage = ( is_front_page() || is_page_template( 'template-homepage.php' ) || ( class_exists( 'Landing' ) && Landing::isActive() ) ) ? 'home'
+	: ( is_page( 23 ) ? 'group' : ( is_page_template( 'template-my-wishlist.php' ) ? 'wishlist' : 'other' ) );
+?>
+<div class="mm-support" data-mm-support data-page="<?php echo esc_attr( $mmPage ); ?>" data-suggest="<?php echo esc_attr( wp_json_encode( SupportBot::suggestions( $mmPage ) ) ); ?>" data-socials="<?php echo esc_attr( wp_json_encode( array_values( Theme::socials() ) ) ); ?>">
+	<button type="button" class="mm-support__fab" data-mm-support-open aria-label="Open help chat" aria-expanded="false">
+		<i class="fa-solid fa-comment-dots" aria-hidden="true"></i><span class="mm-support__hint">Need help?</span>
+	</button>
+	<div class="mm-support__panel" role="dialog" aria-modal="false" aria-label="Ask Manito help chat" hidden></div>
+</div>
 <input type="hidden" id="base-url" value="<?php echo home_url(); ?>">
 <input type="hidden" id="ajax-url" value="<?php echo admin_url('admin-ajax.php'); ?>">
 

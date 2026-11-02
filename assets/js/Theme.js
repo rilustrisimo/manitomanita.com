@@ -33,6 +33,7 @@ var Theme = {
         this.initQA($);
         this.initRepeat($);
         this.initMyWishlist($);
+        this.initSupport($);
         this.initHome($);
         this.initPasswordToggles($);
 
@@ -917,6 +918,176 @@ var Theme = {
                 if (btn.length) { $('html, body').animate({ scrollTop: btn.closest('.card').offset().top - 90 }, 300); btn.trigger('click'); }
             }, 900);
         }
+    },
+
+    /* ---------- Ask Manito: help chat (SupportBot) + social follow tracking ---------- */
+
+    initSupport: function($){
+        // Every follow button on the site (footer, homepage, See Match, wishlist, chat)
+        $(document).off('click.mmSocial').on('click.mmSocial', '[data-mm-social]', function(){
+            Theme.track('social_click', { network: $(this).attr('data-mm-social'), slot: $(this).attr('data-mm-slot') || '' });
+        });
+
+        var root = $('[data-mm-support]');
+        if (!root.length) return;
+
+        var ajax = $('#ajax-url').val(), page = root.attr('data-page') || 'other',
+            panel = root.find('.mm-support__panel'), fab = root.find('.mm-support__fab'),
+            suggest = [], socials = [], built = false, busy = false, store = 'mm_support_v1',
+            state = { cid: 0, key: '', msgs: [], social: false, at: 0 };
+        try { suggest = JSON.parse(root.attr('data-suggest') || '[]'); socials = JSON.parse(root.attr('data-socials') || '[]'); } catch (e) {}
+        try { var saved = JSON.parse(localStorage.getItem(store) || 'null'); if (saved && saved.at > Date.now() - 7 * 864e5) state = saved; } catch (e) {}
+        var save = function(){ state.at = Date.now(); state.msgs = state.msgs.slice(-40); try { localStorage.setItem(store, JSON.stringify(state)); } catch (e) {} };
+        var plain = function(h){ return $('<div>').html(h || '').text(); };
+
+        // **bold**, "- " lists, links (site pages and our socials), line breaks
+        var fmt = function(text){
+            var out = [], list = [];
+            var line = function(l){
+                l = Theme.esc(plain(l)).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+                return l.replace(/(https?:\/\/[^\s<]+|(?:www\.)?(?:manitomanita\.com|facebook\.com|instagram\.com|tiktok\.com)\/[^\s<]*)/gi, function(u){
+                    var href = /^https?:/i.test(u) ? u : 'https://' + u, ours = /manitomanita\.com/i.test(href);
+                    return '<a href="' + href.replace(/[.,)]+$/, '') + '"' + (ours ? '' : ' target="_blank" rel="noopener"') + '>' + u + '</a>';
+                });
+            };
+            String(text || '').split(/\n/).forEach(function(l){
+                if (/^\s*[-*]\s+/.test(l)) { list.push('<li>' + line(l.replace(/^\s*[-*]\s+/, '')) + '</li>'); return; }
+                if (list.length) { out.push('<ul>' + list.join('') + '</ul>'); list = []; }
+                if ($.trim(l)) out.push('<p>' + line(l) + '</p>');
+            });
+            if (list.length) out.push('<ul>' + list.join('') + '</ul>');
+            return out.join('');
+        };
+
+        var socialHtml = function(cls){
+            return '<div class="' + cls + '">' + socials.map(function(s){
+                return '<a href="' + Theme.esc(s[1]) + '" target="_blank" rel="noopener" data-mm-social="' + Theme.esc(s[0].toLowerCase()) + '" data-mm-slot="chat" aria-label="' + Theme.esc(s[0]) + '"><i class="' + Theme.esc(s[2]) + '" aria-hidden="true"></i><span>' + Theme.esc(s[0]) + '</span></a>';
+            }).join('') + '</div>';
+        };
+
+        var list, chips, input;
+        var scroll = function(){ list.scrollTop(list[0].scrollHeight); };
+        var setChips = function(qs){
+            chips.html((qs || []).map(function(q){ return '<button type="button" data-mm-sq>' + Theme.esc(q) + '</button>'; }).join('')).prop('hidden', !(qs && qs.length));
+        };
+        var bubble = function(m, i){
+            var bot = m.r === 'b';
+            var html = '<div class="mm-support__msg mm-support__msg--' + (bot ? 'bot' : 'me') + '" data-i="' + i + '"><div class="mm-support__bubble">' + (bot ? fmt(m.t) : '<p>' + Theme.esc(m.t) + '</p>') + '</div>';
+            if (bot && m.turn !== undefined && m.turn !== null) {
+                html += '<div class="mm-support__vote"' + (m.vote ? ' data-voted="' + m.vote + '"' : '') + '>' +
+                    '<button type="button" data-mm-vote="up" aria-label="Helpful"' + (m.vote === 'up' ? ' class="is-on"' : '') + '><i class="fa-regular fa-thumbs-up"></i></button>' +
+                    '<button type="button" data-mm-vote="down" aria-label="Not helpful"' + (m.vote === 'down' ? ' class="is-on"' : '') + '><i class="fa-regular fa-thumbs-down"></i></button></div>';
+            }
+            if (bot && m.handoff) html += '<button type="button" class="mm-support__person" data-mm-handoff><i class="fa-solid fa-envelope"></i> Talk to a person</button>';
+            if (m.social) html += '<div class="mm-support__social-card"><p><b>Glad that helped!</b> Follow us for gift ideas and party themes.</p>' + socialHtml('mm-support__social') + '</div>';
+            return html + '</div>';
+        };
+        var render = function(){
+            list.html('<div class="mm-support__msg mm-support__msg--bot"><div class="mm-support__bubble"><p>Hi! I\u2019m <b>Manito</b>. Ask me anything about creating a group, joining, the shuffle, wishlists or PRO.</p></div></div>' +
+                state.msgs.map(bubble).join(''));
+            scroll();
+        };
+        var maybeSocial = function(){
+            if (state.social) return;
+            var answered = state.msgs.filter(function(m){ return m.r === 'b' && m.turn !== undefined; }).length;
+            var liked = state.msgs.some(function(m){ return m.vote === 'up'; });
+            if (liked || answered >= 3) { state.social = true; state.msgs[state.msgs.length - 1].social = true; }
+        };
+
+        var ask = function(q, via){
+            q = $.trim(q);
+            if (!q || busy) return;
+            busy = true;
+            state.msgs.push({ r: 'u', t: q });
+            save(); render(); setChips([]);
+            list.append('<div class="mm-support__msg mm-support__msg--bot mm-support__typing"><div class="mm-support__bubble"><span></span><span></span><span></span></div></div>'); scroll();
+            Theme.track('support_ask', { via: via || 'typed', page: page });
+
+            $.post(ajax, { action: 'mm_support_ask', q: q, page: page, cid: state.cid, key: state.key }).done(function(r){
+                if (r && r.success) {
+                    state.cid = r.data.cid; state.key = r.data.key;
+                    state.msgs.push({ r: 'b', t: r.data.answer, turn: r.data.turn, handoff: r.data.handoff });
+                    maybeSocial();
+                    setChips(r.data.followups && r.data.followups.length ? r.data.followups : suggest);
+                } else {
+                    state.msgs.push({ r: 'b', t: plain(r && r.data) || 'Something went wrong. Please try again.', handoff: true });
+                    setChips(suggest);
+                }
+            }).fail(function(){
+                state.msgs.push({ r: 'b', t: 'I couldn\u2019t connect. Please check your internet and try again.' });
+                setChips(suggest);
+            }).always(function(){ busy = false; save(); render(); input.trigger('focus'); });
+        };
+
+        var handoffForm = function(){
+            if (panel.find('.mm-support__form').length) return;
+            var lastQ = ''; state.msgs.slice().reverse().some(function(m){ if (m.r === 'u') { lastQ = m.t; return true; } return false; });
+            list.append('<form class="mm-support__form" novalidate><p><b>Talk to a person</b><br>Leave your email and Rouie will reply, usually within a day.</p>' +
+                '<input type="text" name="name" maxlength="60" placeholder="Your name (optional)" autocomplete="name">' +
+                '<input type="email" name="email" maxlength="120" placeholder="Your email" autocomplete="email" required>' +
+                '<textarea name="message" rows="3" maxlength="1500" placeholder="How can we help?">' + Theme.esc(lastQ) + '</textarea>' +
+                '<input type="text" name="website" class="mm-support__hp" tabindex="-1" autocomplete="off" aria-hidden="true">' +
+                '<p class="mm-support__formmsg" role="status"></p>' +
+                '<div class="mm-support__formacts"><button type="button" class="mm-support__link" data-mm-handoff-cancel>Cancel</button><button type="submit" class="mm-support__send2">Send</button></div></form>');
+            panel.find('.mm-support__form input[name="email"]').trigger('focus'); scroll();
+        };
+
+        var build = function(){
+            if (built) return;
+            built = true;
+            panel.html('<div class="mm-support__head"><span class="mm-support__avatar"><i class="fa-solid fa-gift"></i></span><div><strong>Ask Manito</strong><small>Help with Manito Manita &middot; usually instant</small></div>' +
+                '<button type="button" class="mm-support__close" data-mm-support-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>' +
+                '<div class="mm-support__list" aria-live="polite"></div>' +
+                '<div class="mm-support__chips"></div>' +
+                '<form class="mm-support__composer"><textarea rows="1" maxlength="500" placeholder="Type your question\u2026" aria-label="Your question"></textarea><button type="submit" aria-label="Send"><i class="fa-solid fa-paper-plane"></i></button></form>' +
+                '<div class="mm-support__foot"><button type="button" class="mm-support__link" data-mm-handoff>Talk to a person</button>' + socialHtml('mm-support__icons') + '</div>' +
+                '<p class="mm-support__note">Please don\u2019t share passwords or personal details.</p>');
+            list = panel.find('.mm-support__list'); chips = panel.find('.mm-support__chips'); input = panel.find('.mm-support__composer textarea');
+            render();
+            setChips(suggest);
+
+            panel.on('click', '[data-mm-sq]', function(){ ask($(this).text(), 'chip'); });
+            panel.on('submit', '.mm-support__composer', function(e){ e.preventDefault(); var v = input.val(); input.val('').css('height', ''); ask(v, 'typed'); });
+            input.on('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); panel.find('.mm-support__composer').trigger('submit'); } })
+                 .on('input', function(){ this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 110) + 'px'; });
+            panel.on('click', '[data-mm-support-close]', function(){ toggle(false); });
+            panel.on('click', '[data-mm-handoff]', function(){ handoffForm(); Theme.track('support_handoff_open', { page: page }); });
+            panel.on('click', '[data-mm-handoff-cancel]', function(){ $(this).closest('form').remove(); });
+            panel.on('click', '[data-mm-vote]', function(){
+                var b = $(this), i = parseInt(b.closest('.mm-support__msg').attr('data-i'), 10), m = state.msgs[i], v = b.attr('data-mm-vote');
+                if (!m || m.vote) return;
+                m.vote = v;
+                $.post(ajax, { action: 'mm_support_vote', cid: state.cid, key: state.key, turn: m.turn, vote: v });
+                Theme.track('support_vote', { vote: v });
+                if (v === 'down') { m.handoff = true; } else { maybeSocial(); }
+                save(); render();
+            });
+            panel.on('submit', '.mm-support__form', function(e){
+                e.preventDefault();
+                var f = $(this), msg = f.find('.mm-support__formmsg'), btn = f.find('button[type="submit"]').prop('disabled', true);
+                $.post(ajax, { action: 'mm_support_handoff', cid: state.cid, key: state.key, page: page, name: f.find('[name="name"]').val(), email: f.find('[name="email"]').val(), message: f.find('[name="message"]').val(), website: f.find('[name="website"]').val() })
+                    .done(function(r){
+                        if (r && r.success) {
+                            if (r.data && r.data.cid) { state.cid = r.data.cid; state.key = r.data.key; }
+                            f.remove();
+                            state.msgs.push({ r: 'b', t: plain(r.data && r.data.message) || 'Thanks! We\u2019ll reply by email.' });
+                            save(); render();
+                            Theme.track('support_handoff', { page: page });
+                        } else { msg.addClass('is-error').text(plain(r && r.data)); btn.prop('disabled', false); }
+                    }).fail(function(){ msg.addClass('is-error').text('Network error. Please try again.'); btn.prop('disabled', false); });
+            });
+        };
+
+        var toggle = function(open){
+            if (open) { build(); panel.prop('hidden', false); root.addClass('is-open'); fab.attr('aria-expanded', 'true'); setTimeout(function(){ input.trigger('focus'); scroll(); }, 50); Theme.track('support_open', { page: page }); }
+            else { panel.prop('hidden', true); root.removeClass('is-open'); fab.attr('aria-expanded', 'false'); }
+        };
+
+        $(document).off('click.mmSupport').on('click.mmSupport', '[data-mm-support-open]', function(e){ e.preventDefault(); toggle(panel.prop('hidden')); });
+        $(document).off('keydown.mmSupport').on('keydown.mmSupport', function(e){ if (e.key === 'Escape' && !panel.prop('hidden')) toggle(false); });
+
+        // "Need help?" label on the first visits only
+        try { if (!localStorage.getItem('mm_support_hint')) { root.addClass('show-hint'); localStorage.setItem('mm_support_hint', '1'); setTimeout(function(){ root.removeClass('show-hint'); }, 7000); } } catch (e) {}
     },
 
     /* ---------- My Wishlist (template-my-wishlist.php, MyWishlist class) ---------- */

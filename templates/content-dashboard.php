@@ -83,7 +83,7 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
                         </div>
                         <div class="body-dash">
                             <?php if(!empty($fields['matched'])): ?>
-                            <div class="mm-dash-status is-matched"><i class="fas fa-gift"></i><div><strong>The group has been shuffled!</strong> Tap <em>See Match</em> on your name to see who you&rsquo;re giving a gift to.</div></div>
+                            <div class="mm-dash-status is-matched"><i class="fas fa-gift"></i><div><strong>The group has been shuffled!</strong> Tap <em>See Match</em> on your name to see who you&rsquo;re giving a gift to. <span class="mm-dash-follow">Need gift ideas? Follow us on <?php $mmF = array(); foreach ( Theme::socials() as $mmK => $mmS ) $mmF[] = '<a href="' . esc_url( $mmS[1] ) . '" target="_blank" rel="noopener" data-mm-social="' . $mmK . '" data-mm-slot="dashboard">' . esc_html( $mmS[0] ) . '</a>'; echo implode( ', ', $mmF ); ?>.</span></div></div>
                             <?php else: ?>
                             <div class="mm-dash-status"><i class="far fa-clock"></i><div><strong>Waiting for the shuffle.</strong> Find your name below and add your wishlist. <em>See Match</em> unlocks once the organizer shuffles the group.</div></div>
                             <?php endif; ?>

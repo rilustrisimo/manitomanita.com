@@ -1366,3 +1366,8 @@
     text-decoration: underline;
     text-underline-offset: 3px;
 }
+
+.mm-match .mm-match__social {
+    justify-content: center;
+    margin-top: 10px;
+}

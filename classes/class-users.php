@@ -506,8 +506,8 @@ class Users extends Theme {
 
         /** FOOTER */
         echo '<div class="mm-match__footer">';
-        echo '    <p>Thank you for using Manito<span>Manita</span>! Support us by liking and sharing our Facebook page.</p>';
-        echo '    <iframe src="https://www.facebook.com/plugins/like.php?href=https%3A%2F%2Fwww.facebook.com%2Fmanitomanitaph&width=450&layout=standard&action=like&size=large&show_faces=false&share=true&height=35&appId=62030021851" width="264" height="60" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe>';
+        echo '    <p>Thank you for using Manito<span>Manita</span>! Follow us for gift ideas and party themes.</p>';
+        echo      Theme::socialLinks('match', 'mm-social mm-match__social');
         echo '</div>';
 
         echo '</div>';

@@ -276,6 +276,8 @@ $faq = array(
 			<h2>Ready for this year&rsquo;s exchange?</h2>
 			<p>Set it up in 2 minutes. Free forever.</p>
 			<a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="final">Create a free group</a>
+			<p class="mmh-follow">Follow us for gift ideas, party themes and Monito Monita tips</p>
+			<?php echo Theme::socialLinks( 'home', 'mm-social mmh-follow__links' ); ?>
 		</div>
 	</section>
 

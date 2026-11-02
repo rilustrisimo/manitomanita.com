@@ -40,5 +40,7 @@ defined( 'ABSPATH' ) || die();
             <a href="#" id="try-pro-btn" class="mm-upsell__btn mm-upsell__btn--gold">See PRO, &#8369;199 one-time</a>
             <a href="#" class="mm-upsell__btn mm-upsell__btn--ghost" data-mm-close>Maybe later</a>
         </div>
+        <p class="mm-upsell__follow">Follow us for party theme and gift ideas</p>
+        <?php echo Theme::socialLinks( 'welcome', 'mm-social mm-upsell__social' ); ?>
     </div>
 </div>

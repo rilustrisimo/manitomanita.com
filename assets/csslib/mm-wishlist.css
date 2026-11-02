@@ -472,3 +472,18 @@
         gap: 8px;
     }
 }
+
+.mm-wl .mm-wl-follow {
+    margin-top: 22px;
+    text-align: center;
+}
+
+.mm-wl .mm-wl-follow p {
+    margin: 0 0 10px !important;
+    color: var(--wl-text);
+    font-size: 14px;
+}
+
+.mm-wl .mm-wl-follow .mm-social {
+    justify-content: center;
+}

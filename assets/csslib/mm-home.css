@@ -1575,3 +1575,24 @@
         justify-content: center;
     }
 }
+
+/* Follow us (final band, dark background) */
+.mm-home .mmh-follow {
+    margin: 26px 0 10px !important;
+    color: rgba(255, 255, 255, .72);
+    font-size: 14px;
+}
+
+.mm-home .mmh-follow__links {
+    justify-content: center;
+}
+
+.mm-home .mmh-final .mm-social__btn {
+    border-color: rgba(255, 255, 255, .25);
+    background: transparent;
+    color: #fff !important;
+}
+
+.mm-home .mmh-final .mm-social__btn i {
+    color: #fff;
+}

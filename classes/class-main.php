@@ -63,7 +63,7 @@ class Theme {
     
 
     function __autoload() {
-        $classes = array('affiliate', 'captcha', 'emails', 'email-check', 'seo', 'landing', 'themes', 'qa', 'gift-ai', 'involve', 'payments', 'groups', 'group-extras', 'repeat', 'my-wishlist', 'season', 'logs', 'users', 'wishlists');
+        $classes = array('affiliate', 'captcha', 'emails', 'email-check', 'seo', 'landing', 'themes', 'qa', 'gift-ai', 'involve', 'payments', 'groups', 'group-extras', 'repeat', 'my-wishlist', 'season', 'support-bot', 'logs', 'users', 'wishlists');
 
         foreach($classes as $value){
             require_once PARENT_DIR . '/classes/class-'. $value .'.php';
@@ -119,6 +119,27 @@ class Theme {
      * Never save those from a form: PRO status, credits, payment, matches and links are set by code
      * (Payments, the PRO tools, the shuffle). Without this, editing the form could give free PRO.
      */
+    /**
+     * Official social accounts (footer, homepage, See Match, emails, chat, SEO sameAs).
+     * key => array( label, url, Font Awesome icon )
+     */
+    public static function socials(){
+        return array(
+            'facebook'  => array('Facebook', 'https://www.facebook.com/manitomanitaph', 'fa-brands fa-facebook-f'),
+            'instagram' => array('Instagram', 'https://www.instagram.com/manitomanita', 'fa-brands fa-instagram'),
+            'tiktok'    => array('TikTok', 'https://www.tiktok.com/@manitomanitaph', 'fa-brands fa-tiktok'),
+        );
+    }
+
+    /** Follow buttons; $slot is the GA4 placement (footer, home, match, wishlist, chat...). */
+    public static function socialLinks($slot, $class = 'mm-social'){
+        $html = '<div class="'.esc_attr($class).'">';
+        foreach(self::socials() as $key => $s){
+            $html .= '<a href="'.esc_url($s[1]).'" target="_blank" rel="noopener" class="'.esc_attr($class).'__btn '.esc_attr($class).'__btn--'.$key.'" data-mm-social="'.$key.'" data-mm-slot="'.esc_attr($slot).'" aria-label="'.esc_attr($s[0]).'"><i class="'.esc_attr($s[2]).'" aria-hidden="true"></i><span>'.esc_html($s[0]).'</span></a>';
+        }
+        return $html.'</div>';
+    }
+
     public function protectHiddenFields(){
         if(is_admin() || empty($_POST['acf']) || !is_array($_POST['acf'])) return;
 

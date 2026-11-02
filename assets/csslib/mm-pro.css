@@ -1498,3 +1498,14 @@
 .mm-prot-sheet ul.mm-coorg-how li {
     line-height: 1.4;
 }
+
+.mm-upsell__follow {
+    margin: 18px 0 8px !important;
+    color: #6d6d6d;
+    font-size: 13px;
+    text-align: center;
+}
+
+.mm-upsell .mm-upsell__social {
+    justify-content: center;
+}

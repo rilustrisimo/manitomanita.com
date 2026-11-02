@@ -205,6 +205,7 @@ if ( $wlId ) {
 					<a class="mm-wl-btn mm-wl-btn--dark" href="<?php echo esc_url( home_url( '/my-wishlist/' ) ); ?>" data-mm-track="wishlist_cta" data-mm-slot="shared-wishlist">Create mine</a>
 				</div>
 				<p class="mm-wl-group">Doing a gift exchange? <a href="<?php echo esc_url( home_url( '/' ) ); ?>">Draw names with Manito Manita</a>.</p>
+				<div class="mm-wl-follow"><p>Follow us for gift ideas</p><?php echo Theme::socialLinks( 'wishlist', 'mm-social' ); ?></div>
 			</div>
 		</section>
 		<?php

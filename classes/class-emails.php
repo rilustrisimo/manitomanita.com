@@ -130,6 +130,9 @@ class Emails {
         $foot = $o['footer'] ?? 'You&rsquo;re getting this email because of a Manito Manita gift exchange group.';
         $html .= '<tr><td style="padding:18px 12px 4px;text-align:center;font-family:' . $f . ';font-size:12px;line-height:1.6;color:#8a8a8a;">';
         $html .= $foot . '<br>Manito Manita &middot; free online gift exchange &middot; <a href="' . esc_url( home_url( '/' ) ) . '" style="color:#8a8a8a;">manitomanita.com</a>';
+        $follow = array();
+        foreach ( Theme::socials() as $s ) $follow[] = '<a href="' . esc_url( $s[1] ) . '" style="color:#8a8a8a;">' . esc_html( $s[0] ) . '</a>';
+        $html .= '<br>Follow us: ' . implode( ' &middot; ', $follow );
         if ( ! empty( $o['unsubscribe'] ) ) {
             $html .= '<br><a href="' . esc_url( self::unsubUrl( $o['unsubscribe'] ) ) . '" style="color:#8a8a8a;">Unsubscribe from reminders</a>';
         }
@@ -169,6 +172,7 @@ class Emails {
         if ( ! empty( $o['button'] ) ) $lines[] = $o['button'][0] . ': ' . $o['button'][1];
         if ( ! empty( $o['note'] ) ) $lines[] = html_entity_decode( wp_strip_all_tags( $o['note'] ), ENT_QUOTES, 'UTF-8' );
         $lines[] = "--\nManito Manita, free online gift exchange: " . home_url( '/' );
+        foreach ( Theme::socials() as $s ) $lines[] = $s[0] . ': ' . $s[1];
         if ( ! empty( $o['unsubscribe'] ) ) $lines[] = 'Unsubscribe from reminders: ' . self::unsubUrl( $o['unsubscribe'] );
 
         return implode( "\n\n", array_filter( $lines ) );

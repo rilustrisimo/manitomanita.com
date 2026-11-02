@@ -133,7 +133,7 @@ class SEO {
                     'name'   => 'Manito Manita',
                     'url'    => $home,
                     'logo'   => get_template_directory_uri() . '/assets/images/logo.png',
-                    'sameAs' => array( self::FACEBOOK ),
+                    'sameAs' => array_values( wp_list_pluck( Theme::socials(), 1 ) ),
                 ),
                 array(
                     '@type'               => 'WebApplication',
@@ -196,7 +196,12 @@ class SEO {
         echo "- [Home and group creation]({$home})\n";
         echo "- [How it works]({$home}#how-it-works)\n";
         echo "- [Free vs PRO]({$home}#pro)\n";
-        echo "- [FAQ]({$home}#faq)\n\n";
+        echo "- [FAQ]({$home}#faq)\n";
+        echo "- [My Wishlist (personal, any occasion)]({$home}my-wishlist/)\n";
+        echo "- Help: the \"Ask Manito\" chat on every page answers questions about the site\n\n";
+        echo "## Social\n\n";
+        foreach ( Theme::socials() as $s ) echo '- [' . $s[0] . '](' . $s[1] . ")\n";
+        echo "\n";
         echo "## Terms\n\n";
         echo "Monito Monita / Manito Manita is the Filipino name for Secret Santa, often with weekly themed gifts in December. Kris Kringle is the name used in the Philippines, Australia and Ireland.\n";
         exit;

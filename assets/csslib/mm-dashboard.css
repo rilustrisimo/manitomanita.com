@@ -2399,3 +2399,13 @@ body.pro-version:not(.mm-gtheme) .dashboard .dashboard__gd .mm-coorg i {
 .dashboard .mm-repeat-card + .mm-themes {
     margin-top: 2px;
 }
+
+.mm-dash-status .mm-dash-follow {
+    display: inline;
+    color: var(--mm-text);
+}
+
+.mm-dash-status .mm-dash-follow a {
+    color: var(--mm-accent-dark);
+    font-weight: 700;
+}
