@@ -42,7 +42,7 @@ $pro = (isset($fields['pro']))?$fields['pro']:false;
 </div>
 <?php endif; ?>
 <div class="loader-overlay" style="background:#1b1b1b;display:none;"><img src="<?php echo 
-get_template_directory_uri().'/assets/images/loader.gif'; ?>"></div>
+get_template_directory_uri().'/assets/images/loader.gif'; ?>" loading="lazy" alt=""></div>
 <!-- Loader Overlay -->
 <div id="loader-overlay-paypal" style="display: none;">
     <div class="loader"></div>

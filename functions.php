@@ -105,7 +105,7 @@ function mm_scripts_to_footer() {
 
 add_filter( 'style_loader_tag', 'mm_async_popup_styles', 10, 2 );
 function mm_async_popup_styles( $tag, $handle ) {
-	static $popup = array( 'fontawesome', 'icons-font-daf285204f208daff44cf703ef74f361', 'fancybox', 'jquery-ui', 'bxslider', 'bootstrap-select', 'acf-global', 'acf-input', 'acf-pro-input', 'select2', 'acf-datepicker', 'acf-timepicker', 'wp-color-picker', 'chaty-front-css', 'mm-forms', 'mm-match', 'mm-dashboard', 'mm-pro' );
+	static $popup = array( 'dashicons', 'fontawesome', 'icons-font-daf285204f208daff44cf703ef74f361', 'fancybox', 'jquery-ui', 'bxslider', 'bootstrap-select', 'acf-global', 'acf-input', 'acf-pro-input', 'select2', 'acf-datepicker', 'acf-timepicker', 'wp-color-picker', 'chaty-front-css', 'mm-forms', 'mm-match', 'mm-dashboard', 'mm-pro' );
 	if ( ! in_array( $handle, $popup, true ) || ! mm_is_marketing_page() || strpos( $tag, "media='all'" ) === false ) return $tag;
 	return str_replace( "media='all'", "media='print' onload=\"this.media='all'\"", $tag ) . '<noscript>' . $tag . '</noscript>';
 }
