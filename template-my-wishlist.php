@@ -13,14 +13,15 @@
 
 defined( 'ABSPATH' ) || die();
 
-$slug = get_query_var( 'mm_wl' );
-$id = $slug ? MyWishlist::bySlug( $slug ) : 0;
+// Prefixed names: this file runs at global scope and WordPress sets a global $id while building the header.
+$wlSlug = get_query_var( 'mm_wl' );
+$wlId = $wlSlug ? MyWishlist::bySlug( $wlSlug ) : 0;
 
 // Personal and changing (owner editor, live reservations): never cached by LiteSpeed or the CDN.
 nocache_headers();
 do_action( 'litespeed_control_set_nocache', 'my wishlist' );
 
-if ( $slug && ! $id ) status_header( 404 );
+if ( $wlSlug && ! $wlId ) status_header( 404 );
 
 get_header();
 
@@ -38,7 +39,7 @@ $hero = function ( $eyebrow, $title, $lead ) { ?>
 echo '<div class="mm-home mm-landing mm-wl">';
 
 /* ---------------------------------------------------------------- Not found */
-if ( $slug && ! $id ) {
+if ( $wlSlug && ! $wlId ) {
 	$hero( 'My Wishlist', 'This wishlist isn&rsquo;t available', 'The link may be mistyped, or the owner removed it.' );
 	echo '<section class="mmh-section"><div class="mmh-wrap mmh-wrap--narrow mmh-center"><a class="mmh-btn mmh-btn--primary" href="' . esc_url( home_url( '/my-wishlist/' ) ) . '">Make your own wishlist</a></div></section>';
 	echo '</div>';
@@ -47,13 +48,13 @@ if ( $slug && ! $id ) {
 }
 
 /* ---------------------------------------------------------------- A shared wishlist */
-if ( $id ) {
-	$name = MyWishlist::name( $id );
-	$items = MyWishlist::items( $id );
-	$note = (string) get_post_meta( $id, '_mm_wl_note', true );
-	$owner = MyWishlist::isOwner( $id );
+if ( $wlId ) {
+	$name = MyWishlist::name( $wlId );
+	$items = MyWishlist::items( $wlId );
+	$note = (string) get_post_meta( $wlId, '_mm_wl_note', true );
+	$owner = MyWishlist::isOwner( $wlId );
 	$preview = $owner && isset( $_GET['preview'] );
-	$link = MyWishlist::url( $id );
+	$link = MyWishlist::url( $wlId );
 
 	if ( $owner && ! $preview ) {
 		/* ----- Owner: share box + editor ----- */
@@ -90,8 +91,8 @@ if ( $id ) {
 				<div class="mm-match mm-edit mm-wl-edit">
 				<form class="mm-edit__form" novalidate data-mm-wl-editor data-config="<?php echo esc_attr( wp_json_encode( $config ) ); ?>">
 					<input type="hidden" name="action" value="mm_wl_save">
-					<input type="hidden" name="id" value="<?php echo (int) $id; ?>">
-					<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'mm_wl_' . $id ) ); ?>">
+					<input type="hidden" name="id" value="<?php echo (int) $wlId; ?>">
+					<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'mm_wl_' . $wlId ) ); ?>">
 
 					<section class="mm-sec">
 						<h3 class="mm-sec__title"><i class="fas fa-user"></i> ABOUT<span>&nbsp;YOU</span></h3>
@@ -149,14 +150,14 @@ if ( $id ) {
 
 				<div class="mm-wl-account">
 					<button type="button" class="mm-wl-link" data-mm-wl-logout>Log out</button>
-					<button type="button" class="mm-wl-link mm-wl-link--danger" data-mm-wl-delete data-id="<?php echo (int) $id; ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'mm_wl_' . $id ) ); ?>">Delete my wishlist</button>
+					<button type="button" class="mm-wl-link mm-wl-link--danger" data-mm-wl-delete data-id="<?php echo (int) $wlId; ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'mm_wl_' . $wlId ) ); ?>">Delete my wishlist</button>
 				</div>
 			</div>
 		</section>
 		<?php
 	} else {
 		/* ----- Friends (and the owner's preview) ----- */
-		$res = $preview ? array() : MyWishlist::reservations( $id );
+		$res = $preview ? array() : MyWishlist::reservations( $wlId );
 		$count = count( $items );
 		$hero( 'Wishlist', esc_html( $name ) . '&rsquo;s <span>wishlist</span>', $note !== '' ? esc_html( $note ) : ( $count ? 'Pick something you think they&rsquo;ll love. Tap &ldquo;I&rsquo;ll get this&rdquo; so nobody buys the same gift.' : '' ) );
 		?>
@@ -167,7 +168,7 @@ if ( $id ) {
 				<?php endif; ?>
 				<div class="mm-match">
 					<?php if ( $items ) : ?>
-					<ol class="mm-wish mm-wl-list" data-mm-wl-list data-id="<?php echo (int) $id; ?>">
+					<ol class="mm-wish mm-wl-list" data-mm-wl-list data-id="<?php echo (int) $wlId; ?>">
 						<?php foreach ( $items as $i => $w ) :
 							$key = substr( md5( strtolower( trim( (string) $w['wishlist_description'] ) ) ), 0, 12 );
 							$taken = isset( $res[ $key ] ); ?>
