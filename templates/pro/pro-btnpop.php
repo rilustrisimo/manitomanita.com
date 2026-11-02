@@ -35,6 +35,7 @@ $mm_stats = Groups::siteStats();
         <ul class="mm-upsell__list">
             <li data-reason="exclude"><i class="fa-solid fa-user-slash"></i><span><b>Exclusions:</b> couples or family won&rsquo;t get each other</span></li>
             <li data-reason="themes"><i class="fa-solid fa-gift"></i><span><b>Weekly Drops:</b> an optional themed mini-gift each week, plus a fun reveal</span></li>
+            <li data-reason="qa"><i class="fa-solid fa-user-secret"></i><span><b>Anonymous Q&amp;A:</b> members ask their match questions without revealing themselves</span></li>
             <li data-reason="unshuffle"><i class="fa-solid fa-rotate-left"></i><span><b>Unshuffle</b> so late joiners can get in, then shuffle again <em>(3 included)</em></span></li>
             <li data-reason="remind"><i class="fa-solid fa-bell"></i><span><b>Reminders and auto-shuffle</b> on the date you pick</span></li>
             <li data-reason="status"><i class="fa-solid fa-list-check"></i><span><b>Gift status:</b> see who has bought or given</span></li>

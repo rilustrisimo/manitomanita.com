@@ -393,6 +393,9 @@ class Users extends Theme {
         echo '    </div>';
         echo '</div>';
 
+        /** QUESTIONS FROM THEIR OWN SECRET SANTA (private: only for the member themselves) */
+        if($this->isVerifiedMember($uid)) echo QA::inboxSection($uid);
+
         /** GIFT STATUS (only for the member themselves; the moderator's PRO board shows the totals) */
         if($this->isVerifiedMember($uid)){
             if(!get_post_meta($uid, '_mm_match_viewed', true)) update_post_meta($uid, '_mm_match_viewed', time());
@@ -444,8 +447,10 @@ class Users extends Theme {
             ? Affiliate::giftIdeasHtml($gid, 'ai-gift-ideas', false, $aiIdeas, 'Picked for '.esc_html($pairName).' from their wishlist')
             : Affiliate::giftIdeasHtml($gid, 'match-gift-ideas');
 
-        /** One quiet PRO line for free groups (members can gift PRO to the group) */
-        if(!$pro){
+        /** ASK ANONYMOUSLY (PRO; free groups get a locked teaser that opens Gift PRO) */
+        if($this->isVerifiedMember($uid)){
+            echo QA::askSection($uid, $pair, $gid);
+        } elseif(!$pro){
             echo '<p class="mm-match-pro"><i class="fa-solid fa-star" aria-hidden="true"></i> <span>Want <b>Weekly Drops</b>, reminders and a reveal at the end?</span> <button type="button" data-mm-upsell="gift">Gift PRO to the group</button></p>';
         }
 

@@ -892,6 +892,7 @@ class Groups extends Theme {
         foreach(self::memberIds($gid) as $uid){
             delete_post_meta($uid, '_mm_gift_status');
             delete_post_meta($uid, '_mm_match_viewed');
+            QA::clear($uid); // questions belong to the old matches
             update_field('pair', '', $uid);
 
             if(!$notify || !EmailCheck::isConfirmed($uid)) continue;
@@ -1445,6 +1446,7 @@ class Groups extends Theme {
                 return array('result' => false, 'message' => 'Pair Update Failed for User ID: '.$userId);
             }
             delete_post_meta($userId, '_mm_match_viewed'); // a new match has to be opened again
+            QA::clear($userId);
         }
 
         $this->setEmailForMembers($gid);

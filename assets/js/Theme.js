@@ -30,6 +30,7 @@ var Theme = {
         this.initFormAlerts($);
         this.initTurnstile($);
         this.initGiftStatus($);
+        this.initQA($);
         this.initHome($);
         this.initPasswordToggles($);
 
@@ -869,6 +870,50 @@ var Theme = {
         });
     },
 
+    /**
+     * Anonymous Q&A on See Match (markup: QA::askSection / QA::inboxSection). Each send replaces its
+     * section with the fresh HTML from the server. ?qa=<member id> (from the emails) opens that
+     * member's password prompt for See Match.
+     */
+    initQA: function($){
+        $(document).off('click.mmQaChip').on('click.mmQaChip', '[data-mm-qa-chip]', function(){
+            var box = $(this).closest('form').find('textarea');
+            box.val($('<div>').html($(this).html()).text()).trigger('focus');
+        });
+
+        $(document).off('submit.mmQa').on('submit.mmQa', '[data-mm-qa-ask], [data-mm-qa-answer]', function(e){
+            e.preventDefault();
+            var form = $(this), sec = form.closest('[data-mm-qa]'), asking = form.is('[data-mm-qa-ask]');
+            var text = $.trim(form.find('textarea').val()), btn = form.find('button[type=submit]');
+            if (text.length < (asking ? 3 : 1)) { Theme.toast(asking ? 'Please type a question.' : 'Please type your answer.', 'error'); return; }
+
+            btn.prop('disabled', true).addClass('is-loading');
+            var data = { action: asking ? 'mm_qa_ask' : 'mm_qa_answer', uid: sec.attr('data-uid'), nonce: sec.attr('data-nonce') };
+            if (asking) { data.q = text; } else { data.a = text; data.qid = form.attr('data-qid'); }
+
+            $.post($('#ajax-url').val(), data)
+                .done(function(resp){
+                    if (resp && resp.success) {
+                        sec.replaceWith(resp.data);
+                        Theme.toast(asking ? 'Sent! We\u2019ll email you when they answer' : 'Answer sent');
+                        Theme.track(asking ? 'qa_ask' : 'qa_answer', {});
+                    } else {
+                        btn.prop('disabled', false).removeClass('is-loading');
+                        Theme.toast($('<div>').html((resp && resp.data) || 'Could not send. Please try again.').text(), 'error');
+                    }
+                })
+                .fail(function(){ btn.prop('disabled', false).removeClass('is-loading'); Theme.toast('Network error. Please try again.', 'error'); });
+        });
+
+        var m = /[?&]qa=(\d+)/.exec(window.location.search);
+        if (m) {
+            setTimeout(function(){
+                var btn = $('.user-action[data-action="see-match"][user-data="' + m[1] + '"]').first();
+                if (btn.length) { $('html, body').animate({ scrollTop: btn.closest('.card').offset().top - 90 }, 300); btn.trigger('click'); }
+            }, 900);
+        }
+    },
+
     /* ---------- Weekly Drops (optional weekly themes) ---------- */
 
     proThemes: function($, gid){
@@ -1049,7 +1094,7 @@ var Theme = {
     tryProPop: function($) {
         var m = /[?&]pop=pro-([a-z]+)/.exec(window.location.search);
         if (m && $('#make-pro').length) {
-            var map = { drops: 'themes', exclude: 'exclude', unshuffle: 'unshuffle', gift: 'gift' };
+            var map = { drops: 'themes', exclude: 'exclude', unshuffle: 'unshuffle', gift: 'gift', qa: 'qa' };
             setTimeout(function(){ Theme.openUpsell($, map[m[1]] || 'header'); }, 900);
         }
 
@@ -1102,6 +1147,7 @@ var Theme = {
             fix:       ['Fix your member list before shuffling', 'Remove duplicates and correct misspelled names or emails.'],
             themes:    ['Make it more fun with Weekly Drops', 'An optional Filipino-style activity: a themed mini-gift each week, an email to everyone with ideas, and a reveal at the end.'],
             exclude:   ['Keep couples from getting each other', 'Add exclusions so couples or family members never get each other in the shuffle.'],
+            qa:        ['Ask your match anything, anonymously', 'Find out their size, allergies or favorite things without giving yourself away. One payment unlocks it for the whole group, with no ads.'],
             gift:    ['Gift PRO to your group', 'Remove ads for everyone and unlock the organizer tools. One payment covers the whole group.']
         }[reason] || null;
 

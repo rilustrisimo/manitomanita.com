@@ -188,6 +188,7 @@ class SEO {
         echo "## PRO (optional, PHP 199 one-time per group)\n\n";
         echo "- Exclusions (couples or family won't get each other)\n";
         echo "- Weekly Drops: an optional themed mini-gift each week with an email to everyone, and a reveal of who gave to whom\n";
+        echo "- Anonymous Q&A: members ask the person they're giving to a question (size, likes, allergies) without revealing who they are\n";
         echo "- Unshuffle to let late joiners in (3 unshuffles included), reshuffle\n";
         echo "- Reminders, auto-shuffle, gift status board, remove or edit members, see matches, export, no ads\n\n";
         echo "## Key pages\n\n";

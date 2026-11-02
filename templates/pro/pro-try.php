@@ -29,6 +29,7 @@ defined( 'ABSPATH' ) || die();
             <ul class="mm-upsell__list mm-upsell__list--compact">
                 <li><i class="fa-solid fa-user-slash"></i><span>Keep couples or family from getting each other</span></li>
                 <li><i class="fa-solid fa-gift"></i><span>Weekly Drops: a themed mini-gift each week, plus a reveal</span></li>
+                <li><i class="fa-solid fa-user-secret"></i><span>Anonymous Q&amp;A: ask your match about sizes or likes, secretly</span></li>
                 <li><i class="fa-solid fa-rotate-left"></i><span>Unshuffle so late joiners can get in</span></li>
                 <li><i class="fa-solid fa-bell"></i><span>Reminders, auto-shuffle and a gift status board</span></li>
                 <li><i class="fa-solid fa-ban"></i><span>No ads for everyone</span></li>
