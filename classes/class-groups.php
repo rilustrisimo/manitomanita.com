@@ -1030,13 +1030,13 @@ class Groups extends Theme {
             $html .= $tool('autodraw', 'fa-solid fa-calendar-check', 'Auto-shuffle', $at ? 'Scheduled: '.esc_html(wp_date('M j, g:i A', $at)) : 'Shuffle automatically on a date you pick');
         }
 
-        // Manito Manita mode (weekly themes) + reveal
+        // Weekly Drops (optional weekly themes) + reveal
         $themes = Themes::get($gid);
         $tNow = Themes::now($gid);
-        $html .= '<h4 class="mm-prot__group">Manito Manita mode</h4>';
-        $html .= $tool('themes', 'fa-solid fa-calendar-week', 'Weekly themes', $themes
-            ? count($themes).' '.(count($themes) == 1 ? 'theme' : 'themes').($tNow['current'] ? ' &middot; now: '.esc_html($tNow['current']['t']) : ' &middot; starts '.esc_html(wp_date('M j', strtotime($themes[0]['d']))))
-            : 'Something sweet, something soft&hellip; with a weekly email to everyone');
+        $html .= '<h4 class="mm-prot__group">Fun extras (optional)</h4>';
+        $html .= $tool('themes', 'fa-solid fa-gift', 'Weekly Drops', $themes
+            ? count($themes).' '.(count($themes) == 1 ? 'drop' : 'drops').($tNow['current'] ? ' &middot; now: '.esc_html($tNow['current']['t']) : ' &middot; first drop '.esc_html(wp_date('M j', strtotime($themes[0]['d']))))
+            : 'A themed mini-gift each week (something sweet, something soft&hellip;)');
         if($matched){
             $html .= $tool('reveal', 'fa-solid fa-masks-theater', Themes::isRevealed($gid) ? 'Hide the reveal' : 'Reveal who gave to whom',
                 Themes::isRevealed($gid) ? 'Everyone can see all pairs on the group page' : 'For after the exchange: show all pairs to the group');
@@ -1346,7 +1346,8 @@ class Groups extends Theme {
             ),
             'card'      => Emails::groupCard($gid),
             'button'    => array('Open your group', $link),
-            'note'      => 'Keep your organizer password safe: you need it to edit the group and shuffle. Forgot it? Use &ldquo;Forgot password&rdquo; on the group page.',
+            'note'      => 'Keep your organizer password safe: you need it to edit the group and shuffle. Forgot it? Use &ldquo;Forgot password&rdquo; on the group page.'
+                .'<br><br><strong>Optional PRO extras (&#8369;199 one-time):</strong> exclusions for couples, Weekly Drops (a themed mini-gift each week), unshuffle for late joiners, reminders and no ads. <a href="'.esc_url($link.'&pop=pro-drops').'" style="color:#1f8580;">See PRO</a>',
             'footer'    => 'You&rsquo;re getting this because you created '.esc_html($name).' on Manito Manita.',
         ));
     }
@@ -1659,6 +1660,7 @@ class Groups extends Theme {
         $name = (string) get_field('group_name', $gid);
         $link = Emails::groupLink($gid);
         $ideas = Affiliate::giftIdeasHtml($gid, 'email-match', true);
+        $proLine = get_field('pro', $gid) ? '' : 'Want extra fun this season? Add <a href="'.esc_url($link.'&pop=pro-drops').'" style="color:#1f8580;">Weekly Drops</a> to your group: a themed mini-gift each week, plus a reveal at the end (PRO).';
 
         foreach(self::memberIds($gid) as $uid){
             $pair = (int) get_field('pair', $uid, false);
@@ -1676,6 +1678,7 @@ class Groups extends Theme {
                 'card'      => Emails::groupCard($gid),
                 'button'    => array('See their wishlist', $link),
                 'raw'       => $ideas,
+                'note'      => $proLine,
                 'footer'    => 'You&rsquo;re getting this because you&rsquo;re a member of '.esc_html($name).' on Manito Manita.',
             ));
         }

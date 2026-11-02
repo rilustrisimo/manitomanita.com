@@ -2202,3 +2202,29 @@
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
 }
+
+/* Weekly Drops: member "how it works" under the banner */
+.dashboard .mm-themes .mm-themes__how {
+    margin: 12px 0 0;
+    color: rgba(255, 255, 255, .78);
+    font-size: 13px;
+}
+
+.dashboard .mm-themes .mm-themes__how summary {
+    color: #D4AF37;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.dashboard .mm-themes .mm-themes__how ol {
+    margin: 8px 0 0 !important;
+    padding-left: 20px !important;
+    list-style: decimal !important;
+}
+
+.dashboard .mm-themes .mm-themes__how li {
+    display: list-item !important;
+    margin: 0 0 4px !important;
+    line-height: 1.45 !important;
+    text-align: left !important;
+}

@@ -34,13 +34,12 @@ $mm_stats = Groups::siteStats();
 
         <ul class="mm-upsell__list">
             <li data-reason="exclude"><i class="fa-solid fa-user-slash"></i><span><b>Exclusions:</b> couples or family won&rsquo;t get each other</span></li>
-            <li data-reason="themes"><i class="fa-solid fa-calendar-week"></i><span><b>Manito Manita mode:</b> weekly themes, a weekly email and a fun reveal</span></li>
-            <li data-reason="unshuffle"><i class="fa-solid fa-rotate-left"></i><span><b>Unshuffle</b> so late joiners can get in, then shuffle again <em>(3 unshuffles included)</em></span></li>
-            <li data-reason="fix"><i class="fa-solid fa-user-xmark"></i><span><b>Remove</b> duplicate or wrong members</span></li>
-            <li data-reason="fix"><i class="fa-solid fa-pen-to-square"></i><span><b>Fix</b> a misspelled name or email</span></li>
-            <li data-reason="names"><i class="fa-solid fa-address-book"></i><span><b>See</b> every member&rsquo;s real name and email</span></li>
-            <li data-reason="matches"><i class="fa-solid fa-handshake"></i><span><b>See all matches</b> when you need to</span></li>
-            <li data-reason="export"><i class="fa-solid fa-file-arrow-down"></i><span><b>Export</b> everything to a spreadsheet</span></li>
+            <li data-reason="themes"><i class="fa-solid fa-gift"></i><span><b>Weekly Drops:</b> an optional themed mini-gift each week, plus a fun reveal</span></li>
+            <li data-reason="unshuffle"><i class="fa-solid fa-rotate-left"></i><span><b>Unshuffle</b> so late joiners can get in, then shuffle again <em>(3 included)</em></span></li>
+            <li data-reason="remind"><i class="fa-solid fa-bell"></i><span><b>Reminders and auto-shuffle</b> on the date you pick</span></li>
+            <li data-reason="status"><i class="fa-solid fa-list-check"></i><span><b>Gift status:</b> see who has bought or given</span></li>
+            <li data-reason="fix"><i class="fa-solid fa-user-pen"></i><span><b>Remove or fix</b> members, names and emails</span></li>
+            <li data-reason="matches"><i class="fa-solid fa-handshake"></i><span><b>See matches</b> and <b>export</b> everything</span></li>
             <li data-reason="gift"><i class="fa-solid fa-ban"></i><span><b>No ads</b> for everyone in the group</span></li>
         </ul>
 

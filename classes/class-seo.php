@@ -187,9 +187,9 @@ class SEO {
         echo "- Email notifications, exchange-day reminder, comments on wishlists\n\n";
         echo "## PRO (optional, PHP 199 one-time per group)\n\n";
         echo "- Exclusions (couples or family won't get each other)\n";
-        echo "- Manito Manita mode: weekly gift themes with an email to everyone, and a reveal of who gave to whom\n";
+        echo "- Weekly Drops: an optional themed mini-gift each week with an email to everyone, and a reveal of who gave to whom\n";
         echo "- Unshuffle to let late joiners in (3 unshuffles included), reshuffle\n";
-        echo "- Remove or edit members, see matches, export, reminders, auto-shuffle, no ads\n\n";
+        echo "- Reminders, auto-shuffle, gift status board, remove or edit members, see matches, export, no ads\n\n";
         echo "## Key pages\n\n";
         echo "- [Home and group creation]({$home})\n";
         echo "- [How it works]({$home}#how-it-works)\n";

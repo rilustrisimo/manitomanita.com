@@ -869,10 +869,10 @@ var Theme = {
         });
     },
 
-    /* ---------- Manito Manita mode: weekly themes ---------- */
+    /* ---------- Weekly Drops (optional weekly themes) ---------- */
 
     proThemes: function($, gid){
-        var body = Theme.proView($, 'Weekly themes', Theme.proLoading);
+        var body = Theme.proView($, 'Weekly Drops', Theme.proLoading);
 
         function addDays(d, n){
             var x = new Date(d + 'T00:00:00'); x.setDate(x.getDate() + n);
@@ -888,13 +888,19 @@ var Theme = {
         function render(d){
             var rows = d.themes.map(function(r){ return rowHtml(r.t, r.d); }).join('');
             body.html(
-                '<p class="mm-prov__meta">Pick a theme for each week before the exchange. On each start date, members get an email with the theme and matching gift ideas, and the group page shows <b>This week\u2019s theme</b>.</p>' +
+                '<p class="mm-prov__meta"><b>Optional.</b> A Filipino favorite: on top of the main gift, everyone gives their Manito or Manita a small themed gift each week until the exchange.</p>' +
+                '<details class="mm-drops-how" open><summary>How Weekly Drops work</summary><ol>' +
+                '<li><b>Shuffle first</b>, so everyone knows who they\u2019re giving to.</li>' +
+                '<li>Each week a new theme <b>drops</b> (e.g. <i>something sweet</i>). Members get an email with gift ideas, and the group page shows this week\u2019s drop.</li>' +
+                '<li>Everyone leaves a <b>small gift</b> that fits the theme (usually &#8369;50 to &#8369;150), secretly: on a desk early, through a friend, or labelled with the screen name only.</li>' +
+                '<li>On exchange day: the main gift, then <b>reveal</b> who gave to whom (Fun extras \u203a Reveal).</li>' +
+                '</ol><p>Tips: 3 to 4 drops is plenty. Start the week after you shuffle. Clear all drops anytime to stop.</p></details>' +
                 '<ul class="mm-theme-rows">' + rows + '</ul>' +
                 '<button type="button" class="mm-prov__mini mm-prov__gapb" data-th-add><i class="fa-solid fa-plus"></i> Add a theme</button>' +
                 '<h4 class="mm-prot__group">Quick add</h4>' +
                 '<div class="mm-theme-presets">' + d.presets.map(function(p){ return '<button type="button" data-th-preset="' + Theme.esc(p) + '">' + Theme.esc(p) + '</button>'; }).join('') + '</div>' +
                 '<label class="mm-prov__field">Suggested budget per weekly gift (&#8369;)<input type="number" min="0" max="5000" step="10" value="' + d.budget + '" data-th-budget></label>' +
-                '<button type="button" class="mm-upsell__btn mm-upsell__btn--dark" data-th-save>Save themes</button>'
+                '<button type="button" class="mm-upsell__btn mm-upsell__btn--dark" data-th-save>Save Weekly Drops</button>'
             );
 
             var list = body.find('.mm-theme-rows');
@@ -922,9 +928,9 @@ var Theme = {
                 btn.prop('disabled', true).text('Saving\u2026');
                 Theme.proApi('themes', { group_id: gid, op: 'save', themes: themes, budget: body.find('[data-th-budget]').val() }).then(function(r){
                     render(r);
-                    Theme.toast(r.themes.length ? 'Themes saved' : 'Themes cleared');
+                    Theme.toast(r.themes.length ? 'Weekly Drops saved' : 'Weekly Drops cleared');
                 }).catch(function(err){
-                    btn.prop('disabled', false).text('Save themes');
+                    btn.prop('disabled', false).text('Save Weekly Drops');
                     Theme.toast(err.message, 'error');
                 });
             });
@@ -1041,6 +1047,12 @@ var Theme = {
     },
 
     tryProPop: function($) {
+        var m = /[?&]pop=pro-([a-z]+)/.exec(window.location.search);
+        if (m && $('#make-pro').length) {
+            var map = { drops: 'themes', exclude: 'exclude', unshuffle: 'unshuffle', gift: 'gift' };
+            setTimeout(function(){ Theme.openUpsell($, map[m[1]] || 'header'); }, 900);
+        }
+
         if ($('#pro-try').length > 0) {
             // Check if URL has the parameter '&pop=try-pro'
             const urlParams = new URLSearchParams(window.location.search);
@@ -1088,7 +1100,7 @@ var Theme = {
             welcome:   ['Extra tools for your group\u2019s organizer', 'Fix mistakes, let late joiners in and keep everything organized.'],
             unshuffle: ['More people want to join?', 'Unshuffle the group to let them in, then shuffle again. 3 unshuffles included.'],
             fix:       ['Fix your member list before shuffling', 'Remove duplicates and correct misspelled names or emails.'],
-            themes:    ['Weekly themes, Manito Manita style', 'Set a theme for each week, email everyone with matching gift ideas, then reveal who gave to whom.'],
+            themes:    ['Make it more fun with Weekly Drops', 'An optional Filipino-style activity: a themed mini-gift each week, an email to everyone with ideas, and a reveal at the end.'],
             exclude:   ['Keep couples from getting each other', 'Add exclusions so couples or family members never get each other in the shuffle.'],
             gift:    ['Gift PRO to your group', 'Remove ads for everyone and unlock the organizer tools. One payment covers the whole group.']
         }[reason] || null;
@@ -1100,6 +1112,7 @@ var Theme = {
         sheet.find('.mm-upsell__list li').removeClass('is-focus').filter('[data-reason="' + reason + '"]').addClass('is-focus');
 
         $('.pop-container').hide();
+        if ($.fancybox && $.fancybox.getInstance && $.fancybox.getInstance()) $.fancybox.close(true);
         sheet.css('display', 'flex').data('mmReason', reason);
         sheet.find('.mm-upsell__inner').scrollTop(0);
 

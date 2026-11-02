@@ -282,7 +282,7 @@ class Payments {
             'title'     => $name . ' is now PRO',
             'body'      => array(
                 '<p>Your group has been upgraded to <strong>Manito Manita PRO</strong>. Ads are removed for everyone, and as the organizer you can now:</p>',
-                '<ul><li>Add <strong>exclusions</strong> so couples or family don&rsquo;t get each other</li><li><strong>Unshuffle</strong> to let late joiners in (3 unshuffles included)</li><li>Remove or edit members, see matches and export the group</li><li>Send reminders and schedule an auto-shuffle</li></ul>',
+                '<ul><li>Add <strong>exclusions</strong> so couples or family don&rsquo;t get each other</li><li>Run <strong>Weekly Drops</strong>: a themed mini-gift each week, with a reveal at the end</li><li><strong>Unshuffle</strong> to let late joiners in (3 unshuffles included)</li><li>Send reminders, schedule an auto-shuffle and track gift status</li><li>Remove or edit members, see matches and export the group</li></ul>',
                 '<p>Open your group, tap <strong>PRO Actions</strong> and enter your organizer password.</p>',
             ),
             'card'      => Emails::groupCard( $gid ),

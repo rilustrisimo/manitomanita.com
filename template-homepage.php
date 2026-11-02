@@ -32,21 +32,20 @@ $free = array(
 
 $pro = array(
 	'Exclusions: couples or family won&rsquo;t get each other',
-	'Manito Manita mode: weekly themes with an email to everyone',
+	'Weekly Drops: an optional themed mini-gift each week, with an email to everyone',
+	'A fun reveal of who gave to whom after the exchange',
+	'Unshuffle so late joiners can get in, then reshuffle (3 included)',
+	'One-click reminders and an auto-shuffle on the date you pick',
+	'Gift status board: see who has bought or given (never who drew whom)',
+	'Remove or fix members, see all matches and export everything',
 	'No ads for everyone in the group',
-	'Unshuffle to let late joiners in, then shuffle again (3 unshuffles included)',
-	'Remove duplicate or wrong members',
-	'Fix a misspelled name or email',
-	'See every member&rsquo;s name and email',
-	'See all matches when you need to',
-	'Export everything to a spreadsheet',
 );
 
 $faq = array(
 	array( 'Is Manito Manita really free?', 'Yes. Creating a group, inviting everyone, shuffling names, wishlists, gift ideas and emails are free, with no limit on members. PRO is an optional one-time add-on for organizers who want extra tools.' ),
 	array( 'Do members need to create an account?', 'No. Members open the group link, enter their name, a screen name, their email and a password for that group. No app to install and no sign-up.' ),
 	array( 'How does the shuffle work?', 'When everyone has joined, the organizer shuffles names in one tap. Each member is matched with someone else at random, never themselves, and each person only sees their own match.' ),
-	array( 'What does PRO add, and how much is it?', 'PRO is a one-time &#8369;199 per group. It removes ads for the whole group and gives the organizer tools to unshuffle (so late joiners can get in), remove or edit members, see matches and export the group data. You can pay with PayPal or any debit or credit card.' ),
+	array( 'What does PRO add, and how much is it?', 'PRO is a one-time &#8369;199 per group. It adds exclusions for couples, Weekly Drops (a themed mini-gift each week) with a reveal at the end, unshuffle for late joiners, reminders and auto-shuffle, a gift status board, member editing, matches and export, and removes ads for the whole group. You can pay with PayPal or any debit or credit card.' ),
 	array( 'Can couples or family avoid getting each other?', 'Yes, with PRO. The organizer adds exclusions, like a couple or siblings, and the shuffle makes sure they never get each other.' ),
 	array( 'Who can see my address and wishlist?', 'Your wishlist is visible to your group. Your address and contact details are shown only to the person who drew you, and to the organizer of a PRO group in the export.' ),
 );
@@ -142,6 +141,32 @@ $faq = array(
 				</div>
 				<?php endforeach; ?>
 			</div>
+		</div>
+	</section>
+
+	<section class="mmh-section mmh-drops" id="weekly-drops">
+		<div class="mmh-wrap mmh-drops__grid">
+			<div class="mmh-drops__copy" data-reveal>
+				<p class="mmh-eyebrow">PRO &middot; optional activity</p>
+				<h2 class="mmh-h2 mml-left">Weekly Drops: Manito Manita, <span>the Filipino way</span></h2>
+				<p class="mmh-drops__lead">On top of the main gift, everyone leaves their Manito or Manita a small themed gift each week until the party. We send the theme, gift ideas and the reveal.</p>
+				<ol class="mmh-drops__steps">
+					<li><b>Shuffle</b> names as usual.</li>
+					<li>Each week a theme <b>drops</b>, like <i>something sweet</i>. Everyone gets an email with ideas.</li>
+					<li>Leave a <b>small secret gift</b> that fits the theme (&#8369;50 to &#8369;150).</li>
+					<li>On exchange day, give the main gift and <b>reveal</b> who gave to whom.</li>
+				</ol>
+				<div class="mmh-drops__actions">
+					<a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="weekly-drops">Create a free group</a>
+					<a href="<?php echo esc_url( home_url( '/monito-monita-themes/' ) ); ?>" class="mmh-drops__link">See 50+ theme ideas <i class="fas fa-arrow-right"></i></a>
+				</div>
+			</div>
+			<ol class="mmh-drops__line" data-reveal style="--d:.12s" aria-label="Example Weekly Drops">
+				<li class="is-done"><span>Nov 28</span>Something sweet</li>
+				<li class="is-now"><span>Dec 5</span>Something soft</li>
+				<li><span>Dec 12</span>Something red</li>
+				<li class="is-final"><span>Dec 19</span>Main gift &amp; reveal</li>
+			</ol>
 		</div>
 	</section>
 

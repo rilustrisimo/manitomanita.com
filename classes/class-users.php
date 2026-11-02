@@ -444,6 +444,11 @@ class Users extends Theme {
             ? Affiliate::giftIdeasHtml($gid, 'ai-gift-ideas', false, $aiIdeas, 'Picked for '.esc_html($pairName).' from their wishlist')
             : Affiliate::giftIdeasHtml($gid, 'match-gift-ideas');
 
+        /** One quiet PRO line for free groups (members can gift PRO to the group) */
+        if(!$pro){
+            echo '<p class="mm-match-pro"><i class="fa-solid fa-star" aria-hidden="true"></i> <span>Want <b>Weekly Drops</b>, reminders and a reveal at the end?</span> <button type="button" data-mm-upsell="gift">Gift PRO to the group</button></p>';
+        }
+
         /** ADDRESS AND CONTACTS */
         echo '<section class="mm-sec">';
         echo '    <h3 class="mm-sec__title"><i class="fas fa-location-dot"></i> ADDRESS<span>&nbsp;&amp; CONTACTS</span></h3>';

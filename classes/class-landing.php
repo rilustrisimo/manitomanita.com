@@ -29,6 +29,36 @@ class Landing {
 
         add_action( 'template_redirect', array( __CLASS__, 'redirects' ), -1 );
         add_action( 'wp_head', array( __CLASS__, 'faqSchema' ), 40 );
+        add_action( 'wp_loaded', array( __CLASS__, 'renameDropsOnce' ) ); // TEMP: remove after it has run
+    }
+
+    /**
+     * TEMP one-time update: FAQ answers on landing pages said "Manito Manita mode"; the feature is now
+     * "Weekly Drops". Runs once (option mm_drops_rename_v1), then this method can be deleted.
+     */
+    public static function renameDropsOnce() {
+        if ( get_option( 'mm_drops_rename_v1' ) || ! function_exists( 'update_field' ) ) return;
+        update_option( 'mm_drops_rename_v1', time(), false );
+
+        $pages = get_posts( array( 'post_type' => 'page', 'posts_per_page' => -1, 'fields' => 'ids', 'meta_key' => '_wp_page_template', 'meta_value' => 'template-landing.php' ) );
+        foreach ( $pages as $id ) {
+            $faq = get_field( 'mm_faq', $id );
+            if ( ! is_array( $faq ) ) continue;
+            $changed = false;
+            foreach ( $faq as $k => $row ) {
+                $new = str_replace(
+                    array( 'Manito Manita mode lets the organizer set a theme for each week', 'Manito Manita mode emails', 'With PRO, Manito Manita mode' ),
+                    array( 'Weekly Drops (an optional PRO activity) let the organizer set a theme for each week', 'Weekly Drops email', 'With PRO, Weekly Drops' ),
+                    (string) ( $row['answer'] ?? '' )
+                );
+                if ( $new !== ( $row['answer'] ?? '' ) ) { $faq[ $k ]['answer'] = $new; $changed = true; }
+            }
+            if ( $changed ) {
+                update_field( 'field_mm_land_faq', array_map( function ( $r ) {
+                    return array( 'field_mm_land_faq_q' => $r['question'], 'field_mm_land_faq_a' => $r['answer'] );
+                }, $faq ), $id );
+            }
+        }
     }
 
     public static function isActive() {

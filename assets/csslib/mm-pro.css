@@ -1271,3 +1271,38 @@
         grid-column: 1 / -1;
     }
 }
+
+/* Weekly Drops: how it works */
+.mm-drops-how {
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    border: 1px solid rgba(212, 175, 55, .35);
+    border-radius: 12px;
+    background: rgba(212, 175, 55, .07);
+    color: #3a3a3a;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.mm-drops-how summary {
+    color: #1b1b1b;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.mm-prot-sheet .mm-drops-how ol {
+    margin: 8px 0 6px;
+    padding-left: 20px;
+    list-style: decimal;
+}
+
+.mm-prot-sheet .mm-drops-how li {
+    margin: 0 0 6px;
+    line-height: 1.5;
+}
+
+.mm-prot-sheet .mm-drops-how p {
+    margin: 0;
+    color: #6d6d6d;
+    font-size: 13px;
+}

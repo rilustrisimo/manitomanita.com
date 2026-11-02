@@ -1040,3 +1040,41 @@
     font-size: 12px;
     line-height: 1.4;
 }
+
+/* One quiet PRO line on See Match (free groups) */
+.mm-match-pro {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    margin: 14px 0;
+    padding: 10px 14px;
+    border: 1px dashed rgba(212, 175, 55, .55);
+    border-radius: 12px;
+    background: rgba(212, 175, 55, .07);
+    color: #1b1b1b;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.mm-match-pro > i,
+.mm-match-pro > svg {
+    color: #D4AF37;
+}
+
+.mm-match-pro span {
+    flex: 1 1 200px;
+}
+
+.mm-match-pro button {
+    padding: 0 4px;
+    border: 0;
+    background: none;
+    color: #8a6d12;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}

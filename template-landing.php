@@ -126,7 +126,7 @@ endif;
 			<?php endforeach; ?>
 			<div class="mml-tip" data-reveal>
 				<i class="fas fa-shuffle"></i>
-				<div><strong>Got your themes?</strong> Create a free group, share the link and shuffle names. Everyone privately sees their Monito or Monita, with wishlists and gift ideas.</div>
+				<div><strong>Got your themes?</strong> Create a free group and shuffle names. Add <strong>Weekly Drops</strong> (PRO) and everyone gets this week&rsquo;s theme by email with gift ideas, plus a reveal at the end.</div>
 				<a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="<?php echo esc_attr( $slot ); ?>:tip">Create a free group</a>
 			</div>
 		</div>

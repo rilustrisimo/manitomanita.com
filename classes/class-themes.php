@@ -1,6 +1,6 @@
 <?php
 /**
- * * Themes Class. "Manito Manita mode" (PRO): weekly gift themes for a group, a "this week" banner on
+ * * Themes Class. "Weekly Drops" (optional PRO activity): weekly gift themes for a group, a "this week" banner on
  * the dashboard, a weekly theme email with matching gift ideas, and an end-of-exchange reveal of who
  * gave to whom (shown only on the private group page).
  *
@@ -245,19 +245,19 @@ class Themes {
             $pair = (int) get_field( 'pair', $uid, false );
             $pairName = $pair ? trim( (string) get_field( 'screen_name', $pair ) ) : '';
 
-            Emails::send( (string) get_field( 'email', $uid ), 'This week&rsquo;s theme: ' . $row['t'], array(
-                'preheader'   => 'Your Manito Manita theme for ' . $name . ($next ? '. Next up: ' . $next['t'] : '') . '.',
-                'eyebrow'     => 'Manito Manita mode',
-                'title'       => 'This week&rsquo;s theme: ' . $row['t'],
+            Emails::send( (string) get_field( 'email', $uid ), 'This week&rsquo;s drop: ' . $row['t'], array(
+                'preheader'   => 'Your Weekly Drop for ' . $name . ($next ? '. Next up: ' . $next['t'] : '') . '.',
+                'eyebrow'     => 'Weekly Drops',
+                'title'       => 'This week&rsquo;s drop: ' . $row['t'],
                 'highlight'   => $pairName !== '' ? array( 'Your gift goes to', $pairName ) : array(),
                 'body'        => array(
-                    '<p>Give your Monito or Monita a small gift that fits this week&rsquo;s theme. Suggested budget: <strong>&#8369;' . number_format( $budget ) . '</strong>. Keep it a secret!</p>',
+                    '<p>Leave your Manito or Manita a small gift that fits this week&rsquo;s theme, around <strong>&#8369;' . number_format( $budget ) . '</strong>. Keep it secret: leave it on their desk early, hand it over through a friend, or label it with their screen name only.</p>',
                     $next ? '<p>Next theme: <strong>' . esc_html( $next['t'] ) . '</strong>, starting ' . esc_html( wp_date( 'F j', strtotime( $next['d'] ) ) ) . '.</p>' : '<p>This is the last theme. See you at the exchange!</p>',
                 ),
                 'button'      => array( 'See their wishlist', Emails::groupLink( $gid ) ),
                 'raw'         => $ideas,
                 'unsubscribe' => $uid,
-                'footer'      => 'You&rsquo;re getting this because ' . esc_html( $name ) . ' uses Manito Manita mode.',
+                'footer'      => 'You&rsquo;re getting this because ' . esc_html( $name ) . ' is doing Weekly Drops.',
             ) );
         }
     }
@@ -276,10 +276,10 @@ class Themes {
 
         $html = '<div class="mm-themes">';
         if ( $now['current'] ) {
-            $html .= '<div class="mm-themes__now"><span class="mm-themes__label">This week&rsquo;s theme</span><strong>' . esc_html( $now['current']['t'] ) . '</strong>'
+            $html .= '<div class="mm-themes__now"><span class="mm-themes__label">This week&rsquo;s drop</span><strong>' . esc_html( $now['current']['t'] ) . '</strong>'
                 . ( $now['next'] ? '<small>Next: ' . esc_html( $now['next']['t'] ) . ' &middot; ' . esc_html( wp_date( 'M j', strtotime( $now['next']['d'] ) ) ) . '</small>' : '<small>Last theme before the exchange</small>' ) . '</div>';
         } else {
-            $html .= '<div class="mm-themes__now"><span class="mm-themes__label">First theme starts ' . esc_html( wp_date( 'M j', strtotime( $rows[0]['d'] ) ) ) . '</span><strong>' . esc_html( $rows[0]['t'] ) . '</strong><small>Suggested budget per weekly gift: &#8369;' . number_format( self::budget( $gid ) ) . '</small></div>';
+            $html .= '<div class="mm-themes__now"><span class="mm-themes__label">First drop ' . esc_html( wp_date( 'M j', strtotime( $rows[0]['d'] ) ) ) . '</span><strong>' . esc_html( $rows[0]['t'] ) . '</strong><small>Suggested budget per weekly gift: &#8369;' . number_format( self::budget( $gid ) ) . '</small></div>';
         }
 
         $html .= '<ol class="mm-themes__line">';
@@ -287,7 +287,13 @@ class Themes {
             $state = ( $now['current'] && $r['d'] === $now['current']['d'] ) ? 'is-now' : ( $r['d'] < $today ? 'is-done' : '' );
             $html .= '<li class="' . $state . '"><span>' . esc_html( wp_date( 'M j', strtotime( $r['d'] ) ) ) . '</span>' . esc_html( $r['t'] ) . '</li>';
         }
-        $html .= '</ol></div>';
+        $html .= '</ol>';
+        $html .= '<details class="mm-themes__how"><summary>How Weekly Drops work</summary><ol>'
+            . '<li>Each week a new theme drops, like <em>something sweet</em>. Everyone gets an email.</li>'
+            . '<li>Leave a small gift for your Manito or Manita that fits the theme (around &#8369;' . number_format( self::budget( $gid ) ) . ').</li>'
+            . '<li>Keep it secret: leave it early, use a friend, or label it with their screen name only.</li>'
+            . '<li>On exchange day, give your main gift and find out who your Secret Santa was.</li>'
+            . '</ol></details></div>';
 
         return $html;
     }
