@@ -1454,7 +1454,7 @@
 .mm-coorg-card small {
     color: #6d6d6d;
     font-size: 12px;
-    word-break: break-all;
+    overflow-wrap: anywhere; /* long emails break; the date wraps at spaces */
 }
 
 .mm-prot-sheet ul.mm-coorg-how {
