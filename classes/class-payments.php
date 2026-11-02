@@ -48,6 +48,7 @@ class Payments {
             add_action( 'wp_ajax_' . $action, array( __CLASS__, $method ) );
             add_action( 'wp_ajax_nopriv_' . $action, array( __CLASS__, $method ) );
         }
+        add_action( 'wp_head', array( __CLASS__, 'preconnect' ), 2 );
     }
 
     public static function enabled() {
@@ -76,7 +77,8 @@ class Payments {
         echo '<div id="paypal-card-container" class="mm-pay__card"></div>';
         echo '<div class="mm-pay__or"><span>or</span></div>';
         echo '<div id="paypal-button-container" class="mm-pay__paypal"></div>';
-        echo '<script src="https://www.paypal.com/sdk/js?client-id=' . esc_attr( PAYPAL_CLIENT_ID ) . '&currency=' . self::CURRENCY . '"></script>';
+        // en_PH: Philippine defaults in the card form (country, mobile prefix); unused funding options off = less to load.
+        echo '<script src="https://www.paypal.com/sdk/js?client-id=' . esc_attr( PAYPAL_CLIENT_ID ) . '&currency=' . self::CURRENCY . '&locale=en_PH&disable-funding=paylater,venmo"></script>';
         ?>
 <script>
     (function(){
@@ -105,8 +107,30 @@ class Payments {
             alert(message || 'There was an issue processing your payment. Please try again.');
         }
 
+        // Instant feedback while PayPal loads its secure card form (it's PayPal's own page, embedded).
+        function cardLoading(){
+            var box = document.getElementById('paypal-card-container');
+            if (!box || document.getElementById('mm-card-wait')) return;
+            var start = box.offsetHeight;
+            var note = document.createElement('p');
+            note.id = 'mm-card-wait';
+            note.className = 'mm-pay__wait';
+            note.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Opening secure card form\u2026';
+            box.parentNode.insertBefore(note, box.nextSibling);
+            var done = function(){ if (note.parentNode) note.parentNode.removeChild(note); };
+            if (window.ResizeObserver) {
+                var ro = new ResizeObserver(function(){ if (box.offsetHeight > start + 60) { done(); ro.disconnect(); } });
+                ro.observe(box);
+            }
+            setTimeout(done, 6000);
+            setTimeout(function(){ box.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+        }
+
         var cfg = {
-            locale: 'en_PH',
+            onClick: function(data){
+                if (data && data.fundingSource === 'card') cardLoading();
+                track('add_payment_info', { currency: 'PHP', value: item.price, payment_type: data ? data.fundingSource : '' });
+            },
             createOrder: function(){
                 track('begin_checkout', { currency: 'PHP', value: item.price, items: [item] });
                 return post({ action: 'mm_paypal_create', gid: gid, product: product }).then(function(resp){
@@ -147,6 +171,14 @@ class Payments {
     })();
 </script>
         <?php
+    }
+
+    /** Open the connection to PayPal early on group dashboards, so the buttons and card form load faster. */
+    public static function preconnect() {
+        if ( ! is_page( 23 ) || ! self::enabled() ) return;
+        foreach ( array( 'https://www.paypal.com', 'https://www.paypalobjects.com', 'https://c.paypal.com' ) as $h ) {
+            echo '<link rel="preconnect" href="' . esc_url( $h ) . '" crossorigin>' . "\n";
+        }
     }
 
     /* --------------------------------------------------------------- AJAX */

@@ -1689,3 +1689,28 @@ html.mm-noscroll body {
         max-height: 94dvh;
     }
 }
+
+/* PayPal's embedded card form sets its own z-index: keep it inside its box, and the close button above it */
+.mm-upsell .mm-upsell__buy {
+    position: relative;
+    z-index: 0;
+    isolation: isolate;
+}
+
+.mm-upsell .pop-container__close {
+    z-index: 1000;
+}
+
+.mm-upsell p.mm-pay__wait {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 6px 0 4px;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgba(62, 199, 194, .1);
+    color: #1f8580;
+    font-size: 14px;
+    font-weight: 700;
+}
