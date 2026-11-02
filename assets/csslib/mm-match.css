@@ -1316,3 +1316,20 @@
         display: none;
     }
 }
+
+/* Wishlist editor: link to My Wishlist (any occasion) */
+.mm-match .mm-edit__more {
+    margin: 4px 0 14px;
+    color: var(--mm-text);
+    font-size: 13px;
+    text-align: left;
+}
+
+.mm-match .mm-edit__more i {
+    color: #e5509f;
+}
+
+.mm-match .mm-edit__more a {
+    color: var(--mm-accent-dark);
+    font-weight: 700;
+}

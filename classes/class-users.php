@@ -274,6 +274,8 @@ class Users extends Theme {
         echo '    </label>';
         echo '</section>';
 
+        echo '<p class="mm-edit__more"><i class="fas fa-heart"></i> Want a wishlist for birthdays and other days too? <a href="'.esc_url(home_url('/my-wishlist/')).'" target="_blank" rel="noopener">Make My Wishlist</a>, free.</p>';
+
         /** FOOTER */
         echo '<div class="mm-edit__footer">';
         echo '    <div class="mm-edit__status" data-mm-status role="status" aria-live="polite"></div>';
@@ -285,7 +287,7 @@ class Users extends Theme {
         echo '</div>';
     }
 
-    protected function wishlistItemHtml($text, $links){
+    public static function wishlistItemHtml($text, $links){
         $html  = '<li class="mm-item" data-mm-item>';
         $html .= '<div class="mm-item__head">';
         $html .= '    <span class="mm-wish__num" data-mm-num>1</span>';
@@ -296,7 +298,7 @@ class Users extends Theme {
         $html .= '<div class="mm-item__meta" data-mm-meta><span data-mm-chars>0</span>/'.self::WISH_MAX_TEXT.'</div>';
         $html .= '<div class="mm-item__error" data-mm-error></div>';
         $html .= '<div class="mm-links" data-mm-links>';
-        foreach($links as $l) $html .= $this->wishlistLinkHtml($l);
+        foreach($links as $l) $html .= self::wishlistLinkHtml($l);
         $html .= '</div>';
         $html .= '<div class="mm-item__actions">';
         $html .= '    <button type="button" class="mm-btn-text" data-mm-add-link><i class="fas fa-link"></i> Add a shop link</button>';
@@ -307,7 +309,7 @@ class Users extends Theme {
         return $html;
     }
 
-    protected function wishlistLinkHtml($url){
+    public static function wishlistLinkHtml($url){
         $html  = '<div class="mm-link" data-mm-link>';
         $html .= '    <span class="mm-link__store" data-mm-store>Link</span>';
         $html .= '    <input type="url" inputmode="url" autocomplete="off" placeholder="Paste a Lazada, Shopee or any shop link" value="'.esc_attr($url).'" data-mm-url>';

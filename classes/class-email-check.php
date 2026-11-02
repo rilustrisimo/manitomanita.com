@@ -139,13 +139,14 @@ class EmailCheck {
         $code = (string) random_int( 100000, 999999 );
         set_transient( 'mm_otp_' . self::key( $email ), array( 'h' => self::hashCode( $email, $code ), 'tries' => 0 ), self::CODE_TTL );
 
+        $what = ( ( $_POST['purpose'] ?? '' ) === 'wishlist' ) ? 'wishlist' : 'group';
         $sent = Emails::send( $email, $code . ' is your Manito Manita code', array(
-            'preheader' => 'Enter this code to verify your email and create your group.',
+            'preheader' => 'Enter this code to verify your email and create your ' . $what . '.',
             'eyebrow'   => 'Verify your email',
             'title'     => 'Your verification code',
-            'body'      => array( '<p>Enter this code on the Create Group form to verify your email:</p>' ),
+            'body'      => array( '<p>Enter this code ' . ( $what === 'group' ? 'on the Create Group form' : 'to create your wishlist' ) . ' to verify your email:</p>' ),
             'code'      => $code,
-            'note'      => 'The code expires in 10 minutes. If you didn&rsquo;t try to create a group, you can ignore this email.',
+            'note'      => 'The code expires in 10 minutes. If you didn&rsquo;t try to create a ' . $what . ', you can ignore this email.',
             'footer'    => 'You&rsquo;re getting this because this address was entered on manitomanita.com.',
         ) );
 
@@ -187,6 +188,11 @@ class EmailCheck {
         $error = self::checkCode( $email, preg_replace( '/\D/', '', (string) ( $_POST['mm_otp'] ?? '' ) ) );
 
         if ( $error ) acf_add_validation_error( '', $error );
+    }
+
+    /** Public check for other forms (My Wishlist). Empty when verified, otherwise a message. */
+    public static function verifyCode( $email, $code ) {
+        return self::checkCode( $email, $code );
     }
 
     /**

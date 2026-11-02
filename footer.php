@@ -51,6 +51,7 @@ if ( qed_get_option( 'is_testimonial_enabled', 'option' ) && qed_is_display_test
 					<li><a href="<?php echo esc_url( home_url( '/secret-santa-generator/' ) ); ?>">Secret Santa generator</a></li>
 					<li><a href="<?php echo esc_url( home_url( '/exchange-gift-ideas-500-pesos/' ) ); ?>">Gift ideas under &#8369;500</a></li>
 					<li><a href="<?php echo esc_url( home_url( '/monito-monita-themes/' ) ); ?>">Monito Monita themes</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/my-wishlist/' ) ); ?>">My Wishlist (any occasion)</a></li>
 				</ul>
 			</div>
 			<div>

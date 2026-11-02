@@ -68,6 +68,7 @@ add_action( 'wp_enqueue_scripts', 'mm_enqueue_ui_styles', 20 );
 function mm_enqueue_ui_styles() {
 	$names = array( 'mm-header', 'mm-footer', 'mm-match', 'mm-dashboard', 'mm-forms', 'mm-pro' );
 	if ( is_page_template( 'template-homepage.php' ) || ( class_exists( 'Landing' ) && Landing::isActive() ) ) $names[] = 'mm-home';
+	if ( is_page_template( 'template-my-wishlist.php' ) ) array_push( $names, 'mm-home', 'mm-wishlist' );
 
 	foreach ( $names as $name ) {
 		$file = '/assets/csslib/' . $name . '.css';

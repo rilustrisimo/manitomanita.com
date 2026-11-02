@@ -32,6 +32,7 @@ var Theme = {
         this.initGiftStatus($);
         this.initQA($);
         this.initRepeat($);
+        this.initMyWishlist($);
         this.initHome($);
         this.initPasswordToggles($);
 
@@ -915,6 +916,142 @@ var Theme = {
                 var btn = $('.user-action[data-action="see-match"][user-data="' + m[1] + '"]').first();
                 if (btn.length) { $('html, body').animate({ scrollTop: btn.closest('.card').offset().top - 90 }, 300); btn.trigger('click'); }
             }, 900);
+        }
+    },
+
+    /* ---------- My Wishlist (template-my-wishlist.php, MyWishlist class) ---------- */
+
+    initMyWishlist: function($){
+        var root = $('.mm-wl');
+        if (!root.length) return;
+        var ajax = $('#ajax-url').val(), plain = function(h){ return $('<div>').html(h || '').text(); };
+
+        // Owner: the same editor as the group wishlist
+        var editor = root.find('[data-mm-wl-editor]');
+        if (editor.length) Theme.initWishlistEditor($, editor);
+
+        // Share box
+        var share = root.find('[data-mm-wl-share]');
+        root.find('[data-mm-wl-copy]').on('click', function(){
+            var input = share.find('[data-mm-wl-link]')[0];
+            input.select();
+            (navigator.clipboard ? navigator.clipboard.writeText(input.value) : Promise.reject()).catch(function(){ document.execCommand('copy'); });
+            Theme.toast('Link copied');
+            Theme.track('wishlist_share', { method: 'copy' });
+        });
+        if (navigator.share && share.length) {
+            root.find('[data-mm-wl-native]').prop('hidden', false).on('click', function(){
+                navigator.share({ title: share.attr('data-name') + '\u2019s wishlist', url: share.attr('data-url') }).catch(function(){});
+                Theme.track('wishlist_share', { method: 'native' });
+            });
+        }
+
+        root.find('[data-mm-wl-logout]').on('click', function(){
+            $.post(ajax, { action: 'mm_wl_logout' }).always(function(r){ window.location.href = (r && r.data && r.data.url) || '/my-wishlist/'; });
+        });
+        root.find('[data-mm-wl-delete]').on('click', function(){
+            var b = $(this);
+            Theme.confirmSheet({
+                title: 'Delete your wishlist?',
+                body: 'Your list and share link are removed for good. Friends who open the link will see that it\u2019s gone.',
+                icon: 'fa-solid fa-trash-can', danger: true, confirm: 'Delete',
+                onConfirm: function(done){
+                    $.post(ajax, { action: 'mm_wl_delete', id: b.attr('data-id'), nonce: b.attr('data-nonce') }).done(function(r){
+                        done();
+                        if (r && r.success) window.location.href = r.data.url; else Theme.toast(plain(r && r.data && (r.data.message || r.data)), 'error');
+                    }).fail(function(){ done(); Theme.toast('Network error. Please try again.', 'error'); });
+                }
+            });
+        });
+
+        // Landing: tabs, create (with the email code), log in, login link
+        root.find('[data-mm-wl-tab]').on('click', function(){
+            var t = $(this).attr('data-mm-wl-tab');
+            root.find('[data-mm-wl-tab]').removeClass('is-on').attr('aria-selected', 'false');
+            $(this).addClass('is-on').attr('aria-selected', 'true');
+            root.find('[data-mm-wl-form]').prop('hidden', true).filter('[data-mm-wl-form="' + t + '"]').prop('hidden', false);
+        });
+
+        var create = root.find('[data-mm-wl-form="create"]');
+        if (create.length) {
+            var email = create.find('[name="email"]'), otp = create.find('[data-mm-wl-otp]'), cmsg = create.find('[data-mm-wl-msg]');
+            var valid = function(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); };
+            email.on('input change', function(){ otp.prop('hidden', !valid($.trim(email.val()))); });
+            create.find('[data-mm-wl-send]').on('click', function(){
+                var b = $(this).prop('disabled', true);
+                cmsg.removeClass('is-error').text('Sending\u2026');
+                $.post(ajax, { action: 'mm_send_otp', email: $.trim(email.val()), nonce: create.find('[name="otp_nonce"]').val(), purpose: 'wishlist' }).done(function(r){
+                    if (r && r.success) { cmsg.text(plain(r.data)); create.find('[data-mm-wl-codebox]').prop('hidden', false).find('input').trigger('focus'); b.text('Resend code'); setTimeout(function(){ b.prop('disabled', false); }, 30000); }
+                    else { cmsg.addClass('is-error').text(plain(r && r.data)); b.prop('disabled', false); }
+                }).fail(function(){ cmsg.addClass('is-error').text('Network error. Please try again.'); b.prop('disabled', false); });
+            });
+            create.on('submit', function(e){
+                e.preventDefault();
+                var d = { action: 'mm_wl_create', name: $.trim(create.find('[name="name"]').val()), email: $.trim(email.val()), password: create.find('[name="password"]').val(), code: $.trim(create.find('[name="code"]').val()) };
+                if (!d.name) { cmsg.addClass('is-error').text('Please enter your name.'); return; }
+                if (!valid(d.email)) { cmsg.addClass('is-error').text('Please enter a valid email.'); return; }
+                if (!d.code) { cmsg.addClass('is-error').text('Tap \u201cSend verification code\u201d and enter the code we email you.'); return; }
+                if ((d.password || '').length < 6) { cmsg.addClass('is-error').text('Please use a password with at least 6 characters.'); return; }
+                var btn = create.find('[type="submit"]').prop('disabled', true);
+                cmsg.removeClass('is-error').text('Creating your wishlist\u2026');
+                $.post(ajax, d).done(function(r){
+                    if (r && r.success) { Theme.track('wishlist_create', {}); window.location.href = r.data.url; }
+                    else { cmsg.addClass('is-error').text(plain(r && r.data)); btn.prop('disabled', false); }
+                }).fail(function(){ cmsg.addClass('is-error').text('Network error. Please try again.'); btn.prop('disabled', false); });
+            });
+        }
+
+        var login = root.find('[data-mm-wl-form="login"]');
+        login.on('submit', function(e){
+            e.preventDefault();
+            var m = login.find('[data-mm-wl-msg]'), btn = login.find('[type="submit"]').prop('disabled', true);
+            $.post(ajax, { action: 'mm_wl_login', email: $.trim(login.find('[name="email"]').val()), password: login.find('[name="password"]').val() }).done(function(r){
+                if (r && r.success) window.location.href = r.data.url; else { m.addClass('is-error').text(plain(r && r.data)); btn.prop('disabled', false); }
+            }).fail(function(){ m.addClass('is-error').text('Network error. Please try again.'); btn.prop('disabled', false); });
+        });
+        login.find('[data-mm-wl-magic]').on('click', function(){
+            var m = login.find('[data-mm-wl-msg]'), em = $.trim(login.find('[name="email"]').val());
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) { m.addClass('is-error').text('Type your email above first.'); return; }
+            $.post(ajax, { action: 'mm_wl_magic', email: em }).done(function(r){ m.removeClass('is-error').text(plain(r && r.data)); });
+        });
+
+        // Friends: "I'll get this" (a token in this browser lets the same person undo it)
+        var list = root.find('[data-mm-wl-list]');
+        if (list.length) {
+            var wid = list.attr('data-id'), store = 'mm_wl_res_' + wid, mine = {};
+            try { mine = JSON.parse(localStorage.getItem(store) || '{}') || {}; } catch (e) {}
+            var save = function(){ try { localStorage.setItem(store, JSON.stringify(mine)); } catch (e) {} };
+
+            var paint = function(li, taken, by, own){
+                var box = li.find('[data-mm-wl-res]');
+                li.toggleClass('is-taken', taken);
+                box.html(taken
+                    ? '<span class="mm-wl-res__taken"><i class="fa-solid fa-circle-check"></i> ' + (own ? 'You\u2019re getting this' : 'Reserved' + (by ? ' by ' + Theme.esc(by) : '')) + '</span>' + (own ? ' <button type="button" class="mm-wl-link" data-mm-wl-undo>Undo</button>' : '')
+                    : '<button type="button" class="mm-wl-btn" data-mm-wl-reserve><i class="fa-solid fa-hand"></i> I\u2019ll get this</button>');
+            };
+            list.children('li').each(function(){ var k = $(this).attr('data-key'); if (mine[k]) paint($(this), true, '', true); });
+
+            list.on('click', '[data-mm-wl-reserve]', function(){
+                var li = $(this).closest('li'), key = li.attr('data-key');
+                li.find('[data-mm-wl-res]').html('<form class="mm-wl-resform"><input type="text" maxlength="40" placeholder="Your first name (optional)" aria-label="Your first name"><button type="submit" class="mm-wl-btn mm-wl-btn--dark">Reserve</button><button type="button" class="mm-wl-link" data-mm-wl-cancel>Cancel</button></form>')
+                    .find('input').trigger('focus');
+                li.find('.mm-wl-resform').on('submit', function(e){
+                    e.preventDefault();
+                    var by = $.trim($(this).find('input').val()), b = $(this).find('button[type="submit"]').prop('disabled', true);
+                    $.post(ajax, { action: 'mm_wl_reserve', id: wid, key: key, by: by }).done(function(r){
+                        if (r && r.success) { mine[key] = r.data.token; save(); paint(li, true, by, true); Theme.toast('Reserved! Others will see it\u2019s taken'); Theme.track('wishlist_reserve', {}); }
+                        else { b.prop('disabled', false); Theme.toast(plain(r && r.data), 'error'); if (/already/.test(plain(r && r.data))) paint(li, true, '', false); }
+                    }).fail(function(){ b.prop('disabled', false); Theme.toast('Network error. Please try again.', 'error'); });
+                });
+            });
+            list.on('click', '[data-mm-wl-cancel]', function(){ paint($(this).closest('li'), false); });
+            list.on('click', '[data-mm-wl-undo]', function(){
+                var li = $(this).closest('li'), key = li.attr('data-key');
+                $.post(ajax, { action: 'mm_wl_unreserve', id: wid, key: key, token: mine[key] }).done(function(r){
+                    if (r && r.success) { delete mine[key]; save(); paint(li, false); Theme.toast('Reservation removed'); }
+                    else Theme.toast(plain(r && r.data), 'error');
+                });
+            });
         }
     },
 
@@ -2659,8 +2796,8 @@ var Theme = {
     /**
      * Wishlist editor in the Edit Wishlist popup (markup: Users::generateWishlistEditor()).
      */
-    initWishlistEditor: function($){
-        var $form = $('#custom-popup .mm-edit__form');
+    initWishlistEditor: function($, $editor){
+        var $form = $editor || $('#custom-popup .mm-edit__form'); // group popup, or My Wishlist (its own form)
         if (!$form.length) return;
 
         var cfg = $form.data('config') || {},
@@ -2794,8 +2931,9 @@ var Theme = {
         $form.on('submit', function(e){
             e.preventDefault();
 
-            var data = { action: 'save_wishlist', uid: $form.find('[name="uid"]').val(), nonce: $form.find('[name="nonce"]').val(), address: $form.find('[name="address"]').val(), items: [] },
+            var data = { action: $form.find('[name="action"]').val() || 'save_wishlist', uid: $form.find('[name="uid"]').val(), nonce: $form.find('[name="nonce"]').val(), address: $form.find('[name="address"]').val(), items: [] },
                 firstError = null;
+            $.each(['id', 'name', 'note', 'password'], function(i, k){ var f = $form.find('[name="' + k + '"]'); if (f.length) data[k] = f.val(); });
 
             $list.children('[data-mm-item]').each(function(){
                 var $it = $(this), text = $.trim($it.find('[data-mm-text]').val()), links = [];
