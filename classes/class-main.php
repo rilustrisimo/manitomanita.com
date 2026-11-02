@@ -63,7 +63,7 @@ class Theme {
     
 
     function __autoload() {
-        $classes = array('affiliate', 'captcha', 'emails', 'email-check', 'seo', 'landing', 'themes', 'qa', 'gift-ai', 'involve', 'payments', 'groups', 'group-extras', 'logs', 'users', 'wishlists');
+        $classes = array('affiliate', 'captcha', 'emails', 'email-check', 'seo', 'landing', 'themes', 'qa', 'gift-ai', 'involve', 'payments', 'groups', 'group-extras', 'repeat', 'logs', 'users', 'wishlists');
 
         foreach($classes as $value){
             require_once PARENT_DIR . '/classes/class-'. $value .'.php';
@@ -107,12 +107,34 @@ class Theme {
          if(!$hintsHooked){
              $hintsHooked = true;
              add_filter('acf/prepare_field', array($this, 'frontEndFieldHints'));
+             add_action('acf/save_post', array($this, 'protectHiddenFields'), 1); // before ACF saves (priority 10)
          }
     }
 
     /**
      * Placeholders and short explanations for the Create Group / Join Group / Edit forms (front end only).
      */
+    /**
+     * Front-end forms (Create/Edit Group, Join/Edit Member) render some fields hidden with CSS only.
+     * Never save those from a form: PRO status, credits, payment, matches and links are set by code
+     * (Payments, the PRO tools, the shuffle). Without this, editing the form could give free PRO.
+     */
+    public function protectHiddenFields(){
+        if(is_admin() || empty($_POST['acf']) || !is_array($_POST['acf'])) return;
+
+        $locked = array(
+            'field_672035cd1110f', // groups: pro
+            'field_67258a3f10bcb', // groups: unshuffle_credits
+            'field_6720f0ccaba26', // groups: order_id
+            'field_5f5cc15d79b68', // groups: matched
+            'field_5f55c6cc698b1', // groups: group_password (generated)
+            'field_5f55f1f576679', // users: groups (set from the session)
+            'field_5f5cc0bb4a1fd', // users: pair (set by the shuffle)
+        );
+
+        foreach($locked as $key) unset($_POST['acf'][$key]);
+    }
+
     public function frontEndFieldHints($field){
         if(!$field || is_admin()) return $field;
 

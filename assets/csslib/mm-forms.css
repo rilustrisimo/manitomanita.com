@@ -864,3 +864,108 @@ body #ui-datepicker-div .ui-datepicker-buttonpane button:hover {
 @media (prefers-reduced-motion: reduce) {
     body #ui-datepicker-div.ui-datepicker { animation: none; }
 }
+
+/* ---------- Start a new group from an old one (Theme.initRepeat) ---------- */
+
+#create-group .mm-repeat-intro {
+    display: flex;
+    gap: 12px;
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(62, 199, 194, .12);
+    color: #1b1b1b;
+    font-size: 14px;
+    line-height: 1.45;
+    text-align: left;
+}
+
+#create-group .mm-repeat-intro > i {
+    margin-top: 3px;
+    color: #2a9d99;
+}
+
+#create-group .mm-repeat-intro strong {
+    display: block;
+}
+
+#create-group .mm-repeat-intro span {
+    color: #4a4a4a;
+}
+
+#create-group .acf-field input.is-kept {
+    background: #f6f8f8 !important;
+    color: #4a4a4a !important;
+    cursor: default;
+}
+
+#create-group .mm-repeat-kept {
+    margin: 6px 0 0 !important;
+    color: #6d6d6d;
+    font-size: 13px;
+    line-height: 1.4;
+    text-align: left;
+}
+
+#create-group fieldset.mm-repeat-invite {
+    margin: 6px 0 16px;
+    padding: 14px;
+    border: 1px solid #e3e3e3;
+    border-radius: 12px;
+    text-align: left;
+}
+
+#create-group .mm-repeat-invite legend {
+    width: auto;
+    margin: 0;
+    padding: 0 6px;
+    border: 0;
+    color: #1b1b1b;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+#create-group .mm-repeat-invite legend small {
+    color: #6d6d6d;
+    font-weight: 400;
+}
+
+#create-group .mm-repeat-invite p {
+    margin: 0 0 10px !important;
+    color: #6d6d6d;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+#create-group .mm-repeat-invite label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 8px 4px;
+    color: #1b1b1b;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+#create-group .mm-repeat-invite input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: #3ec7c2;
+}
+
+#create-group .mm-repeat-invite__all {
+    border-bottom: 1px solid #f0f0f0;
+    font-weight: 700 !important;
+}
+
+#create-group .mm-repeat-invite__list {
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+#create-group .mm-repeat-invite__note {
+    margin: 10px 0 0 !important;
+}

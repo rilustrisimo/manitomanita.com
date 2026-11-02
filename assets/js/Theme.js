@@ -31,6 +31,7 @@ var Theme = {
         this.initTurnstile($);
         this.initGiftStatus($);
         this.initQA($);
+        this.initRepeat($);
         this.initHome($);
         this.initPasswordToggles($);
 
@@ -334,6 +335,7 @@ var Theme = {
             if (btn === 'autodraw') Theme.proAutoDraw($, gid);
             if (btn === 'gtheme') Theme.proGroupTheme($, gid);
             if (btn === 'comod') Theme.proCoOrganizer($, gid);
+            if (btn === 'repeat') Theme.startRepeat($, gid);
             if (btn === 'gifts') Theme.proGifts($, gid);
 
             if (btn === 'nudge-wishlist' || btn === 'nudge-match') {
@@ -914,6 +916,64 @@ var Theme = {
                 if (btn.length) { $('html, body').animate({ scrollTop: btn.closest('.card').offset().top - 90 }, 300); btn.trigger('click'); }
             }, 900);
         }
+    },
+
+    /* ---------- Start a new group from this one (Repeat class) ---------- */
+
+    /** Moderator verified: get a one-time link and open Create Group on the homepage, pre-filled. */
+    startRepeat: function($, gid){
+        Theme.toast('Opening the new group form\u2026');
+        $.post($('#ajax-url').val(), { action: 'mm_repeat_start', gid: gid })
+            .done(function(resp){
+                if (resp && resp.success) { Theme.track('repeat_group_start', {}); window.location.href = resp.data.url; }
+                else Theme.toast($('<div>').html((resp && resp.data) || 'Please try again.').text(), 'error');
+            })
+            .fail(function(){ Theme.toast('Network error. Please try again.', 'error'); });
+    },
+
+    /** Homepage ?mm_repeat=<token>: Create Group with the organizer's email kept and last year's members to invite. */
+    initRepeat: function($){
+        var m = /[?&]mm_repeat=([A-Za-z0-9]+)/.exec(window.location.search);
+        if (!m || !$('#create-group').length) return;
+
+        $.post($('#ajax-url').val(), { action: 'mm_repeat_prep', token: m[1] }).done(function(resp){
+            if (!resp || !resp.success) { Theme.toast($('<div>').html((resp && resp.data) || 'This link has expired.').text(), 'error'); return; }
+            var d = resp.data, box = $('#create-group'), form = box.find('form');
+
+            box.find('.popup__title').html('New<span>Group</span>');
+            form.find('[data-mm-repeat]').remove();
+            form.prepend('<div class="mm-repeat-intro" data-mm-repeat><i class="fa-solid fa-rotate-right"></i><div><strong>Starting a new group from ' + Theme.esc(d.from) + '</strong>' +
+                '<span>Enter the new group name, date, budget and a new password. This is a new free group: PRO features don\u2019t carry over.</span></div></div>');
+            form.append('<input type="hidden" name="mm_repeat" value="' + Theme.esc(m[1]) + '" data-mm-repeat>');
+
+            var name = form.find('.acf-field[data-key="field_5f55bf19de4cb"] input');
+            if (name.length && !name.val()) name.val(d.name);
+
+            var email = form.find('.acf-field[data-key="field_5f55bf2fde4cc"] input');
+            email.val(d.email).prop('readonly', true).addClass('is-kept').trigger('change');
+            email.closest('.acf-field').find('.mm-repeat-kept').remove();
+            email.closest('.acf-input').append('<p class="mm-repeat-kept" data-mm-repeat>Same email as before. Tap <b>Send verification code</b> to check it still works.</p>');
+
+            if (d.members.length) {
+                var list = '<fieldset class="mm-repeat-invite" data-mm-repeat><legend>Invite last year\u2019s members <small>(' + d.members.length + ')</small></legend>' +
+                    '<p>They get an email with the new group link and join themselves. Untick anyone you don\u2019t want to invite.</p>' +
+                    '<label class="mm-repeat-invite__all"><input type="checkbox" checked data-mm-repeat-all> Select all</label><div class="mm-repeat-invite__list">';
+                d.members.forEach(function(p){
+                    list += '<label><input type="checkbox" name="mm_invite[]" value="' + parseInt(p.id, 10) + '" checked> ' + Theme.esc(p.name) + '</label>';
+                });
+                list += '</div>' + (d.skipped ? '<p class="mm-repeat-invite__note">' + d.skipped + ' member' + (d.skipped == 1 ? '' : 's') + ' without a confirmed email or who unsubscribed won\u2019t be invited.</p>' : '') + '</fieldset>';
+                var anchor = form.find('[data-mm-otp-gate]');
+                (anchor.length ? anchor : form.find('.acf-form-submit')).before(list);
+                form.find('[data-mm-repeat-all]').on('change', function(){ form.find('input[name="mm_invite[]"]').prop('checked', this.checked); });
+            }
+
+            $.fancybox.open({
+                src: '#create-group', type: 'inline', animationDuration: 600, animationEffect: 'slide-in-out',
+                btnTpl: { smallBtn: '<button data-fancybox-close class="fancybox-button fancybox-button--close" title="{{CLOSE}}"><i class="fas fa-times"></i></button>' },
+                afterShow: function(instance, current){ Theme.moveCloseButton($, current); }
+            });
+            Theme.track('repeat_group_form', { invites: d.members.length });
+        });
     },
 
     /* ---------- Group theme (colors of the group page) ---------- */
@@ -1701,7 +1761,7 @@ var Theme = {
                 var $nameEl = btn.parents('.card').find('h2 button .mm-member__name'); // not the avatar initial
                 var uname = $.trim(($nameEl.length ? $nameEl : btn.parents('.card').find('h2 button')).text());
                 var unamef = (uname.length > 0)?uname:'Moderator Password';
-                var uid = (btn.hasClass('editgroup-btn') || btn.hasClass('shuffle-btn'))?btn.attr('group-data'):btn.attr('user-data');
+                var uid = (btn.hasClass('editgroup-btn') || btn.hasClass('shuffle-btn') || btn.hasClass('repeat-btn'))?btn.attr('group-data'):btn.attr('user-data');
                 var box = (btn.hasClass('comment-btn'))?'#comment-box':'#input-password';
                 var action = btn.attr('data-action');
                 var notice = $('#input-pw .notices');
@@ -1798,6 +1858,9 @@ var Theme = {
                                     icon: 'fa-solid fa-shuffle',
                                     onConfirm: function(done){ done(); Theme.initMatching($, Theme.userid); }
                                 });
+                            }else if(Theme.action == "repeat-group"){
+                                Theme.removeOverlay($);
+                                Theme.startRepeat($, Theme.userid);
                             }else{
                                 Theme.initCustomPopup($);
                                 Theme.removeOverlay($);

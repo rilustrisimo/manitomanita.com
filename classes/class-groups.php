@@ -415,7 +415,7 @@ class Groups extends Theme {
         return $blocked;
     }
 
-    protected static function memberIds($gid){
+    public static function memberIds($gid){
         return array_map('intval', get_posts(array(
             'post_type'      => 'users',
             'post_status'    => 'publish',
@@ -1052,6 +1052,7 @@ class Groups extends Theme {
         $html .= $tool('comod', 'fa-solid fa-user-plus', 'Co-organizer', $co
             ? esc_html($co['name']).' can help run the group'
             : 'Add someone to help you run the group');
+        $html .= $tool('repeat', 'fa-solid fa-rotate-right', 'Start a new group from this one', 'For your next exchange: a new free group, invite everyone back');
 
         $html .= '<h4 class="mm-prot__group">Results</h4>';
         $html .= $tool('matches', 'fa-solid fa-handshake', 'See matches', 'Who is buying for whom', $matched ? '' : 'Available after the shuffle');
@@ -1294,6 +1295,7 @@ class Groups extends Theme {
 
                     $this->setUserGroupSession($post_id, get_field('group_password', $post_id));
                     $this->setEmailForCreateGroup($post_id);
+                    do_action('mm_group_created', $post_id); // e.g. Repeat: invites from last year's group
 
 
                     // Retrieve the initial redirect URL (you may have it set as a parameter or derived in your function)

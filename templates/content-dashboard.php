@@ -87,6 +87,7 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
                             <?php else: ?>
                             <div class="mm-dash-status"><i class="far fa-clock"></i><div><strong>Waiting for the shuffle.</strong> Find your name below and add your wishlist. <em>See Match</em> unlocks once the organizer shuffles the group.</div></div>
                             <?php endif; ?>
+                            <?php echo Repeat::dashboardCard($group->getGroupId()); ?>
                             <?php echo Themes::revealHtml($group->getGroupId()); ?>
                             <?php echo Themes::bannerHtml($group->getGroupId()); ?>
                             <button type="button" class="mm-tour-again" data-mm-tour-again><i class="far fa-circle-question" aria-hidden="true"></i> Show me around</button>
