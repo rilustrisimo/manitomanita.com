@@ -29,7 +29,6 @@ $pro = (isset($fields['pro']))?$fields['pro']:false;
 	<?php acf_form_head(); ?>
 	<?php wp_head(); ?>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.2.1/js.cookie.min.js" integrity="sha512-Meww2sXqNHxI1+5Dyh/9KAtvI9RZSA4c1K2k5iL02oiPO/RH3Q30L3M1albtqMg50u4gRTYdV4EXOQqXEI336A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-	<script data-ad-client="ca-pub-8648985139343614" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
 </head>
 <body <?php body_class(); ?>>
 <?php if(count($activepromos) > 0 && !is_front_page()): ?>

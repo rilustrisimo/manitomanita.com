@@ -2409,3 +2409,13 @@ body.pro-version:not(.mm-gtheme) .dashboard .dashboard__gd .mm-coorg i {
     color: var(--mm-accent-dark);
     font-weight: 700;
 }
+
+/* Ad slots (Ads::slot): space is reserved so the page doesn't jump when the ad loads */
+.mm-adslot {
+    min-height: 100px;
+    text-align: center;
+}
+
+.mm-adslot--fixed {
+    min-height: 250px;
+}

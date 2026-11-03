@@ -26,6 +26,7 @@ var Theme = {
         this.proScripts($);
         this.initAffiliateCap($);
         this.initTracking($);
+        this.initAdSense($);
         this.initEmailChecks($);
         this.initFormAlerts($);
         this.initTurnstile($);
@@ -2550,6 +2551,58 @@ var Theme = {
         try {
             if (typeof window.gtag === 'function') window.gtag('event', name, params || {});
         } catch (e) {}
+    },
+
+    /**
+     * Ad slots from Ads::slot ([data-mm-adsense]): the AdSense script loads only when the first
+     * slot comes near the screen, and each slot's ad is created then. Slots added later (the match
+     * view) are picked up too. Pages where nobody reaches a slot load no ad code.
+     */
+    initAdSense: function($){
+        if (Theme._adsInit) return;
+        Theme._adsInit = true;
+
+        var loaded = false, queued = false, io = null;
+        var fill = function(el){
+            var tpl = el.querySelector('template');
+            if (!tpl) return;
+            el.appendChild(tpl.content.cloneNode(true));
+            tpl.parentNode.removeChild(tpl);
+            if (!loaded) {
+                loaded = true;
+                var sc = document.createElement('script');
+                sc.async = true;
+                sc.crossOrigin = 'anonymous';
+                sc.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8648985139343614';
+                document.head.appendChild(sc);
+            }
+            try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+        };
+        if ('IntersectionObserver' in window) {
+            io = new IntersectionObserver(function(entries){
+                entries.forEach(function(en){
+                    if (!en.isIntersecting) return;
+                    io.unobserve(en.target);
+                    fill(en.target);
+                });
+            }, { rootMargin: '300px 0px' });
+        }
+        var scan = function(){
+            queued = false;
+            var els = document.querySelectorAll('[data-mm-adsense]:not([data-mm-ad-seen])');
+            for (var i = 0; i < els.length; i++) {
+                els[i].setAttribute('data-mm-ad-seen', '1');
+                if (io) io.observe(els[i]); else fill(els[i]);
+            }
+        };
+        scan();
+        if ('MutationObserver' in window) {
+            new MutationObserver(function(){
+                if (queued) return;
+                queued = true;
+                if (window.requestAnimationFrame) window.requestAnimationFrame(scan); else setTimeout(scan, 50);
+            }).observe(document.body, { childList: true, subtree: true });
+        }
     },
 
     initTracking: function($){

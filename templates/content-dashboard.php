@@ -168,19 +168,7 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
         </div>
         <div class="col-md-12 text-center" style="padding: 35px 15px;">
         <!-- ADS and PROMOTIONS -->
-        <?php if(!$pro): ?>
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-        <!-- Manito Manita Dashboard -->
-        <ins class="adsbygoogle"
-            style="display:block"
-            data-ad-client="ca-pub-8648985139343614"
-            data-ad-slot="3637831254"
-            data-ad-format="auto"
-            data-full-width-responsive="true"></ins>
-        <script>
-            (adsbygoogle = window.adsbygoogle || []).push({});
-        </script>
-        <?php endif; ?>
+        <?php echo Ads::slot('dashboard-bottom', $group->getGroupId()); // sponsor card, else AdSense near the screen; nothing for PRO ?>
 <!--
             <style>
                 .show-mobile { display: none; }

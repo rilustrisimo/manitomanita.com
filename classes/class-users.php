@@ -475,20 +475,9 @@ class Users extends Theme {
             : '<div class="mm-empty"><i class="fas fa-address-card"></i><p>No address or contact details yet.</p></div>';
         echo '</section>';
 
-        if(!$pro):
-            /** VALUE DEALS */
-            echo '<section class="mm-sec mm-sec--ad"><div class="mm-sec__label">Sponsored</div><div class="mm-ad"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-            <!-- Manito Manita Match Page -->
-            <ins class="adsbygoogle"
-                style="display:inline-block;width:300px;height:250px"
-                data-ad-client="ca-pub-8648985139343614"
-                data-ad-slot="3964563495"></ins>
-            <script>
-                (adsbygoogle = window.adsbygoogle || []).push({});
-            </script></div></section>';
-            //get_template_part('lazada/assets/offers', 'content');// offers template
-            /** VALUE DEALS END */
-        endif;
+        /** AD: a sponsor card for this slot, else AdSense (loaded near the screen). Nothing for PRO groups. */
+        $mmAd = Ads::slot('match-ideas', $gid);
+        if($mmAd !== '') echo '<section class="mm-sec mm-sec--ad"><div class="mm-sec__label">Sponsored</div><div class="mm-ad">'.$mmAd.'</div></section>';
 
         /** COMMENTS */
         echo '<section class="mm-sec">';
