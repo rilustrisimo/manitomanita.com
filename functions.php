@@ -66,9 +66,10 @@ function my_custom_styles() {
  */
 add_action( 'wp_enqueue_scripts', 'mm_enqueue_ui_styles', 20 );
 function mm_enqueue_ui_styles() {
-	$names = array( 'mm-header', 'mm-footer', 'mm-match', 'mm-dashboard', 'mm-forms', 'mm-pro', 'mm-support' );
+	$names = array( 'mm-header', 'mm-footer', 'mm-match', 'mm-dashboard', 'mm-forms', 'mm-pro', 'mm-support', 'mm-account' );
 	if ( is_page_template( 'template-homepage.php' ) || ( class_exists( 'Landing' ) && Landing::isActive() ) ) $names[] = 'mm-home';
 	if ( is_page_template( 'template-my-wishlist.php' ) ) array_push( $names, 'mm-home', 'mm-wishlist' );
+	if ( is_page_template( 'template-resetpw.php' ) || is_404() ) $names[] = 'mm-home';
 
 	foreach ( $names as $name ) {
 		$file = '/assets/csslib/' . $name . '.css';
@@ -106,7 +107,7 @@ function mm_scripts_to_footer() {
 
 add_filter( 'style_loader_tag', 'mm_async_popup_styles', 10, 2 );
 function mm_async_popup_styles( $tag, $handle ) {
-	static $popup = array( 'dashicons', 'fontawesome', 'icons-font-daf285204f208daff44cf703ef74f361', 'fancybox', 'jquery-ui', 'bxslider', 'bootstrap-select', 'acf-global', 'acf-input', 'acf-pro-input', 'select2', 'acf-datepicker', 'acf-timepicker', 'wp-color-picker', 'chaty-front-css', 'mm-support', 'mm-forms', 'mm-match', 'mm-dashboard', 'mm-pro' );
+	static $popup = array( 'dashicons', 'fontawesome', 'icons-font-daf285204f208daff44cf703ef74f361', 'fancybox', 'jquery-ui', 'bxslider', 'bootstrap-select', 'acf-global', 'acf-input', 'acf-pro-input', 'select2', 'acf-datepicker', 'acf-timepicker', 'wp-color-picker', 'chaty-front-css', 'mm-support', 'mm-account', 'mm-forms', 'mm-match', 'mm-dashboard', 'mm-pro' );
 	if ( ! in_array( $handle, $popup, true ) || ! mm_is_marketing_page() || strpos( $tag, "media='all'" ) === false ) return $tag;
 	return str_replace( "media='all'", "media='print' onload=\"this.media='all'\"", $tag ) . '<noscript>' . $tag . '</noscript>';
 }

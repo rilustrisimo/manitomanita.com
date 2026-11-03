@@ -96,7 +96,9 @@ $faq = array(
 						<button type="submit" class="mmh-btn mmh-btn--dark">Open</button>
 					</div>
 					<p class="mmh-link__error" data-mm-link-error hidden>That doesn&rsquo;t look like a Manito Manita group link. Check the link in your invite or email.</p>
+					<p class="mmh-link__lost">Don&rsquo;t have the link? <button type="button" data-mm-find-open>Email me my group links</button></p>
 				</form>
+				<div class="mmh-findbox" data-mm-find-box hidden><?php get_template_part( 'templates/account/find-group', null, array( 'slot' => 'home' ) ); ?></div>
 				<ul class="mmh-hero__trust">
 					<li><i class="fas fa-check"></i> Free forever</li>
 					<li><i class="fas fa-check"></i> No app, no sign-up</li>

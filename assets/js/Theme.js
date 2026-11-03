@@ -34,6 +34,7 @@ var Theme = {
         this.initRepeat($);
         this.initMyWishlist($);
         this.initSupport($);
+        this.initAccount($);
         this.initHome($);
         this.initPasswordToggles($);
 
@@ -129,6 +130,15 @@ var Theme = {
             $('#pro-actions-btn').click(function(e){
                 e.preventDefault();
 
+                var gid = $('input#groupid-val').val();
+                if (Theme.isVerified(gid)) {
+                    Theme.userid = gid;
+                    $('#pro-actions.pop-container').css('display', 'flex');
+                    Theme.popClose($);
+                    Theme.getProListActions($);
+                    return;
+                }
+
                 Theme.openPasswordField($);
             });
         }
@@ -202,7 +212,8 @@ var Theme = {
                     // ANY other properties of data are passed to your_function()
                     // in the PHP global $_REQUEST (or $_POST in this case)
                     password : pw.val(),
-                    uid : userid.val()
+                    uid : userid.val(),
+                    remember : $('#input-pw input[name="remember"]').is(':checked') ? '1' : '0'
                     },
                 beforeSend : function()    {           
 
@@ -212,6 +223,7 @@ var Theme = {
                         if(resp.data[0]){
                             $.fancybox.close();
                             Theme.userid = userid.val(); //set global user id
+                            Theme.markVerified(Theme.userid);
 
                             $('#pro-actions.pop-container').css('display', 'flex');
                             Theme.popClose($);
@@ -918,6 +930,57 @@ var Theme = {
                 if (btn.length) { $('html, body').animate({ scrollTop: btn.closest('.card').offset().top - 90 }, 300); btn.trigger('click'); }
             }, 900);
         }
+    },
+
+    /* ---------- Account: lost group link, reset password form, sign out on this device ---------- */
+
+    initAccount: function($){
+        var ajax = $('#ajax-url').val();
+
+        // "Lost your group link?" forms (homepage, reset page, 404)
+        $(document).off('submit.mmFind').on('submit.mmFind', '[data-mm-find]', function(e){
+            e.preventDefault();
+            var f = $(this), msg = f.find('.mm-find__msg'), btn = f.find('button[type="submit"]'), email = $.trim(f.find('[name="email"]').val());
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { msg.addClass('is-error').text('Please enter a valid email address.'); return; }
+            btn.prop('disabled', true);
+            msg.removeClass('is-error').text('Sending\u2026');
+            $.post(ajax, { action: 'mm_find_groups', email: email }).done(function(r){
+                msg.toggleClass('is-error', !(r && r.success)).text($('<div>').html((r && r.data) || 'Something went wrong. Please try again.').text());
+                if (r && r.success) Theme.track('find_groups', { slot: f.attr('data-slot') || '' });
+            }).fail(function(){ msg.addClass('is-error').text('Network error. Please try again.'); })
+              .always(function(){ btn.prop('disabled', false); });
+        });
+        $(document).off('click.mmFindOpen').on('click.mmFindOpen', '[data-mm-find-open]', function(){
+            var box = $('[data-mm-find-box]').prop('hidden', false);
+            box.find('input[type="email"]').trigger('focus');
+        });
+
+        // Reset password: show/hide and a quick check before sending
+        var reset = $('[data-mm-reset]');
+        if (reset.length) {
+            reset.find('[data-mm-pwshow]').on('click', function(){
+                var ins = reset.find('input[type="password"], input[data-shown]'), show = $(this).text() === 'Show';
+                ins.attr('type', show ? 'text' : 'password').attr('data-shown', show ? '1' : null);
+                $(this).text(show ? 'Hide' : 'Show');
+            });
+            reset.on('submit', function(e){
+                var a = reset.find('[name="new-pass"]').val(), b = reset.find('[name="new-pass2"]').val(), hint = reset.find('[data-mm-pwhint]');
+                if (a.length < 6) { e.preventDefault(); hint.addClass('is-error').text('Please use at least 6 characters.'); return; }
+                if (a !== b) { e.preventDefault(); hint.addClass('is-error').text('The two passwords don\u2019t match.'); return; }
+                reset.find('button[type="submit"]').prop('disabled', true).text('Saving\u2026');
+            });
+        }
+
+        // Sign out on this device (forget the remembered members/organizer here)
+        var out = $('[data-mm-forget]');
+        if (out.length && (window.mmVerified || []).length) out.prop('hidden', false);
+        out.on('click', function(){
+            $.post(ajax, { action: 'mm_forget_device' }).always(function(){
+                window.mmVerified = [];
+                Theme.toast('Signed out on this device');
+                setTimeout(function(){ window.location.reload(); }, 600);
+            });
+        });
     },
 
     /* ---------- Ask Manito: help chat (SupportBot) + social follow tracking ---------- */
@@ -1731,22 +1794,19 @@ var Theme = {
         function steps(which){
             var shuffleTarget = isPro ? '#pro-actions-btn' : '.mm-header .shuff-btn a';
             var all = {
+                // Short on purpose (the 5-step version was finished by only 29%).
                 organizer: [
-                    { el: '#clipboard', title: 'Share this link', text: 'Send it on Messenger, Viber or email. Members join, confirm their email and add a wishlist.' },
-                    { el: '#navigation-dashboard li:first-child a', title: 'Playing too?', text: 'The organizer isn\u2019t in the shuffle automatically. If you\u2019re joining the exchange, join with your own screen name.' },
+                    { el: '#clipboard', title: 'Share this link', text: 'Send it on Messenger or Viber. Members join, confirm their email and add a wishlist. Playing too? Join with your own name.' },
                     { el: '#members-list', title: 'Watch people join', text: 'Members appear here once they confirm their email.' },
-                    { el: shuffleTarget, title: 'Shuffle when everyone is in', text: 'Everyone gets their match by email. You need at least 3 members.' },
-                    { el: '#go-pro-btn', title: 'Need more control? (optional)', text: 'PRO adds exclusions for couples, unshuffle for late joiners, reminders and more. Everything else is free.' }
+                    { el: shuffleTarget, title: 'Shuffle when everyone is in', text: 'Everyone gets their match by email (at least 3 members).' }
                 ],
                 'member-before': [
-                    { el: '[data-mm-search]:not([hidden]), #members-list', title: 'Find your name', text: 'Your card is in the member list. Big group? Use the search box.' },
-                    { el: '#members-list .user-action[data-action="edit-wishlist"]', title: 'Add your wishlist', text: 'Tap Edit Wishlist on your name and add a few things you\u2019d love. Links to Lazada or Shopee work great.' },
+                    { el: '#members-list .user-action[data-action="edit-wishlist"]', title: 'Add your wishlist', text: 'Find your name and tap Edit Wishlist. Links to Lazada or Shopee work great.' },
                     { el: '.mm-dash-status', title: 'We\u2019ll email you', text: 'When the organizer shuffles, you\u2019ll get an email with your match.' }
                 ],
                 'member-after': [
-                    { el: '.mm-dash-status', title: 'The group has been shuffled!', text: 'Everyone has a match now. Yours is waiting.' },
-                    { el: '#members-list .mm-match-btn:not([disabled])', title: 'See your match', text: 'Tap See Match on your name and enter your password. You\u2019ll see their wishlist, address and gift ideas.' },
-                    { el: '#members-list .mm-view-btn', title: 'Peek at wishlists', text: 'View anyone\u2019s wishlist and leave a comment. Then mark your gift as bought in See Match.' }
+                    { el: '#members-list .mm-match-btn:not([disabled])', title: 'See your match', text: 'Tap See Match on your name to see their wishlist, address and gift ideas.' },
+                    { el: '#members-list .mm-view-btn', title: 'Peek at wishlists', text: 'View anyone\u2019s wishlist and leave a comment.' }
                 ]
             };
             return all[which] || [];
@@ -1775,9 +1835,13 @@ var Theme = {
             start(true);
         });
 
+        // Starts by itself only for an organizer's first group on this browser; members use "Show me around".
         var seen = null;
-        try { seen = localStorage.getItem(key); } catch (e) {}
-        if (!seen) setTimeout(function(){ start(false); }, 600);
+        try { seen = localStorage.getItem(key) || localStorage.getItem('mm_tour_organizer_seen'); } catch (e) {}
+        if (organizer && !seen) {
+            try { localStorage.setItem('mm_tour_organizer_seen', '1'); } catch (e) {}
+            setTimeout(function(){ start(false); }, 600);
+        }
     },
 
     /**
@@ -2112,6 +2176,15 @@ var Theme = {
                 var uid = (btn.hasClass('editgroup-btn') || btn.hasClass('shuffle-btn') || btn.hasClass('repeat-btn'))?btn.attr('group-data'):btn.attr('user-data');
                 var box = (btn.hasClass('comment-btn'))?'#comment-box':'#input-password';
                 var action = btn.attr('data-action');
+
+                // Signed in on this device ("remember this device" or a password this session): no prompt.
+                if (!btn.hasClass('comment-btn') && Theme.isVerified(uid)) {
+                    Theme.action = action;
+                    Theme.userid = uid;
+                    Theme.afterVerified($);
+                    return;
+                }
+
                 var notice = $('#input-pw .notices');
                 notice.hide();
                 $('.header-details').hide();
@@ -2180,7 +2253,8 @@ var Theme = {
                     // ANY other properties of data are passed to your_function()
                     // in the PHP global $_REQUEST (or $_POST in this case)
                     password : pw.val(),
-                    uid : userid.val()
+                    uid : userid.val(),
+                    remember : $('#input-pw input[name="remember"]').is(':checked') ? '1' : '0'
                     },
                 beforeSend : function()    {           
 
@@ -2190,29 +2264,9 @@ var Theme = {
                         if(resp.data[0]){
                             $.fancybox.close();
                             Theme.userid = userid.val(); //set global user id
+                            Theme.markVerified(Theme.userid);
 
-                            if(Theme.action == "shuffle-group"){
-                                Theme.removeOverlay($);
-                                var isPro = $('body').hasClass('pro-version');
-                                Theme.confirmSheet({
-                                    title: 'Shuffle the group now?',
-                                    points: [
-                                        'Everyone gets their match <b>by email right away</b>.',
-                                        '<b>No one can join</b> after the shuffle.',
-                                        isPro ? 'You can unshuffle later from PRO Actions (uses 1 credit).' : '<b>Free groups can\u2019t undo a shuffle.</b> If late joiners might come, upgrade to PRO to be able to unshuffle.'
-                                    ],
-                                    check: 'Everyone who should be in the group has joined',
-                                    confirm: 'Shuffle now',
-                                    icon: 'fa-solid fa-shuffle',
-                                    onConfirm: function(done){ done(); Theme.initMatching($, Theme.userid); }
-                                });
-                            }else if(Theme.action == "repeat-group"){
-                                Theme.removeOverlay($);
-                                Theme.startRepeat($, Theme.userid);
-                            }else{
-                                Theme.initCustomPopup($);
-                                Theme.removeOverlay($);
-                            }
+                            Theme.afterVerified($);
                         }else{
                             notice.html('Incorrect Password for '+resp.data[1]+'. Reset and Generate New Password <a href="javascript:;" id="reset-pass">Here</a>.');
                             notice.show();
@@ -2238,6 +2292,42 @@ var Theme = {
         });
     },
 
+    /** Members/groups signed in on this device (window.mmVerified from the dashboard, plus this visit). */
+    isVerified: function(id){
+        return !!id && (window.mmVerified || []).map(String).indexOf(String(id)) !== -1;
+    },
+
+    markVerified: function(id){
+        window.mmVerified = window.mmVerified || [];
+        if (!Theme.isVerified(id)) window.mmVerified.push(String(id));
+    },
+
+    /** After the member/organizer password (or a remembered device): run the action they tapped. */
+    afterVerified: function($){
+                if(Theme.action == "shuffle-group"){
+                    Theme.removeOverlay($);
+                    var isPro = $('body').hasClass('pro-version');
+                    Theme.confirmSheet({
+                        title: 'Shuffle the group now?',
+                        points: [
+                            'Everyone gets their match <b>by email right away</b>.',
+                            '<b>No one can join</b> after the shuffle.',
+                            isPro ? 'You can unshuffle later from PRO Actions (uses 1 credit).' : '<b>Free groups can\u2019t undo a shuffle.</b> If late joiners might come, upgrade to PRO to be able to unshuffle.'
+                        ],
+                        check: 'Everyone who should be in the group has joined',
+                        confirm: 'Shuffle now',
+                        icon: 'fa-solid fa-shuffle',
+                        onConfirm: function(done){ done(); Theme.initMatching($, Theme.userid); }
+                    });
+                }else if(Theme.action == "repeat-group"){
+                    Theme.removeOverlay($);
+                    Theme.startRepeat($, Theme.userid);
+                }else{
+                    Theme.initCustomPopup($);
+                    Theme.removeOverlay($);
+                }
+    },
+
     generateNewPassword: function($, uids){
         Theme.initShowOverlay($);
 
@@ -2260,10 +2350,10 @@ var Theme = {
                 //console.log(resp);
                 var notice = $('#input-pw .notices');
 
-                if(resp.success){
-                    notice.html('Check your email inbox for the new generated password. If not found, please try to look in your Junk or Bulk folders.');
+                if(resp.success && resp.data){
+                    notice.html('We emailed you a link to set a new password (it works for 1 hour). Check your inbox, and your spam folder if you don\u2019t see it.');
                 }else{
-                    notice.html('Password generating failed. Please try again.');
+                    notice.html(resp && resp.data && typeof resp.data === 'string' ? resp.data : 'We couldn\u2019t send the reset link. Please try again.');
                 }
 
                 Theme.removeOverlay($);
@@ -2607,6 +2697,19 @@ var Theme = {
     initEmailChecks: function($){
         // After joining / confirming (EmailCheck): tell the member where they stand.
         var q = window.location.search;
+
+        // Conversion events (GA4 key events): group created / member joined, sent once then removed from the URL.
+        var m = /[?&]mm_new=(new|repeat)/.exec(q), clean = function(name){
+            try { var u = new URL(window.location.href); u.searchParams.delete(name); history.replaceState(null, '', u.toString()); } catch (e) {}
+        };
+        if (m) {
+            Theme.track('create_group', { method: m[1] });
+            if (m[1] === 'repeat') Theme.track('repeat_group_created', {});
+            clean('mm_new');
+        }
+        if (/[?&]mm_confirmed=1/.test(q)) { Theme.track('join_group', {}); setTimeout(function(){ clean('mm_confirmed'); }, 800); }
+        if (/[?&]mm_joined=1/.test(q)) Theme.track('join_request', {});
+
         if (/[?&]mm_joined=1/.test(q)) {
             setTimeout(function(){
                 Theme.infoSheet($, 'Check your email to confirm', 'We sent you a confirmation email. <b>Tap the button in it to be added to the group.</b> You won\u2019t appear in the member list until you confirm. Can\u2019t find it? Check your spam or promotions folder.', 'fa-solid fa-envelope-open-text');

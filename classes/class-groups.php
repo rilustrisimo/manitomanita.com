@@ -242,6 +242,8 @@ class Groups extends Theme {
     public static function isModerator($gid){
         $gid = (int) $gid;
         $t = (isset($_SESSION['mm_mod'][$gid]))?(int) $_SESSION['mm_mod'][$gid]:0;
+        if($gid && get_post_type($gid) === 'groups' && $t <= time() - self::MOD_TTL && class_exists('Account')) Account::restore($gid); // remembered device
+        $t = (isset($_SESSION['mm_mod'][$gid]))?(int) $_SESSION['mm_mod'][$gid]:0;
 
         return $gid && get_post_type($gid) === 'groups' && $t > time() - self::MOD_TTL;
     }
@@ -1192,67 +1194,7 @@ class Groups extends Theme {
         return $creds;
     }
 
-    public function update_password(){
-        $uid = $_POST['uid'];
-        $newPass = $_POST['new-pass'];
-
-        $posttype = get_post_type($uid);
-		$email = ($posttype == "groups")?get_field('your_email', $uid):get_field('email', $uid);
-        $update = update_field('password', wp_hash_password($newPass), $uid);
-           
-        if($update){
-            $tag = "new-pass";
-
-            $args = array(
-            'post_type'   => 'emails',
-            'posts_per_page' => -1
-            );
-            
-            $em = get_posts( $args );
-            
-            foreach($em as $epost){
-                $f = get_fields($epost->ID);
-
-                if($f['email_tag'] == $tag){
-                    $e = $f;
-                    break;
-                }
-            }
-
-            $group = new Groups();
-
-            $gpw = "";
-            $gid = "";
-
-            if(get_post_type($uid) == 'users'){
-                $field = get_field('groups', $uid);
-                $gid = $field;
-                $gpw = get_field('group_password', $field);
-            }else{
-                $gid = $uid;
-                $gpw = get_field('group_password', $uid);
-            }
-
-            $name = ($posttype == "groups")?get_field('your_name', $uid):get_field('name', $uid);
-
-            $message = $e['email_body'];
-            $message = str_replace('[email_name]', ucwords($name), $message);
-            $message = str_replace('[email_grouplink]', get_permalink(23).'?gid='.$gid.'&pw='.$gpw, $message);
-            
-            $to = $email;
-
-            $subject = $e['email_subject'];
-
-            if(parent::sendEmail($to, $subject, $message)){
-                return 'Password Changed Successfully!';
-            }else{
-                return 'Password Change Failed!';
-            }
-        }else {
-            return 'Password Change Failed!';
-        }
-        
-    }
+    // update_password() removed: password resets are handled by Account::handleReset() (signed, expiring links).
 
     public function my_save_post( $post_id ) {	
         if(isset($_POST['_acf_post_id'])) {
@@ -1299,7 +1241,8 @@ class Groups extends Theme {
 
 
                     // Retrieve the initial redirect URL (you may have it set as a parameter or derived in your function)
-                    $initial_redirect = home_url('/group-dashboard/?rnd='.$this->randString(10).'&pop=try-pro'); // Replace this if you retrieve from elsewhere
+                    // mm_new: the dashboard sends GA4 "create_group" once (method: new / repeat), then removes it from the URL
+                    $initial_redirect = home_url('/group-dashboard/?rnd='.$this->randString(10).'&pop=try-pro&mm_new='.(!empty($_POST['mm_repeat']) ? 'repeat' : 'new'));
 
                     // Append gid (post_id) and pw (group password)
                     $redirect_url = add_query_arg(

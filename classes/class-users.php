@@ -85,9 +85,11 @@ class Users extends Theme {
             // Lets save_wishlist() trust this member for the rest of the session.
             if(get_post_type($uid) == 'users') $_SESSION['mm_verified'][(int) $uid] = time();
             if(get_post_type($uid) == 'groups'){ Groups::markModerator($uid); GroupExtras::markOrganizer($uid); } // moderator tools / PRO actions
+            if(($_POST['remember'] ?? '1') !== '0') Account::remember($uid); // "Remember this device" (30 days)
 		} elseif(get_post_type($uid) == 'groups' && GroupExtras::checkCoOrganizer($uid, (string) $password)) {
 		    $result = true; // PRO co-organizer: same tools, except managing the co-organizer
 		    Groups::markModerator($uid);
+            if(($_POST['remember'] ?? '1') !== '0') Account::remember($uid, 'co');
 		} else {
 		    $result = false;
         }
@@ -175,7 +177,8 @@ class Users extends Theme {
     protected function isVerifiedMember($uid){
         $t = (isset($_SESSION['mm_verified'][(int) $uid]))?(int) $_SESSION['mm_verified'][(int) $uid]:0;
 
-        return ($t > time() - 2 * HOUR_IN_SECONDS);
+        // Fresh password check this session, or "remember this device" (Account cookie, 30 days).
+        return ($t > time() - 2 * HOUR_IN_SECONDS) || Account::restore($uid);
     }
 
     /**
@@ -682,6 +685,7 @@ class Users extends Theme {
 
         $email = ($posttype == "groups")?get_field('your_email', $uid):get_field('email', $uid);
         if(!$email) wp_send_json_success(false);
+        if(!Account::canSendReset($uid)) wp_send_json_error('We already sent a reset link. Please check your inbox (and spam folder) or try again in an hour.');
 
         $group = new Groups();
         $gpass = $group->getGroupPassword($uid);
@@ -694,8 +698,8 @@ class Users extends Theme {
             'eyebrow'   => 'Password reset',
             'title'     => 'Reset your password',
             'body'      => array('<p>Hi '.esc_html($name !== '' ? $name : 'there').', we got a request to reset your '.($posttype == "groups" ? 'organizer' : 'member').' password for <strong>'.esc_html($groupName).'</strong>.</p>'),
-            'button'    => array('Set a new password', get_permalink(1389).'?uid='.$uid.'&gpw='.rawurlencode((string) $gpass)),
-            'note'      => 'Didn&rsquo;t ask for this? You can ignore this email; your password stays the same.',
+            'button'    => array('Set a new password', Account::resetUrl($uid)),
+            'note'      => 'The link works for 1 hour. Didn&rsquo;t ask for this? You can ignore this email; your password stays the same.',
             'footer'    => 'You&rsquo;re getting this because a password reset was requested on manitomanita.com.',
         ));
 

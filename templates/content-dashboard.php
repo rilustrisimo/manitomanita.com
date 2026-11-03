@@ -92,6 +92,7 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
                             <?php echo Themes::revealHtml($group->getGroupId()); ?>
                             <?php echo Themes::bannerHtml($group->getGroupId()); ?>
                             <button type="button" class="mm-tour-again" data-mm-tour-again><i class="far fa-circle-question" aria-hidden="true"></i> Show me around</button>
+                            <button type="button" class="mm-tour-again mm-signout" data-mm-forget hidden><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i> Sign out on this device</button>
                             <?php if(!$pro): // one quiet PRO hint at the moment it helps ?>
                             <div class="mm-pro-hint">
                                 <i class="fa-solid fa-star" aria-hidden="true"></i>
@@ -221,8 +222,10 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
 		<form action="#" method="POST" id="input-pw" class="acf-form">
             <input type="hidden" name="user-data" value="">
             <div class="pw-field acf-field"><div class="acf-label"><label for="mm-pw-input">Password</label><p class="description">The password you set when you joined or created the group.</p></div><input type="password" name="password" id="mm-pw-input" autocomplete="current-password" placeholder="Enter your password" required><div class="notices" style="display:none;"></div></div>
+            <label class="mm-remember"><input type="checkbox" name="remember" value="1" checked> Remember me on this device for 30 days</label>
             <div class="pw-submit acf-form-submit"><input type="submit" name="submit" value="Submit" class="button"></div>
         </form>
+        <script>window.mmVerified = <?php echo wp_json_encode( array_map( 'strval', Account::verifiedIds( $group->getGroupId() ) ) ); ?>;</script>
 	</div>
 </div>
 <div id="comment-box" class="popup">

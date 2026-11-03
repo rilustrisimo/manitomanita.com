@@ -49,7 +49,7 @@ class QA {
     protected static function verified( $uid ) {
         $t = isset( $_SESSION['mm_verified'][ (int) $uid ] ) ? (int) $_SESSION['mm_verified'][ (int) $uid ] : 0;
 
-        return $t > time() - 2 * HOUR_IN_SECONDS;
+        return $t > time() - 2 * HOUR_IN_SECONDS || ( class_exists( 'Account' ) && Account::restore( $uid ) );
     }
 
     protected static function groupOf( $uid ) {
