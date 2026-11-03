@@ -459,6 +459,11 @@ class Users extends Theme {
             ? Affiliate::giftIdeasHtml($gid, 'ai-gift-ideas', false, $aiIdeas, 'Picked for '.esc_html($pairName).' from their wishlist')
             : Affiliate::giftIdeasHtml($gid, 'match-gift-ideas');
 
+        /** Sellers among the members: a quiet invitation to advertise (never in PRO groups) */
+        if(!$pro && get_option('mm_ads_pages')){
+            echo '<p class="mm-match-biz">Sell gifts? <a href="'.esc_url(home_url('/advertise/')).'" target="_blank" rel="noopener" data-mm-track="advertise_cta" data-mm-slot="match-screen">Feature your shop here</a></p>';
+        }
+
         /** My Wishlist: they just shopped from someone's list, the best moment to suggest one of their own */
         if($this->isVerifiedMember($uid)){
             echo '<p class="mm-match-wl"><i class="fas fa-heart" aria-hidden="true"></i> <span>Like having a wishlist to go by? Make your own for your birthday or any day.</span> <a href="'.esc_url(home_url('/my-wishlist/')).'" target="_blank" rel="noopener" data-mm-track="wishlist_cta" data-mm-slot="see-match">Make my wishlist</a></p>';
@@ -480,7 +485,7 @@ class Users extends Theme {
         echo '</section>';
 
         /** AD: AdSense when no sponsor is booked (loaded near the screen). Nothing for PRO groups. */
-        $mmAd = ($mmSpon === '' && !Ads::isProGroup($gid)) ? Ads::adsense('match-ideas') : '';
+        $mmAd = ($mmSpon === '' && !Ads::isProGroup($gid)) ? Ads::fallback('match-ideas') : '';
         if($mmAd !== '') echo '<section class="mm-sec mm-sec--ad"><div class="mm-sec__label">Sponsored</div><div class="mm-ad">'.$mmAd.'</div></section>';
 
         /** COMMENTS */

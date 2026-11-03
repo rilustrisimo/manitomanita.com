@@ -272,6 +272,18 @@ $faq = array(
 		</div>
 	</section>
 
+	<?php if ( get_option( 'mm_ads_pages' ) ) : ?>
+	<section class="mmh-bizband" aria-label="Advertise with us">
+		<div class="mmh-wrap">
+			<div class="mmh-bizband__card">
+				<span class="mmh-bizband__icon" aria-hidden="true"><i class="fas fa-bullhorn"></i></span>
+				<div class="mmh-bizband__txt"><strong>Have a shop or brand?</strong><span>Thousands of Filipinos plan their Monito Monita gifts here every Christmas. Put your shop in front of them right when they shop, from the match screen to the &ldquo;your match is ready&rdquo; email.</span></div>
+				<a href="<?php echo esc_url( home_url( '/advertise/' ) ); ?>" class="mmh-btn mmh-btn--ghost-dark" data-mm-track="advertise_cta" data-mm-slot="home-band">Advertise with us</a>
+			</div>
+		</div>
+	</section>
+	<?php endif; ?>
+
 	<section class="mmh-final<?php echo $finalBg ? ' has-bg' : ''; ?>">
 		<?php echo $finalBg; ?>
 		<div class="mmh-wrap mmh-center" data-reveal>

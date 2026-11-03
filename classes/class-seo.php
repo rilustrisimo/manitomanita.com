@@ -198,6 +198,7 @@ class SEO {
         echo "- [Free vs PRO]({$home}#pro)\n";
         echo "- [FAQ]({$home}#faq)\n";
         echo "- [My Wishlist (personal, any occasion)]({$home}my-wishlist/)\n";
+        echo "- [Advertise with us (for businesses)]({$home}advertise/)\n";
         echo "- Help: the \"Ask Manito\" chat on every page answers questions about the site\n\n";
         echo "## Social\n\n";
         foreach ( Theme::socials() as $s ) echo '- [' . $s[0] . '](' . $s[1] . ")\n";

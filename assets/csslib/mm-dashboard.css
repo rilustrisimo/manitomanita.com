@@ -2515,3 +2515,20 @@ body.pro-version:not(.mm-gtheme) .dashboard .dashboard__gd .mm-coorg i {
 .mm-spon-slot:empty {
     display: none;
 }
+
+.mm-match-biz {
+    margin: -6px 0 16px;
+    color: #8c8f94;
+    font-size: 13px;
+    text-align: right;
+}
+
+.mm-match-biz a {
+    color: #1f8580;
+    font-weight: 600;
+}
+
+.mm-spon--house {
+    border-style: dashed;
+    border-color: #d4c48f;
+}

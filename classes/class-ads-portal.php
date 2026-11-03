@@ -57,7 +57,11 @@ class AdsPortal {
 
     /** Creates /advertise/, /advertiser/ and /ad-guidelines/ once (edits in WP Admin are kept). */
     public static function pages() {
-        if ( get_option( self::PAGES_OPT ) || get_transient( 'mm_ads_pages_lock' ) ) return;
+        if ( get_option( self::PAGES_OPT ) ) {
+            self::rulesLayout();
+            return;
+        }
+        if ( get_transient( 'mm_ads_pages_lock' ) ) return;
         set_transient( 'mm_ads_pages_lock', 1, 120 );
 
         $defs = array(
@@ -83,9 +87,23 @@ class AdsPortal {
         delete_transient( 'mm_ads_pages_lock' );
     }
 
+    /** /ad-guidelines/ uses the Landing "legal" layout (same as the Privacy Policy). Applied once. */
+    protected static function rulesLayout() {
+        if ( get_option( 'mm_ads_rules_layout' ) || ! function_exists( 'update_field' ) ) return;
+        $ids = (array) get_option( self::PAGES_OPT, array() );
+        $id = (int) ( $ids['ad-guidelines'] ?? 0 );
+        if ( ! $id || get_post_type( $id ) !== 'page' ) return;
+        update_option( 'mm_ads_rules_layout', 1, true );
+        wp_update_post( array( 'ID' => $id, 'post_content' => self::rulesHtml() ) );
+        update_post_meta( $id, '_wp_page_template', 'template-landing.php' );
+        update_field( 'field_mm_land_type', 'legal', $id );
+        update_field( 'field_mm_land_h1', 'Ad guidelines', $id );
+        update_field( 'field_mm_land_lead', 'Ads appear next to Secret Santa groups, gift lists and gift guides used by families, schools and offices. Every ad is reviewed before it goes live.', $id );
+        update_field( 'field_mm_land_updated', wp_date( 'Ymd' ), $id );
+    }
+
     public static function rulesHtml() {
-        return '<p>Ads on Manito Manita appear next to Secret Santa groups, gift lists and gift guides used by families, schools and offices. Every ad is reviewed before it goes live.</p>'
-            . '<h2>What you can advertise</h2><ul><li>Products and services people buy as gifts, or use for parties and celebrations: shops, gift boxes, food, flowers, venues, events, personalised items and the like.</li><li>Your own Shopee, Lazada, website or social media pages.</li></ul>'
+        return '<h2>What you can advertise</h2><ul><li>Products and services people buy as gifts, or use for parties and celebrations: shops, gift boxes, food, flowers, venues, events, personalised items and the like.</li><li>Your own Shopee, Lazada, website or social media pages.</li></ul>'
             . '<h2>What we don&rsquo;t accept</h2><ul><li>Gambling, betting, raffles, lotteries and lucky draws that people pay to join.</li><li>Adult content, dating, alcohol aimed at minors, tobacco and vapes.</li><li>Investment schemes, crypto, loans, MLM and &ldquo;get rich&rdquo; offers.</li><li>Political or religious campaigning, weapons, and anything illegal in the Philippines.</li><li>Misleading claims, fake discounts, or links that don&rsquo;t match the ad.</li></ul>'
             . '<h2>Your card</h2><ul><li>Use your real brand name and a logo you own.</li><li>Links must use https and lead to the page the ad describes.</li><li>Promo codes must work for everyone who sees the ad.</li></ul>'
             . '<h2>Reviews, payments and refunds</h2><ul><li>You pay when you book. If we reject the ad, the first payment is refunded in full and the subscription is cancelled.</li><li>Subscriptions renew every week or month until you cancel. When you cancel, your ad keeps running until the end of the period you paid for; that period isn&rsquo;t refunded.</li><li>Christmas placements run Sep 1 to Dec 20. Subscriptions for them stop before billing a period after Dec 20.</li><li>We may pause or remove an ad that breaks these rules. Edits to a live ad are reviewed before they replace the current version.</li></ul>'

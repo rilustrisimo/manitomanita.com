@@ -266,7 +266,25 @@ class Ads {
         if ( self::isProGroup( $gid ) ) return '';
         $card = self::sponsorCard( $slot, $gid );
 
-        return $card !== '' ? $card : self::adsense( $slot );
+        return $card !== '' ? $card : self::fallback( $slot );
+    }
+
+    /** Unsold slot: an "Advertise here" house card about 1 in 4 times (while ad pages exist), else AdSense. */
+    public static function fallback( $slot ) {
+        if ( get_option( 'mm_ads_pages' ) && isset( self::placements()[ $slot ] ) && self::season( $slot ) !== 'closed' && mt_rand( 1, 4 ) === 1 ) return self::houseCard( $slot );
+
+        return self::adsense( $slot );
+    }
+
+    public static function houseCard( $slot ) {
+        $price = self::price( $slot, 'weekly' );
+        $url = home_url( '/advertise/' );
+
+        return '<aside class="mm-spon mm-spon--house"><span class="mm-spon__label">Advertise here</span><div class="mm-spon__body"><div class="mm-spon__text">'
+            . '<span class="mm-spon__brand">For shops and brands</span>'
+            . '<strong class="mm-spon__head">This spot is open for your shop</strong>'
+            . '<span class="mm-spon__copy">Reach people right when they&rsquo;re shopping for their Secret Santa gift.' . ( $price ? ' From &#8369;' . number_format( $price ) . ' a week, cancel anytime.' : '' ) . '</span>'
+            . '</div></div><div class="mm-spon__actions"><a class="mm-spon__btn" href="' . esc_url( $url ) . '" target="_blank" rel="noopener" data-mm-track="advertise_cta" data-mm-slot="' . esc_attr( 'house-' . $slot ) . '">See placements</a></div></aside>';
     }
 
     public static function isProGroup( $gid ) {

@@ -1596,3 +1596,48 @@
 .mm-home .mmh-final .mm-social__btn i {
     color: #fff;
 }
+
+/* "Advertise with us" band (homepage, landing pages) */
+.mmh-bizband {
+    padding: 0 0 56px;
+}
+
+.mmh-bizband--plain {
+    padding-top: 8px;
+}
+
+.mmh-bizband__card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px 18px;
+    padding: 20px 22px;
+    border: 1px solid var(--mm-line);
+    border-radius: var(--mm-radius);
+    background: #fffdf7;
+}
+
+.mmh-bizband__icon {
+    display: grid;
+    flex: 0 0 48px;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, .16);
+    color: #b8901f;
+    font-size: 20px;
+}
+
+.mmh-bizband__txt {
+    flex: 1 1 280px;
+    color: var(--mm-text);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.mmh-bizband__txt strong {
+    display: block;
+    color: var(--mm-dark);
+    font-size: 18px;
+}

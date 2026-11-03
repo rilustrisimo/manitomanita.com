@@ -178,6 +178,18 @@ endif;
 		</div>
 	</section>
 
+	<?php if ( get_option( 'mm_ads_pages' ) ) : ?>
+	<section class="mmh-bizband mmh-bizband--plain" aria-label="Advertise with us">
+		<div class="mmh-wrap">
+			<div class="mmh-bizband__card">
+				<span class="mmh-bizband__icon" aria-hidden="true"><i class="fas fa-store"></i></span>
+				<div class="mmh-bizband__txt"><strong><?php echo $p['type'] === 'guide' ? 'Sell gifts like these?' : 'Have a shop or brand?'; ?></strong><span><?php echo $p['type'] === 'guide' ? 'Feature your shop on this guide and in front of people shopping for their Secret Santa gift.' : 'Reach Filipino gift buyers while they plan their exchange. Weekly or monthly, cancel anytime.'; ?></span></div>
+				<a href="<?php echo esc_url( home_url( '/advertise/' ) ); ?>" class="mmh-btn mmh-btn--ghost-dark" data-mm-track="advertise_cta" data-mm-slot="<?php echo esc_attr( 'landing-' . $p['slug'] ); ?>">Advertise with us</a>
+			</div>
+		</div>
+	</section>
+	<?php endif; ?>
+
 	<section class="mmh-section">
 		<div class="mmh-wrap">
 			<h2 class="mmh-h2" data-reveal>More free tools and guides</h2>

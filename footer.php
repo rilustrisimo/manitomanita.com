@@ -64,9 +64,19 @@ if ( qed_get_option( 'is_testimonial_enabled', 'option' ) && qed_is_display_test
 					<li><a href="#ask-manito" data-mm-support-open>Ask Manito (help chat)</a></li>
 					<li><a href="<?php echo esc_url( home_url( '/privacy-policy/' ) ); ?>">Privacy Policy</a></li>
 					<li><a href="<?php echo esc_url( home_url( '/terms/' ) ); ?>">Terms of Use</a></li>
-					<?php if ( get_option( 'mm_ads_pages' ) ) : // shows once the ad pages exist ?><li><a href="<?php echo esc_url( home_url( '/advertise/' ) ); ?>">Advertise with us</a></li><?php endif; ?>
 				</ul>
 			</div>
+			<?php if ( get_option( 'mm_ads_pages' ) ) : // shows once the ad pages exist ?>
+			<div>
+				<h3>For businesses</h3>
+				<ul>
+					<li><a href="<?php echo esc_url( home_url( '/advertise/' ) ); ?>" data-mm-track="advertise_cta" data-mm-slot="footer">Advertise with us</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/advertise/#placements' ) ); ?>" data-mm-track="advertise_cta" data-mm-slot="footer-prices">Ad placements &amp; prices</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/advertiser/' ) ); ?>">Advertiser sign in</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/ad-guidelines/' ) ); ?>">Ad guidelines</a></li>
+				</ul>
+			</div>
+			<?php endif; ?>
 		</nav>
 	</div>
 	<div class="mm-footer__bottom">

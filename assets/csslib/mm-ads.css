@@ -923,3 +923,94 @@
         margin-left: 0;
     }
 }
+
+/* ---------------------------------------------------------------- Fixes for the theme's global styles */
+.mm-adv .mma-trust {
+    margin-top: 22px;
+}
+
+.mm-adv .mma-stats span,
+.mm-adv .mma-panel__kpis span {
+    display: block;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.mm-adv .mma-note {
+    margin-top: 22px;
+    line-height: 1.6;
+}
+
+.mm-adv .mma-why h3,
+.mm-adv .mma-count h3,
+.mm-adv .mma-manage h3,
+.mm-adv .mma-place h3,
+.mm-adv .mma-dash__panel h3,
+.mm-adv .mma-ad h3 {
+    font-weight: 800;
+    letter-spacing: 0;
+    line-height: 1.3;
+}
+
+.mm-adv .mma-why p,
+.mm-adv .mma-count p,
+.mm-adv .mma-manage p {
+    margin-top: 4px;
+}
+
+.mm-adv .mmh-steps {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.mm-adv .mml-hero .mmh-hero__lead a {
+    color: var(--mm-accent);
+    text-decoration: underline;
+}
+
+.mm-adv--account .mmh-section {
+    padding-top: 40px;
+}
+
+.mm-adv .mma-form label {
+    text-align: left;
+}
+
+.mm-adv .mma-form input[type="text"],
+.mm-adv .mma-form input[type="email"],
+.mm-adv .mma-form input[type="url"],
+.mm-adv .mma-form input[type="file"],
+.mm-adv .mma-form select {
+    display: block;
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto;
+    margin: 0 !important;
+    color: var(--ma-ink);
+    font-size: 16px;
+    letter-spacing: normal;
+    line-height: 1.4;
+    text-align: left !important;
+    text-transform: none !important;
+    box-shadow: none;
+}
+
+.mm-adv .mma-form input::placeholder {
+    color: #9aa3a1;
+    letter-spacing: normal;
+    text-align: left;
+    text-transform: none;
+}
+
+.mm-adv .mma-form input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--mm-accent-dark);
+}
+
+.mm-adv .mma-btn {
+    margin: 0;
+    text-transform: none;
+    letter-spacing: normal;
+}

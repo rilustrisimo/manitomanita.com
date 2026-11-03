@@ -133,6 +133,7 @@ class Emails {
         $follow = array();
         foreach ( Theme::socials() as $s ) $follow[] = '<a href="' . esc_url( $s[1] ) . '" style="color:#8a8a8a;">' . esc_html( $s[0] ) . '</a>';
         $html .= '<br>Follow us: ' . implode( ' &middot; ', $follow );
+        if ( get_option( 'mm_ads_pages' ) ) $html .= '<br>Have a shop or brand? <a href="' . esc_url( home_url( '/advertise/?utm_source=manitomanita&utm_medium=email&utm_campaign=advertise-footer' ) ) . '" style="color:#8a8a8a;">Advertise with us</a>';
         if ( ! empty( $o['unsubscribe'] ) ) {
             $html .= '<br><a href="' . esc_url( self::unsubUrl( $o['unsubscribe'] ) ) . '" style="color:#8a8a8a;">Unsubscribe from reminders</a>';
         }

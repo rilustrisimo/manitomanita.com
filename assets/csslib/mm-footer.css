@@ -167,3 +167,10 @@
         padding-bottom: 48px;
     }
 }
+
+/* Four link columns (Product, Free tools, Help, For businesses) on wide screens */
+@media (min-width: 1100px) {
+    .mm-footer__cols {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
