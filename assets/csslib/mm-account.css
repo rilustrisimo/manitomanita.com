@@ -346,3 +346,184 @@
     margin: 0;
     accent-color: #3ec7c2;
 }
+
+/* ---------- Group page when the link doesn't open a group (template-dashboard.php) ---------- */
+
+.mm-nogroup {
+    max-width: 560px;
+    margin: 40px auto 56px;
+    padding: 28px 24px 24px;
+    border: 1px solid #e6e6e6;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .07);
+    text-align: center;
+}
+
+.mm-nogroup__icon {
+    display: inline-grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 14px;
+    border-radius: 50%;
+    background: rgba(62, 199, 194, .12);
+    color: #2a9d99;
+    font-size: 26px;
+}
+
+.mm-nogroup h1.mm-nogroup__title {
+    margin: 0 0 8px;
+    padding: 0;
+    color: #1b1b1b;
+    font-family: inherit;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.2;
+    text-transform: none;
+}
+
+.mm-nogroup .mm-nogroup__lead {
+    margin: 0 0 20px !important;
+    color: #5c5c5c;
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.mm-nogroup .mm-nogroup__lead b {
+    color: #1b1b1b;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.mm-paste {
+    text-align: left;
+}
+
+.mm-paste label {
+    display: block;
+    margin: 0 0 8px;
+    color: #1b1b1b;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.mm-paste .mm-paste__row {
+    display: flex;
+    gap: 8px;
+}
+
+.mm-paste input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 48px !important;
+    margin: 0 !important;
+    padding: 0 14px !important;
+    border: 1px solid #d9d9d9 !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    color: #1b1b1b !important;
+    font-family: inherit;
+    font-size: 16px !important;
+    letter-spacing: 0 !important;
+    text-align: left !important;
+    text-transform: none !important;
+    box-shadow: none !important;
+}
+
+.mm-paste input::placeholder {
+    color: #9a9a9a !important;
+    text-transform: none !important;
+}
+
+.mm-paste input:focus {
+    border-color: #3ec7c2 !important;
+    outline: 0;
+}
+
+.mm-paste button {
+    flex: 0 0 auto;
+    height: 48px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 12px;
+    background: #3ec7c2;
+    color: #1b1b1b;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.mm-paste .mm-paste__error {
+    margin: 8px 0 0 !important;
+    color: #b42318;
+    font-size: 13.5px;
+}
+
+.mm-nogroup__or {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0;
+    color: #9a9a9a;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.mm-nogroup__or::before,
+.mm-nogroup__or::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #ececec;
+}
+
+.mm-nogroup__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px 18px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.mm-nogroup a.mm-nogroup__btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 999px;
+    background: #1b1b1b;
+    color: #fff !important;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none !important;
+}
+
+.mm-nogroup a.mm-nogroup__link {
+    color: #2a9d99 !important;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+@media (max-width: 480px) {
+    .mm-nogroup {
+        margin: 20px 4px 40px;
+        padding: 22px 16px 18px;
+    }
+
+    .mm-nogroup h1.mm-nogroup__title {
+        font-size: 22px;
+    }
+
+    .mm-paste .mm-paste__row {
+        flex-direction: column;
+    }
+
+    .mm-paste button {
+        width: 100%;
+    }
+}

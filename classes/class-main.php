@@ -108,6 +108,14 @@ class Theme {
              $hintsHooked = true;
              add_filter('acf/prepare_field', array($this, 'frontEndFieldHints'));
              add_action('acf/save_post', array($this, 'protectHiddenFields'), 1); // before ACF saves (priority 10)
+             // A mistyped URL shows the 404 page instead of redirecting to a "closest match" guess.
+             add_filter('do_redirect_guess_404_permalink', '__return_false');
+             // Drop the old public URLs of the internal post types (once).
+             add_action('init', function(){
+                 if(get_option('mm_cpt_private_v1')) return;
+                 update_option('mm_cpt_private_v1', time(), false);
+                 flush_rewrite_rules(false);
+             }, 99);
          }
     }
 
@@ -456,13 +464,18 @@ class Theme {
                         'labels'				=> $a_labels,
                         'show_in_menu'			=> true,
                         'show_ui'				=> true,
-                        'rewrite'				=> array( 'slug' => $a_post_type['post_type'] ),
+                        // Internal records (groups, members, email templates, collections, promos): editable in
+                        // WP Admin, but no public URLs, archives, search results or sitemap entries. The site shows
+                        // groups through /group-dashboard/?gid=... only. (Public URLs exposed names and emails.)
+                        'rewrite'				=> false,
                         'capability_type'		=> 'post',
-                        'has_archive'			=> $a_post_type['has_archive'],
+                        'has_archive'			=> false,
                         'supports'				=> $a_post_type['supports'],
-                        'publicly_queryable' 	=> true,
-                        'public' 				=> true,
-                        'query_var' 			=> true,
+                        'publicly_queryable' 	=> false,
+                        'public' 				=> false,
+                        'exclude_from_search'	=> true,
+                        'show_in_nav_menus'		=> false,
+                        'query_var' 			=> false,
                         'menu_icon'				=> $a_post_type['menu_icon']
                     );
     

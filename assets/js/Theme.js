@@ -955,6 +955,17 @@ var Theme = {
             box.find('input[type="email"]').trigger('focus');
         });
 
+        // Group page without a working link: paste the full link
+        $(document).off('submit.mmPaste').on('submit.mmPaste', '[data-mm-paste-link]', function(e){
+            e.preventDefault();
+            var f = $(this), url = null;
+            try { url = new URL($.trim(f.find('input').val())); } catch (err) {}
+            var ok = url && url.hostname.replace(/^www\./, '') === window.location.hostname.replace(/^www\./, '')
+                && url.pathname.indexOf('group-dashboard') !== -1 && url.searchParams.get('gid') && url.searchParams.get('pw');
+            f.find('[data-mm-paste-error]').prop('hidden', !!ok);
+            if (ok) { Theme.track('paste_group_link', {}); window.location.href = url.href; }
+        });
+
         // Reset password: show/hide and a quick check before sending
         var reset = $('[data-mm-reset]');
         if (reset.length) {

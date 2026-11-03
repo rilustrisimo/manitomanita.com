@@ -61,6 +61,7 @@ if (!(isset($_COOKIE[$cookiename]) && $_COOKIE[$cookiename] == $post_count)) {
 <header class="mm-header mm-header--dashboard" role="banner">
 	<div class="mm-header__bar">
 		<?php get_template_part( 'templates/header/logo' ); ?>
+		<?php if ( $group->checkGroupCredentials() ) : // group buttons only when the link opens a group ?>
 		<nav class="mm-header__nav" aria-label="Group">
 			<ul id="navigation-dashboard" class="mm-header__menu">
 								<li class="menu-item menu-item-type-custom menu-item-object-custom"><a href="javascript:;" <?php echo (get_field('matched', $group->getGroupId()))?'disabled':'data-fancybox="" data-src="#join-group"'; ?>>Join Group</a></li>
@@ -83,6 +84,9 @@ if (!(isset($_COOKIE[$cookiename]) && $_COOKIE[$cookiename] == $post_count)) {
 								<?php endif; ?>
 							</ul>
 		</nav>
+		<?php else : ?>
+		<nav class="mm-header__nav" aria-label="Main"><ul class="mm-header__menu"><li class="menu-item"><a href="<?php echo esc_url( home_url( '/' ) ); ?>">Create a free group</a></li></ul></nav>
+		<?php endif; ?>
 	</div>
 </header>
 <?php if ( $is_sticky_header ) { echo '</div>'; }
