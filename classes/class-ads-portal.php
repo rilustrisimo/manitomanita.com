@@ -578,14 +578,46 @@ class AdsPortal {
         if ( $sub !== '' ) {
             AdsPayPal::cancel( $mode, $sub, 'Ad not approved' );
             update_post_meta( $id, '_mm_ad_cancelled', 1 );
-            $refunded = false;
+            $tried = false;
             foreach ( (array) get_post_meta( $id, '_mm_ad_payments', true ) as $p ) {
-                if ( ! empty( $p['sale'] ) && empty( $p['refunded'] ) ) $refunded = AdsPayPal::refundSale( $mode, $p['sale'] ) || $refunded;
+                if ( empty( $p['sale'] ) || ! empty( $p['refunded'] ) ) continue;
+                $tried = true;
+                if ( ! AdsPayPal::refundSale( $mode, $p['sale'] ) ) self::refundFailed( $id, $p['sale'], (float) ( $p['amount'] ?? 0 ), $mode );
             }
-            if ( ! $refunded ) update_post_meta( $id, '_mm_ad_refund_due', 1 ); // the payment webhook refunds it when it arrives
+            if ( ! $tried ) update_post_meta( $id, '_mm_ad_refund_due', 1 ); // the payment webhook refunds it when it arrives
         }
         Ads::flush();
         if ( (int) Ads::meta( $id, 'adv', 0 ) ) self::mailAdvertiser( $id, 'rejected' );
+    }
+
+    /**
+     * PayPal refused a refund: flag the ad and email the admin everything needed to refund it by hand.
+     */
+    public static function refundFailed( $id, $sale, $amount, $mode ) {
+        $fails = (array) get_post_meta( $id, '_mm_ad_refund_failed', true );
+        if ( in_array( $sale, $fails, true ) ) return; // already reported
+        $fails[] = $sale;
+        update_post_meta( $id, '_mm_ad_refund_failed', $fails );
+        error_log( 'AdsPortal: refund failed for ad ' . (int) $id . ' sale ' . $sale );
+
+        $c = Ads::creative( $id );
+        $p = Ads::placements()[ Ads::meta( $id, 'slot' ) ] ?? array( 'label' => '' );
+        $adv = (int) Ads::meta( $id, 'adv', 0 );
+        $who = get_the_title( $adv ) . ' &lt;' . esc_html( (string) get_post_meta( $adv, '_mm_adv_email', true ) ) . '&gt;';
+        $pp = $mode === 'sandbox' ? 'https://www.sandbox.paypal.com/activity/payment/' : 'https://www.paypal.com/activity/payment/';
+
+        Emails::send( get_option( 'admin_email' ), 'Action needed: refund failed for ' . html_entity_decode( $c['brand'], ENT_QUOTES, 'UTF-8' ), array(
+            'preheader' => 'PayPal didn&rsquo;t accept the automatic refund. Please refund it by hand.',
+            'eyebrow'   => 'Refund failed' . ( $mode === 'sandbox' ? ' &middot; sandbox' : '' ),
+            'title'     => 'Please refund this payment in PayPal',
+            'body'      => array(
+                '<p>You rejected the <strong>' . esc_html( $c['brand'] ) . '</strong> ad (' . esc_html( $p['label'] ) . '), but PayPal didn&rsquo;t accept the automatic refund. The subscription is already cancelled, so there are no more charges.</p>',
+                '<p><strong>Advertiser:</strong> ' . $who . '<br><strong>Amount:</strong> &#8369;' . number_format( $amount, 2 ) . '<br><strong>PayPal transaction ID:</strong> ' . esc_html( $sale ) . '</p>',
+                '<p>To refund it: open the payment in PayPal, click <strong>Refund</strong>, and refund the full amount. The advertiser gets an automatic &ldquo;Refund issued&rdquo; email once PayPal confirms it. Common reasons: the payment is still pending, or your PayPal balance can&rsquo;t cover the refund.</p>',
+            ),
+            'button'    => array( 'Open the payment in PayPal', $pp . rawurlencode( $sale ) ),
+            'footer'    => 'You&rsquo;re getting this because you manage ads on Manito Manita.',
+        ) );
     }
 
     /* ------------------------------------------------------------------ PayPal events */
@@ -615,6 +647,7 @@ class AdsPortal {
 
                 if ( Ads::meta( $id, 'status' ) === 'rejected' || get_post_meta( $id, '_mm_ad_refund_due', true ) ) {
                     if ( AdsPayPal::refundSale( $mode, (string) $r['id'] ) ) delete_post_meta( $id, '_mm_ad_refund_due' );
+                    else self::refundFailed( $id, (string) $r['id'], $amount, $mode );
                 } elseif ( Ads::meta( $id, 'status' ) === 'live' ) {
                     $s = AdsPayPal::subscription( $mode, Ads::meta( $id, 'sub' ) );
                     if ( $s ) update_post_meta( $id, '_mm_ad_end', max( (int) Ads::meta( $id, 'end', 0 ), AdsPayPal::periodEnd( $s, Ads::meta( $id, 'cadence', 'weekly' ) ) ) );
@@ -647,6 +680,8 @@ class AdsPortal {
                 $id = self::adBySub( (string) ( $r['billing_agreement_id'] ?? '' ) );
                 if ( $id && $sale ) {
                     self::mailAdvertiser( $id, 'refunded', array( 'amount' => (float) ( $r['amount']['total'] ?? 0 ) ) );
+                    $fails = array_values( array_diff( (array) get_post_meta( $id, '_mm_ad_refund_failed', true ), array( $sale ) ) );
+                    if ( $fails ) update_post_meta( $id, '_mm_ad_refund_failed', $fails ); else delete_post_meta( $id, '_mm_ad_refund_failed' );
                     $pays = (array) get_post_meta( $id, '_mm_ad_payments', true );
                     foreach ( $pays as &$p ) if ( ( $p['sale'] ?? '' ) === $sale ) $p['refunded'] = 1;
                     unset( $p );

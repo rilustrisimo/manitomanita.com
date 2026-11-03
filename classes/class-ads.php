@@ -765,6 +765,7 @@ class Ads {
                 echo '<b style="color:' . $color . '">' . esc_html( self::statuses()[ $s ] ?? $s ) . '</b>';
                 if ( is_array( get_post_meta( $id, '_mm_ad_pending', true ) ) ) echo '<br><small style="color:#b8901f">Edit to review</small>';
                 if ( self::meta( $id, 'cancelled' ) ) echo '<br><small>Cancelled, runs to end</small>';
+                if ( get_post_meta( $id, '_mm_ad_refund_failed', true ) ) echo '<br><small style="color:#b32d2e;font-weight:700">Refund failed: refund in PayPal</small>';
                 if ( self::meta( $id, 'mode' ) === 'sandbox' ) echo '<br><small>Sandbox test</small>';
                 break;
             case 'mm_end':
