@@ -294,7 +294,7 @@ class Insights {
                 'groups'        => $count( 'groups' ),
                 'members'       => $count( 'users' ),
                 'pro_groups'    => $meta( 'pro', '1' ),
-                'exclusions'    => $meta( 'exclusions' ),
+                'exclusions'    => $meta( '_mm_exclusions' ),
                 'weekly_drops'  => $meta( '_mm_themes' ),
                 'qa'            => $meta( '_mm_qa' ),
                 'co_organizer'  => $meta( '_mm_comod' ),
