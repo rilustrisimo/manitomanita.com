@@ -236,9 +236,8 @@ if ( ! function_exists( 'qed_init_tiny_mce_integration' ) ) {
 	}
 }
 
-if ( is_admin() ) {
-	require 'admin/plugins.php';
-}
+// The old "required/recommended plugins" notice (TGM Plugin Activation, includes/admin/plugins.php) is no longer loaded:
+// those plugins (Contact Form 7, Flamingo, Mailchimp for WP, s2Member...) aren't used by the site anymore.
 
 require 'theme-options-functions.php';
 
