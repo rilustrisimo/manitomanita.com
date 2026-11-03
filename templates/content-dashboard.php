@@ -94,7 +94,7 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
                             <button type="button" class="mm-tour-again" data-mm-tour-again><i class="far fa-circle-question" aria-hidden="true"></i> Show me around</button>
                             <button type="button" class="mm-tour-again mm-signout" data-mm-forget hidden><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i> Sign out on this device</button>
                             <?php if(!$pro): // one quiet PRO hint at the moment it helps ?>
-                            <div class="mm-pro-hint">
+                            <div class="mm-pro-hint" data-mm-promo="hint">
                                 <i class="fa-solid fa-star" aria-hidden="true"></i>
                                 <?php if(!empty($fields['matched'])): ?>
                                 <?php if(((int) $group->getGroupId()) % 2): // A/B: half the groups see each hint ?>

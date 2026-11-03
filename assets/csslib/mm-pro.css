@@ -1714,3 +1714,39 @@ html.mm-noscroll body {
     font-size: 14px;
     font-weight: 700;
 }
+
+/* Optional extra block in a confirm sheet (e.g. the PRO exclusions offer before a free shuffle) */
+.mm-confirm .mm-confirm__extra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(212, 175, 55, .45);
+    border-radius: 12px;
+    background: #fffaf0;
+    color: #3a3a3a;
+    font-size: 13px;
+    line-height: 1.45;
+    text-align: left;
+}
+
+.mm-confirm .mm-confirm__extra > i {
+    color: #b8901f;
+}
+
+.mm-confirm .mm-confirm__extra > span {
+    flex: 1 1 180px;
+}
+
+.mm-confirm .mm-confirm__extra button {
+    padding: 6px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: #d4af37;
+    color: #1b1b1b;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}

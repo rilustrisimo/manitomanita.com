@@ -541,6 +541,7 @@ var Theme = {
             body.append(ul);
         }
         if (typeof o.credit === 'number') body.append(Theme.creditMeter(o.credit));
+        if (o.extra) body.append($('<div class="mm-confirm__extra"></div>').html(o.extra));
         if (o.check) {
             body.append('<label class="mm-confirm__check"><input type="checkbox"> <span></span></label>');
             body.find('.mm-confirm__check span').text(o.check);
@@ -1681,11 +1682,13 @@ var Theme = {
             if (urlParams.get('pop') === 'try-pro') {
                 // Set #pro-try container to display:flex
                 $('#pro-try').css('display', 'flex'); Theme.lockScroll($);
+                Theme.track('view_promotion', { creative_slot: 'created', promotion_name: 'pro_intro' });
                 Theme.popClose($);
 
                 $('#try-pro-btn').click(function(e){
                     e.preventDefault();
                     $('#pro-try').hide();
+                    Theme.track('select_promotion', { creative_slot: 'created', promotion_name: 'pro_intro' });
 
                     Theme.openUpsell($, 'welcome');
                 });
@@ -2318,6 +2321,7 @@ var Theme = {
                 if(Theme.action == "shuffle-group"){
                     Theme.removeOverlay($);
                     var isPro = $('body').hasClass('pro-version');
+                    if (!isPro) Theme.track('view_promotion', { creative_slot: 'shuffle', promotion_name: 'pro_intro' });
                     Theme.confirmSheet({
                         title: 'Shuffle the group now?',
                         points: [
@@ -2325,6 +2329,7 @@ var Theme = {
                             '<b>No one can join</b> after the shuffle.',
                             isPro ? 'You can unshuffle later from PRO Actions (uses 1 credit).' : '<b>Free groups can\u2019t undo a shuffle.</b> If late joiners might come, upgrade to PRO to be able to unshuffle.'
                         ],
+                        extra: isPro ? '' : '<i class="fa-solid fa-user-slash" aria-hidden="true"></i><span><b>Couples or family in the group?</b> Keep them from getting each other with PRO exclusions. Set them up before you shuffle.</span><button type="button" data-mm-upsell="exclude">See PRO</button>',
                         check: 'Everyone who should be in the group has joined',
                         confirm: 'Shuffle now',
                         icon: 'fa-solid fa-shuffle',

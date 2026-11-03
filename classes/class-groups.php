@@ -62,6 +62,7 @@ class Groups extends Theme {
             $cronHooked = true;
             add_action('init', array($this, 'scheduleExchangeReminders'));
             add_action('mm_exchange_reminders', array($this, 'sendExchangeReminders'));
+            add_action('mm_exchange_reminders', array($this, 'sendShuffleReminders'));
             add_action('init', array($this, 'scheduleAutoDraws'));
             add_action('mm_auto_draw', array($this, 'runAutoDraws'));
         }
@@ -1676,6 +1677,55 @@ class Groups extends Theme {
     public function scheduleExchangeReminders(){
         if(!wp_next_scheduled('mm_exchange_reminders')){
             wp_schedule_event(time(), 'daily', 'mm_exchange_reminders');
+        }
+    }
+
+    /**
+     * Daily cron: tells organizers of groups that aren't shuffled yet, with the exchange 2-6 days away,
+     * to shuffle so members have time to buy a gift. Once per group; skips groups with an auto-shuffle set.
+     */
+    public function sendShuffleReminders(){
+        $groups = get_posts(array(
+            'post_type'      => 'groups',
+            'posts_per_page' => 300,
+            'fields'         => 'ids',
+            'meta_query'     => array(
+                array('key' => 'gift_exchange_date', 'value' => array(wp_date('Ymd', strtotime('+2 days')), wp_date('Ymd', strtotime('+6 days'))), 'compare' => 'BETWEEN'),
+                array('key' => '_mm_shuffle_reminder', 'compare' => 'NOT EXISTS'),
+            ),
+        ));
+
+        foreach($groups as $gid){
+            if(get_field('matched', $gid) || get_post_meta($gid, self::AUTODRAW_META, true)) continue;
+
+            $to = (string) get_field('your_email', $gid);
+            $count = count(self::memberIds($gid));
+            $date = DateTime::createFromFormat('m/d/Y', (string) get_field('gift_exchange_date', $gid));
+            if(!is_email($to) || $count < 3 || !$date) continue;
+
+            // Mark first so an overlapping cron run can't send twice.
+            if(!add_post_meta($gid, '_mm_shuffle_reminder', time(), true)) continue;
+
+            $name = (string) get_field('group_name', $gid);
+            $link = Emails::groupLink($gid);
+            $days = max(1, (int) round((strtotime($date->format('Y-m-d')) - strtotime(wp_date('Y-m-d'))) / DAY_IN_SECONDS));
+            $when = $date->format('l, F j');
+
+            Emails::send($to, 'Ready to shuffle '.$name.'?', array(
+                'preheader' => $count.' members have joined. The exchange is in '.$days.' days.',
+                'eyebrow'   => 'Shuffle reminder',
+                'title'     => $name.' hasn&rsquo;t been shuffled yet',
+                'body'      => array(
+                    '<p>Your exchange is on <strong>'.$when.'</strong> ('.$days.' days away) and <strong>'.$count.' members</strong> have joined. Shuffle soon so everyone has time to find a gift.</p>',
+                    '<p>Open the group, tap <strong>Shuffle</strong> and enter your organizer password. Everyone gets their match by email right away.</p>',
+                ),
+                'card'      => Emails::groupCard($gid),
+                'button'    => array('Open the group and shuffle', $link),
+                'note'      => get_field('pro', $gid) ? '' : '<strong>Couples or family in the group?</strong> With PRO (&#8369;199 one-time) you can keep them from getting each other, schedule an auto-shuffle and let late joiners in after the shuffle. <a href="'.esc_url($link.'&pop=pro-exclude').'" style="color:#1f8580;">See PRO</a>',
+                'footer'    => 'You&rsquo;re getting this because you organize '.esc_html($name).' on Manito Manita. Already planned the shuffle for later? You can ignore this email.',
+            ));
+
+            if(class_exists('Insights')) Insights::log('shuffle_reminder', $gid);
         }
     }
 
