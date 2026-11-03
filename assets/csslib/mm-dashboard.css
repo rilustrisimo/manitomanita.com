@@ -2419,3 +2419,99 @@ body.pro-version:not(.mm-gtheme) .dashboard .dashboard__gd .mm-coorg i {
 .mm-adslot--fixed {
     min-height: 250px;
 }
+
+/* Sponsor card (Ads::cardHtml): a native card, clearly labelled */
+.mm-spon {
+    display: grid;
+    gap: 10px;
+    margin: 16px 0;
+    padding: 14px 16px;
+    border: 1px solid #e6e1d0;
+    border-radius: 14px;
+    background: #fffdf7;
+    color: #1b1b1b;
+    text-align: left;
+}
+
+.mm-spon__label {
+    color: #8c8f94;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.mm-spon__body {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.mm-spon__logo {
+    flex: 0 0 56px;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    object-fit: cover;
+    background: #f0f0f1;
+}
+
+.mm-spon__text {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.mm-spon__brand {
+    color: #6d6d6d;
+    font-size: 12px;
+}
+
+.mm-spon__head {
+    font-size: 16px;
+    line-height: 1.3;
+}
+
+.mm-spon__copy {
+    color: #3a3a3a;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.mm-spon__promo {
+    color: #1f8580;
+    font-size: 13px;
+}
+
+.mm-spon__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+}
+
+.mm-spon__btn {
+    display: inline-block;
+    padding: 9px 18px;
+    border-radius: 999px;
+    background: #1b1b1b;
+    color: #ffffff !important;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none !important;
+}
+
+.mm-spon__btn:hover,
+.mm-spon__btn:focus-visible {
+    background: #1f8580;
+}
+
+.mm-spon__link {
+    color: #1f8580 !important;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.mm-spon-slot:empty {
+    display: none;
+}

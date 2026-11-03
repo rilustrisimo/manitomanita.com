@@ -87,6 +87,10 @@ endif;
 		</div>
 	</section>
 
+	<?php if ( class_exists( 'Ads' ) ) : // sponsor booked for this guide (fetched: this page is cached) ?>
+	<div class="mmh-wrap mmh-wrap--narrow"><?php echo Ads::lazySlot( 'guide', $p['slug'] ); ?></div>
+	<?php endif; ?>
+
 	<?php if ( $p['type'] === 'guide' ) : ?>
 	<section class="mmh-section" id="ideas">
 		<div class="mmh-wrap">

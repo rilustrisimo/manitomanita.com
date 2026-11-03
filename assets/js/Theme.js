@@ -27,6 +27,7 @@ var Theme = {
         this.initAffiliateCap($);
         this.initTracking($);
         this.initAdSense($);
+        this.initSponsors($);
         this.initEmailChecks($);
         this.initFormAlerts($);
         this.initTurnstile($);
@@ -2593,6 +2594,70 @@ var Theme = {
             for (var i = 0; i < els.length; i++) {
                 els[i].setAttribute('data-mm-ad-seen', '1');
                 if (io) io.observe(els[i]); else fill(els[i]);
+            }
+        };
+        scan();
+        if ('MutationObserver' in window) {
+            new MutationObserver(function(){
+                if (queued) return;
+                queued = true;
+                if (window.requestAnimationFrame) window.requestAnimationFrame(scan); else setTimeout(scan, 50);
+            }).observe(document.body, { childList: true, subtree: true });
+        }
+    },
+
+    /**
+     * Sponsor cards (Ads::cardHtml). Slots on cached pages ([data-mm-spon-slot]) fetch their card so
+     * rotation and end dates stay right. A card counts as viewed once at least half of it has been on
+     * screen for 1 second (one beacon per card per page view; "unique" once per browser per day).
+     */
+    initSponsors: function($){
+        if (Theme._sponInit) return;
+        Theme._sponInit = true;
+
+        var queued = false, io = null, timers = {};
+        var today = new Date().toISOString().slice(0, 10);
+        var send = function(el){
+            if (el.getAttribute('data-mm-spon-sent')) return;
+            el.setAttribute('data-mm-spon-sent', '1');
+            var ad = el.getAttribute('data-mm-spon'), key = 'mmsp:' + ad + ':' + today, u = 1;
+            try { if (localStorage.getItem(key)) u = 0; else localStorage.setItem(key, '1'); } catch (e) {}
+            var body = new URLSearchParams({ ad: ad, v: el.getAttribute('data-v') || 'a', s: el.getAttribute('data-s') || '', u: String(u) });
+            try {
+                if (navigator.sendBeacon) navigator.sendBeacon('/wp-json/mm/v1/ad-view', body);
+                else fetch('/wp-json/mm/v1/ad-view', { method: 'POST', body: body, keepalive: true, credentials: 'same-origin' });
+            } catch (e) {}
+        };
+        if ('IntersectionObserver' in window) {
+            io = new IntersectionObserver(function(entries){
+                entries.forEach(function(en){
+                    var el = en.target, id = el.getAttribute('data-mm-spon-key');
+                    if (en.intersectionRatio >= 0.5) {
+                        if (!timers[id]) timers[id] = setTimeout(function(){ io.unobserve(el); send(el); }, 1000);
+                    } else if (timers[id]) {
+                        clearTimeout(timers[id]);
+                        timers[id] = null;
+                    }
+                });
+            }, { threshold: [0, 0.5] });
+        }
+        var n = 0;
+        var scan = function(){
+            queued = false;
+            var slots = document.querySelectorAll('[data-mm-spon-slot]:not([data-mm-spon-seen])');
+            for (var i = 0; i < slots.length; i++) {
+                (function(slot){
+                    slot.setAttribute('data-mm-spon-seen', '1');
+                    fetch('/wp-json/mm/v1/ad-slot?s=' + encodeURIComponent(slot.getAttribute('data-mm-spon-slot')) + '&t=' + encodeURIComponent(slot.getAttribute('data-target') || ''), { credentials: 'same-origin' })
+                        .then(function(r){ return r.json(); })
+                        .then(function(d){ if (d && d.html) slot.innerHTML = d.html; })
+                        .catch(function(){});
+                })(slots[i]);
+            }
+            var cards = document.querySelectorAll('[data-mm-spon]:not([data-mm-spon-key])');
+            for (var j = 0; j < cards.length; j++) {
+                cards[j].setAttribute('data-mm-spon-key', 'c' + (++n));
+                if (io) io.observe(cards[j]);
             }
         };
         scan();

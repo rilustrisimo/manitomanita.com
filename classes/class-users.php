@@ -449,6 +449,10 @@ class Users extends Theme {
         endif;
         echo '</section>';
 
+        /** SPONSOR: a booked advertiser above the gift ideas (shoppers are deciding here). Nothing for PRO groups. */
+        $mmSpon = Ads::sponsorCard('match-ideas', $gid);
+        echo $mmSpon;
+
         /** GIFT IDEAS */
         $aiIdeas = GiftAI::ideasFor($pair);
         echo ($aiIdeas)
@@ -475,8 +479,8 @@ class Users extends Theme {
             : '<div class="mm-empty"><i class="fas fa-address-card"></i><p>No address or contact details yet.</p></div>';
         echo '</section>';
 
-        /** AD: a sponsor card for this slot, else AdSense (loaded near the screen). Nothing for PRO groups. */
-        $mmAd = Ads::slot('match-ideas', $gid);
+        /** AD: AdSense when no sponsor is booked (loaded near the screen). Nothing for PRO groups. */
+        $mmAd = ($mmSpon === '' && !Ads::isProGroup($gid)) ? Ads::adsense('match-ideas') : '';
         if($mmAd !== '') echo '<section class="mm-sec mm-sec--ad"><div class="mm-sec__label">Sponsored</div><div class="mm-ad">'.$mmAd.'</div></section>';
 
         /** COMMENTS */

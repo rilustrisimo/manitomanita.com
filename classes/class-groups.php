@@ -1647,7 +1647,7 @@ class Groups extends Theme {
                 ),
                 'card'      => Emails::groupCard($gid),
                 'button'    => array('See their wishlist', $link),
-                'raw'       => $shop.$ideas,
+                'raw'       => $shop.$ideas.(class_exists('Ads') ? Ads::emailBlock('email-match', $gid) : ''),
                 'note'      => trim($proLine.($proLine ? '<br><br>' : '').$wlLine),
                 'footer'    => 'You&rsquo;re getting this because you&rsquo;re a member of '.esc_html($name).' on Manito Manita.',
             ));
@@ -1785,7 +1785,7 @@ class Groups extends Theme {
                         : '<p>Haven&rsquo;t bought your gift yet? Check their wishlist, or pick from the ideas below.</p>'),
                     'card'        => Emails::groupCard($gid),
                     'button'      => array('See their wishlist', Emails::groupLink($gid)),
-                    'raw'         => $done ? '' : ($pairName !== '' ? Affiliate::shopEmailHtml($gid, 'email-reminder-wish', self::wishKeywords($pair), 'Shop for '.$pairName) : '').$ideas,
+                    'raw'         => ($done ? '' : ($pairName !== '' ? Affiliate::shopEmailHtml($gid, 'email-reminder-wish', self::wishKeywords($pair), 'Shop for '.$pairName) : '').$ideas).(class_exists('Ads') ? Ads::emailBlock('email-reminder', $gid) : ''),
                     'unsubscribe' => $uid,
                     'footer'      => 'You&rsquo;re getting this reminder because you&rsquo;re a member of '.esc_html($name).' on Manito Manita.',
                 ));
