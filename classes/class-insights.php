@@ -397,6 +397,9 @@ class Insights {
                 $s = self::series( $from, $to );
                 $out = array( 'chart' => self::daysOf( $from, $to, $s, array( 'affiliate_click' ) ), 'by' => self::affiliate( $from, $to ), 'groups' => self::groups( $from, $to )['clicks'], 'features' => self::features(), 'events' => $g ? $g::events( $p ) : null );
                 break;
+            case 'sponsors':
+                $out = class_exists( 'AdsReport' ) ? AdsReport::adminSummary( $from, $to ) : array( 'rows' => array(), 'revenue' => 0, 'mrr' => 0, 'live' => 0, 'seats' => array() );
+                break;
             case 'export':
                 $out = array( 'markdown' => self::export( $p ), 'filename' => 'manito-insights-' . $from . '-to-' . $to . '.md' );
                 break;
@@ -647,7 +650,7 @@ class Insights {
         echo '<button type="button" class="button" data-mmi-export title="One Markdown file with every section for this period, ready to paste into an AI">Export for AI</button>';
         echo '</div></div>';
         echo '<nav class="mmi-tabs" role="tablist">';
-        foreach ( array( 'overview' => 'Overview', 'growth' => 'Growth &amp; groups', 'revenue' => 'Revenue &amp; PRO', 'traffic' => 'Traffic &amp; SEO', 'affiliate' => 'Affiliate &amp; features' ) as $k => $l ) {
+        foreach ( array( 'overview' => 'Overview', 'growth' => 'Growth &amp; groups', 'revenue' => 'Revenue &amp; PRO', 'traffic' => 'Traffic &amp; SEO', 'affiliate' => 'Affiliate &amp; features', 'sponsors' => 'Sponsors' ) as $k => $l ) {
             echo '<button type="button" role="tab" data-mmi-tab="' . $k . '"' . ( $k === 'overview' ? ' class="is-on" aria-selected="true"' : '' ) . '>' . $l . '</button>';
         }
         echo '</nav><div class="mmi-body" data-mmi-body><p class="mmi-loading">Loading&hellip;</p></div>';

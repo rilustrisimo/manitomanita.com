@@ -16,9 +16,58 @@ nocache_headers();
 do_action( 'litespeed_control_set_nocache', 'advertiser account' );
 
 $aid = AdsPortal::current();
+$rid = absint( $_GET['report'] ?? 0 );
+$rkey = preg_replace( '/[^A-Za-z0-9]/', '', (string) ( $_GET['k'] ?? '' ) );
+$rwho = $rid && class_exists( 'AdsReport' ) ? AdsReport::access( $rid, $rkey ) : '';
 $switchMsg = ( $aid && ! empty( $_GET['switched'] ) ) ? AdsPortal::confirmSwitch( absint( $_GET['switched'] ) ) : '';
 
 get_header();
+
+/* ---------------------------------------------------------------- Results page (owner, admin or share link) */
+if ( $rwho !== '' ) :
+	$rc = Ads::creative( $rid );
+	$rpl = Ads::placements()[ Ads::meta( $rid, 'slot' ) ]['label'] ?? '';
+	?>
+<div class="mm-home mm-landing mm-adv mm-adv--account mm-adv--report" data-mm-ads>
+	<section class="mmh-hero mml-hero">
+		<div class="mmh-wrap">
+			<p class="mmh-eyebrow">Ad results<?php echo $rwho === 'share' ? ' &middot; shared report' : ''; ?></p>
+			<h1 class="mmh-hero__title"><?php echo esc_html( $rc['brand'] ); ?> <span>&middot; <?php echo esc_html( $rpl ); ?></span></h1>
+			<p class="mmh-hero__lead"><?php echo esc_html( $rc['headline'] ); ?><?php if ( $rwho !== 'share' ) : ?> &middot; <a href="<?php echo esc_url( AdsPortal::pageUrl( 'account' ) ); ?>">Back to your ads</a><?php endif; ?></p>
+		</div>
+	</section>
+	<section class="mmh-section">
+		<div class="mmh-wrap mma-report" data-mma-report data-ad="<?php echo (int) $rid; ?>" data-k="<?php echo esc_attr( $rwho === 'share' ? $rkey : '' ); ?>" data-role="<?php echo esc_attr( $rwho ); ?>">
+			<div class="mma-rbar">
+				<div class="mma-rbar__range">
+					<label for="mma-range" class="screen-reader-text">Period</label>
+					<select id="mma-range" data-mma-range>
+						<option value="7d">Last 7 days</option>
+						<option value="30d">Last 30 days</option>
+						<option value="all">Since the ad started</option>
+						<option value="custom">Custom dates</option>
+					</select>
+					<span class="mma-rbar__custom" data-mma-custom hidden>
+						<input type="date" data-mma-from aria-label="From"> <span>to</span> <input type="date" data-mma-to aria-label="To">
+						<button type="button" class="mma-btn" data-mma-apply>Apply</button>
+					</span>
+					<span class="mma-rbar__period" data-mma-period></span>
+				</div>
+				<div class="mma-rbar__tools">
+					<button type="button" class="mma-btn" data-mma-csv>Download CSV</button>
+					<button type="button" class="mma-btn" data-mma-print>Print or save PDF</button>
+					<?php if ( $rwho === 'owner' ) : ?><button type="button" class="mma-btn" data-mma-share>Share results</button><?php endif; ?>
+				</div>
+			</div>
+			<div class="mma-sharebox" data-mma-sharebox hidden></div>
+			<div data-mma-rbody><div class="mma-loader" role="status"><span class="mma-spin" aria-hidden="true"></span><span>Loading your results&hellip;</span></div></div>
+		</div>
+	</section>
+</div>
+<?php
+	get_footer();
+	return;
+endif;
 
 $statusLabel = array( 'checkout' => array( 'Not booked yet', 'is-draft' ), 'review' => array( 'In review', 'is-review' ), 'live' => array( 'Live', 'is-live' ), 'paused' => array( 'Paused', 'is-draft' ), 'ended' => array( 'Ended', 'is-draft' ), 'rejected' => array( 'Not approved', 'is-bad' ) );
 
@@ -41,6 +90,7 @@ foreach ( get_posts( array( 'post_type' => 'page', 'posts_per_page' => 50, 'meta
 	<section class="mmh-section">
 		<div class="mmh-wrap mmh-wrap--narrow mma-account">
 <?php if ( ! $aid ) : ?>
+			<?php if ( $rid ) : ?><p class="mma-notice">Sign in to see the results of your ad.</p><?php endif; ?>
 			<form class="mma-card mma-form" data-mma-login novalidate>
 				<label for="mma-email">Business email<input id="mma-email" type="email" name="email" maxlength="120" autocomplete="email" placeholder="you@yourshop.ph" required></label>
 				<button type="button" class="mma-btn" data-mma-send>Email me a code</button>
@@ -106,6 +156,7 @@ foreach ( get_posts( array( 'post_type' => 'page', 'posts_per_page' => 50, 'meta
 						</dl>
 					</div>
 					<div class="mma-actions">
+						<?php if ( in_array( $st, array( 'live', 'ended', 'paused' ), true ) ) : ?><a class="mma-btn mma-btn--primary" href="<?php echo esc_url( AdsReport::url( $id ) ); ?>">View results</a><?php endif; ?>
 						<button type="button" class="mma-btn" data-mma-edit>Edit card</button>
 						<?php if ( in_array( $st, array( 'checkout', 'ended', 'rejected' ), true ) ) : ?><button type="button" class="mma-btn mma-btn--primary" data-mma-book>Pay and book</button><?php endif; ?>
 						<?php if ( $sub && in_array( $st, array( 'live', 'review' ), true ) ) : ?>

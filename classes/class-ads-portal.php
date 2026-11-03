@@ -150,6 +150,7 @@ class AdsPortal {
             wp_enqueue_style( $n, PARENT_URL . $file, array(), (string) @filemtime( PARENT_DIR . $file ) );
         }
         if ( self::isPage( 'advertiser' ) ) {
+            if ( ! empty( $_GET['report'] ) ) wp_enqueue_script( 'chartjs', 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js', array(), null, true );
             $js = '/assets/js/mm-ads.js';
             wp_enqueue_script( 'mm-ads', PARENT_URL . $js, array( 'jquery' ), (string) @filemtime( PARENT_DIR . $js ), true );
             wp_localize_script( 'mm-ads', 'mmAds', array(
@@ -157,6 +158,7 @@ class AdsPortal {
                 'nonce'    => wp_create_nonce( 'mm_ads' ),
                 'otpNonce' => wp_create_nonce( 'mm_otp' ),
                 'test'     => self::testMode() ? 1 : 0,
+                'csv'      => admin_url( 'admin-ajax.php?action=mm_ads_csv' ),
             ) );
         }
     }
@@ -762,7 +764,7 @@ class AdsPortal {
             'eyebrow'   => 'Manito Manita ads',
             'title'     => $m[1],
             'body'      => $m[2],
-            'button'    => array( 'Open my advertiser account', $acct ),
+            'button'    => in_array( $what, array( 'ended', 'approved', 'renewed', 'paused' ), true ) && class_exists( 'AdsReport' ) ? array( 'See your results', AdsReport::url( $id ) ) : array( 'Open my advertiser account', $acct ),
             'footer'    => 'You&rsquo;re getting this because you advertise on Manito Manita.',
         ) );
     }

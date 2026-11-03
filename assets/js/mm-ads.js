@@ -389,12 +389,205 @@
         });
     }
 
+    /* ---------------------------------------------------------------- Results (/advertiser/?report=ID) */
+
+    var rep = { $el: null, chart: null, timer: null, data: null };
+
+    function n(v) { return Number(v || 0).toLocaleString('en-PH'); }
+
+    function chg(c, invert) {
+        if (c === null || c === undefined) return '<em class="mma-chg is-new">new</em>';
+        if (c === 0) return '<em class="mma-chg">no change</em>';
+        var good = invert ? c < 0 : c > 0;
+        return '<em class="mma-chg ' + (good ? 'is-up' : 'is-down') + '">' + (c > 0 ? '\u25b2 ' : '\u25bc ') + Math.abs(c) + '%</em>';
+    }
+
+    function rcard(label, value, c, hint, invert) {
+        return '<div class="mma-rcard"><span>' + label + '</span><b>' + value + '</b><small>' + (c === false ? (hint || '') : chg(c, invert) + ' <i>vs previous ' + rep.data.period.days + ' days</i>') + '</small></div>';
+    }
+
+    function panel(title, body, cls) { return '<section class="mma-rpanel' + (cls ? ' ' + cls : '') + '"><h3>' + title + '</h3>' + body + '</section>'; }
+
+    function hbars(rows, label, val, sub) {
+        if (!rows || !rows.length) return '<p class="mma-fine">No clicks yet in this period.</p>';
+        var max = Math.max.apply(null, rows.map(function (r) { return val(r); })) || 1;
+        return rows.map(function (r) {
+            return '<div class="mma-hbar"><span>' + esc(label(r)) + '</span><i style="width:' + Math.max(3, val(r) / max * 100) + '%"></i><b>' + (sub ? sub(r) : n(val(r))) + '</b></div>';
+        }).join('');
+    }
+
+    function hidden(seg) {
+        return '<p class="mma-fine">Shown once there are ' + rep.data.minSeg + ' clicks in this period, so no one can be identified' + (seg && seg.n ? ' (' + seg.n + ' so far)' : '') + '.</p>';
+    }
+
+    function heatHtml(grid) {
+        if (!grid) return hidden({ n: rep.data.heatN });
+        var max = 1, days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        grid.forEach(function (row) { row.forEach(function (v) { if (v > max) max = v; }); });
+        var h = '<div class="mma-rheat">';
+        grid.forEach(function (row, d) {
+            h += '<span class="mma-rheat__d">' + days[d] + '</span>';
+            row.forEach(function (v, hr) { h += '<i title="' + days[d] + ' ' + hr + ':00 - ' + v + ' clicks" style="opacity:' + (v ? Math.max(0.12, v / max) : 0.05) + '"></i>'; });
+        });
+        h += '<span></span>';
+        for (var hr = 0; hr < 24; hr++) h += '<em>' + (hr % 6 === 0 ? (hr === 0 ? '12a' : (hr === 12 ? '12p' : (hr < 12 ? hr + 'a' : (hr - 12) + 'p'))) : '') + '</em>';
+        return h + '</div>';
+    }
+
+    function renderReport(d) {
+        rep.data = d;
+        var c = d.cards, p = d.period, owner = d.role === 'owner';
+        var fmtDay = function (x) { return new Date(x + 'T00:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }); };
+        rep.$el.find('[data-mma-period]').text(fmtDay(p.from) + ' \u2013 ' + fmtDay(p.to) + (p.live ? ' \u00b7 updates every minute' : ''));
+        var bench = d.benchmark ? 'Placement average ' + d.benchmark.ctr + '%' : 'Benchmark shows once 3+ ads run here';
+
+        var h = '<div class="mma-rcards">' +
+            rcard('Views on the site', n(c.view.value), c.view.change) +
+            rcard('Unique viewers', n(c.uview.value), c.uview.change) +
+            rcard('Emails sent', n(c.sent.value), c.sent.change) +
+            rcard('Email opens (est.)', n(c.open.value), c.open.change) +
+            rcard('Clicks', n(c.click.value), c.click.change) +
+            rcard('Unique clicks', n(c.uclick.value), c.uclick.change) +
+            rcard('Click-through rate', c.ctr.value === null ? '\u2013' : c.ctr.value + '%', false, bench) +
+            rcard('Cost per click', c.cpc.value === null ? '\u2013' : peso(c.cpc.value), c.cpc.value === null ? false : c.cpc.change, c.cpc.value === null ? 'After the first click' : '', true) +
+            rcard('Cost per 1,000 reached', c.cpm.value === null ? '\u2013' : peso(c.cpm.value), c.cpm.value === null ? false : c.cpm.change, '', true) +
+            rcard('Paid in this period', peso(c.paid.value), false, 'Total since start ' + peso(d.paidAll)) +
+            '</div>';
+
+        h += panel('Reach and clicks per day', '<div class="mma-rchart"><canvas data-mma-chart></canvas></div>', 'mma-rpanel--wide');
+
+        var slots = d.slots.length ? '<table class="mma-table mma-rtable"><thead><tr><th>Placement</th><th>Views</th><th>Emails</th><th>Clicks</th><th>CTR</th></tr></thead><tbody>' +
+            d.slots.map(function (r) { return '<tr><td>' + esc(r.name) + '</td><td>' + n(r.views) + '</td><td>' + n(r.sent) + '</td><td>' + n(r.clicks) + '</td><td>' + (r.ctr === null ? '\u2013' : r.ctr + '%') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="mma-fine">No activity yet in this period.</p>';
+
+        var vers;
+        if (d.versions.length === 2) {
+            vers = '<table class="mma-table mma-rtable"><thead><tr><th>Version</th><th>Seen</th><th>Clicks</th><th>CTR</th></tr></thead><tbody>' +
+                d.versions.map(function (v) { return '<tr><td><b>' + v.v + '</b> &middot; ' + esc(v.headline) + (d.winner === v.v ? ' <span class="mma-win">Winner</span>' : '') + '</td><td>' + n(v.imp) + '</td><td>' + n(v.clicks) + '</td><td>' + v.ctr + '%</td></tr>'; }).join('') + '</tbody></table>' +
+                (d.winner ? '' : '<p class="mma-fine">Too early to call: we need about 300 views per version and 10 clicks.</p>') +
+                (owner && d.ad.hasB ? '<div class="mma-ractions"><button type="button" class="mma-btn" data-mma-keep="a">Keep version A only</button><button type="button" class="mma-btn" data-mma-keep="b">Keep version B only</button></div>' : '');
+        } else {
+            vers = '<p class="mma-fine">' + (d.ad.hasB ? 'Version B hasn\u2019t been shown yet in this period.' : 'Test two headlines: add a version B under Edit card \u2192 Extras. We rotate both and show the winner here.') + '</p>';
+        }
+
+        var dev = d.devices, devRows = [['Phone', dev.phone || {}], ['Computer', dev.computer || {}]].filter(function (x) { return (x[1].view || 0) + (x[1].click || 0) > 0; });
+        var devHtml = devRows.length ? hbars(devRows, function (r) { return r[0]; }, function (r) { return r[1].view || 0; }, function (r) { return n(r[1].view || 0) + ' views \u00b7 ' + n(r[1].click || 0) + ' clicks'; }) : '<p class="mma-fine">No site views yet in this period.</p>';
+
+        h += '<div class="mma-rgrid">' +
+            panel('Where it ran', slots) +
+            panel('Clicks by link', hbars(d.links, function (r) { return r.name; }, function (r) { return r.clicks; }, function (r) { return n(r.clicks) + ' \u00b7 ' + r.share + '%'; })) +
+            panel('Version A vs B', vers) +
+            panel('Phone vs computer', devHtml) +
+            panel('Who clicks <small>group budget</small>', d.budget.hidden ? hidden(d.budget) : hbars(d.budget.rows, function (r) { return r.name; }, function (r) { return r.value; }, function (r) { return r.share + '%'; })) +
+            panel('Who clicks <small>group size</small>', d.size.hidden ? hidden(d.size) : hbars(d.size.rows, function (r) { return r.name; }, function (r) { return r.value; }, function (r) { return r.share + '%'; })) +
+            '</div>';
+
+        h += panel('Best days and hours <small>clicks, Philippine time</small>', heatHtml(d.heat), 'mma-rpanel--wide');
+
+        h += '<details class="mma-rdefs"><summary>How each number is counted</summary><dl>' +
+            '<dt>Views</dt><dd>Your card was at least half on screen for one full second. Scrolling past doesn\u2019t count. Bots are excluded.</dd>' +
+            '<dt>Unique viewers</dt><dd>Each browser counts once per day.</dd>' +
+            '<dt>Emails sent</dt><dd>Emails that included your card, counted when sent.</dd>' +
+            '<dt>Email opens (est.)</dt><dd>Counted when the email&rsquo;s images load. Some apps load images automatically and others block them, so this is an estimate.</dd>' +
+            '<dt>Clicks</dt><dd>Taps on your card&rsquo;s links. Bots, email link scanners and repeat clicks within 30 seconds are filtered out. Unique clicks count each person once per day.</dd>' +
+            '<dt>Click-through rate</dt><dd>Clicks divided by views plus email opens.</dd>' +
+            '<dt>Cost figures</dt><dd>What you paid in the period divided by clicks, or by views plus emails sent (per 1,000).</dd>' +
+            '<dt>Your own analytics</dt><dd>Every link carries <code>utm_source=manitomanita</code> and <code>utm_campaign=ad-' + d.ad.id + '</code>, so visits also appear in Google Analytics, Shopify or your shop&rsquo;s stats.</dd>' +
+            '</dl></details>';
+
+        rep.$el.find('[data-mma-rbody]').html(h);
+        drawChart(d);
+    }
+
+    function drawChart(d) {
+        var el = rep.$el.find('[data-mma-chart]')[0];
+        if (rep.chart) { rep.chart.destroy(); rep.chart = null; }
+        if (!el || !window.Chart) return;
+        var labels = d.daily.labels.map(function (x) { return new Date(x + 'T00:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }); });
+        rep.chart = new window.Chart(el, {
+            data: { labels: labels, datasets: [
+                { type: 'bar', label: 'Views', data: d.daily.view, backgroundColor: 'rgba(62,199,194,.45)', borderRadius: 4, yAxisID: 'y' },
+                { type: 'bar', label: 'Emails sent', data: d.daily.sent, backgroundColor: 'rgba(212,175,55,.55)', borderRadius: 4, yAxisID: 'y' },
+                { type: 'line', label: 'Clicks', data: d.daily.click, borderColor: '#1b1b1b', backgroundColor: '#1b1b1b', cubicInterpolationMode: 'monotone', pointRadius: labels.length > 45 ? 0 : 3, borderWidth: 2, yAxisID: 'y2' }
+            ] },
+            options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 10 } } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Reach' } }, y2: { position: 'right', beginAtZero: true, ticks: { precision: 0 }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Clicks' } } } }
+        });
+    }
+
+    function loadReport(silent) {
+        var $r = rep.$el, range = $r.find('[data-mma-range]').val();
+        if (!silent) $r.find('[data-mma-rbody]').addClass('is-loading');
+        post('mm_ads_report', { ad: $r.attr('data-ad'), k: $r.attr('data-k') || '', range: range, from: $r.find('[data-mma-from]').val() || '', to: $r.find('[data-mma-to]').val() || '' })
+            .done(function (res) {
+                if (!res.success) { $r.find('[data-mma-rbody]').html('<p class="mma-msg is-bad">' + esc(res.data || 'Could not load the results.') + '</p>'); return; }
+                renderReport(res.data);
+                if (res.data.share) showShare(res.data.share, true);
+            })
+            .fail(function () { if (!silent) $r.find('[data-mma-rbody]').html('<p class="mma-msg is-bad">Network error. Please refresh.</p>'); })
+            .always(function () { $r.find('[data-mma-rbody]').removeClass('is-loading'); });
+    }
+
+    function showShare(url, quiet) {
+        var $b = rep.$el.find('[data-mma-sharebox]');
+        if (!url) { $b.prop('hidden', true).empty(); return; }
+        $b.prop('hidden', !!quiet && $b.prop('hidden')).html('<p><b>Share link</b> Anyone with this link can see these results (read only). It never shows your billing or account.</p>' +
+            '<div class="mma-sharebox__row"><input type="text" readonly value="' + esc(url) + '" aria-label="Share link" data-mma-shareurl><button type="button" class="mma-btn" data-mma-copy>Copy</button><button type="button" class="mma-link mma-link--danger" data-mma-shareoff>Turn off</button></div>');
+    }
+
+    function initReport() {
+        rep.$el = $('[data-mma-report]');
+        if (!rep.$el.length) return;
+        var $r = rep.$el;
+        try { var saved = localStorage.getItem('mma_range'); if (saved && saved !== 'custom') $r.find('[data-mma-range]').val(saved); } catch (e) {}
+        $r.on('change', '[data-mma-range]', function () {
+            var custom = this.value === 'custom';
+            $r.find('[data-mma-custom]').prop('hidden', !custom);
+            try { localStorage.setItem('mma_range', this.value); } catch (e) {}
+            if (!custom) loadReport();
+        });
+        $r.on('click', '[data-mma-apply]', function () { loadReport(); });
+        $r.on('click', '[data-mma-print]', function () { window.print(); });
+        $r.on('click', '[data-mma-csv]', function () {
+            var q = $.param({ ad: $r.attr('data-ad'), k: $r.attr('data-k') || '', range: $r.find('[data-mma-range]').val(), from: $r.find('[data-mma-from]').val() || '', to: $r.find('[data-mma-to]').val() || '', nonce: cfg.nonce });
+            location.href = cfg.csv + '&' + q;
+        });
+        $r.on('click', '[data-mma-share]', function () {
+            var $b = $(this).prop('disabled', true);
+            post('mm_ads_share', { ad: $r.attr('data-ad'), 'do': 'on' }).done(function (res) {
+                if (!res.success) return say($r, res.data, true);
+                showShare(res.data.url);
+            }).always(function () { $b.prop('disabled', false); });
+        });
+        $r.on('click', '[data-mma-copy]', function () {
+            var $i = $r.find('[data-mma-shareurl]'), $b = $(this);
+            var ok = function () { $b.text('Copied'); setTimeout(function () { $b.text('Copy'); }, 1500); };
+            if (navigator.clipboard) navigator.clipboard.writeText($i.val()).then(ok, function () { $i[0].select(); });
+            else { $i[0].select(); document.execCommand('copy'); ok(); }
+        });
+        $r.on('click', '[data-mma-shareoff]', function () {
+            post('mm_ads_share', { ad: $r.attr('data-ad'), 'do': 'off' }).done(function () { showShare(''); });
+        });
+        $r.on('click', '[data-mma-keep]', function () {
+            var keep = $(this).attr('data-mma-keep'), $b = $(this);
+            if (!$b.attr('data-sure')) { $b.attr('data-sure', '1').text('Yes, keep version ' + keep.toUpperCase() + ' only'); return; }
+            post('mm_ads_variant', { ad: $r.attr('data-ad'), keep: keep }).done(function (res) {
+                if (!res.success) return;
+                $b.closest('.mma-rpanel').append('<p class="mma-msg">' + esc(res.data.message) + '</p>');
+                setTimeout(function () { loadReport(); }, 1200);
+            });
+        });
+        loadReport();
+        rep.timer = setInterval(function () { if (!document.hidden && rep.data && rep.data.period.live) loadReport(true); }, 60000);
+    }
+
     $(function () {
         if (!$('[data-mm-ads]').length) return;
         initLogin();
         initAccount();
         initBuilder();
         initAds();
+        initReport();
         if (location.hash === '#book' && $bld && $bld.length) open('new');
     });
 })(jQuery);

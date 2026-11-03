@@ -153,6 +153,21 @@
                 if (s.trend) line('mmi-c5', s.trend.labels, [{ label: 'Clicks', data: s.trend.clicks }, { label: 'Impressions', data: s.trend.impressions, axis: 'y2' }], { y2: true });
             } };
         },
+        sponsors: function (d) {
+            var h = '<div class="mmi-cards">' + card('Ad revenue', peso(d.revenue), false, 'paid in this period (live only)') + card('Monthly recurring', peso(d.mrr), false, 'from live subscriptions') + card('Live ads', num(d.live), false, 'right now') + '</div>';
+            h += bars('Seats in use (of 3)', (d.seats || []).map(function (x) { return { name: x.name, value: x.live }; }));
+            h += table('Ads', [
+                { label: 'Ad', get: function (r) { return '<a href="' + esc(r.report) + '" target="_blank" rel="noopener">' + esc(r.brand || '(no brand)') + ' \u2197</a><br><small class="mmi-muted">' + esc(r.adv) + '</small>'; } },
+                { label: 'Placement', get: function (r) { return esc(r.place); } },
+                { label: 'Status', get: function (r) { return esc(r.status); } },
+                { label: 'Views', num: 1, get: function (r) { return num(r.views); } },
+                { label: 'Emails', num: 1, get: function (r) { return num(r.sent); } },
+                { label: 'Clicks', num: 1, get: function (r) { return num(r.clicks); } },
+                { label: 'CTR', num: 1, get: function (r) { return r.ctr === null ? '\u2013' : r.ctr + '%'; } },
+                { label: 'Paid', num: 1, get: function (r) { return peso(r.paid); } }
+            ], d.rows, 'No ads booked yet.');
+            return { html: h };
+        },
         affiliate: function (d) {
             var f = d.features, total = d.chart.data.affiliate_click.reduce(function (a, b) { return a + b; }, 0);
             var h = '<div class="mmi-cards">' + card('Affiliate clicks', num(total), false, 'in this period') + card('My Wishlists (all time)', num(f.my_wishlists), false, num(f.reservations) + ' with reserved gifts') + card('Support chats', num((f.chats.new || 0) + (f.chats.pending || 0) + (f.chats.resolved || 0)), false, num(f.chats.pending || 0) + ' pending, ' + num(f.chats.new || 0) + ' new') + '</div>';
