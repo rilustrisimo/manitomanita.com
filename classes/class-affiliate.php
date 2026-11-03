@@ -119,20 +119,14 @@ class Affiliate {
         if ( ! $merchant ) return $url;
 
         // Shopee: the shoplink format already opens the exact page (also in the app), no API needed.
-        if ( $merchant['source'] === 'shoplink' ) return self::classicLink( class_exists( 'Involve' ) ? Involve::cleanUrl( $url ) : $url, $merchant, $placement, $groupId );
+        if ( $merchant['source'] === 'shoplink' ) return self::goUrl( class_exists( 'Involve' ) ? Involve::cleanUrl( $url ) : $url, $placement, $groupId );
 
-        // Stored Deeplink API link: opens the exact product / search page (also in the store's app).
-        // Wishlist products are generated in the background; search pages only when clicked.
-        if ( self::apiEnabled() ) {
-            $deeplink = Involve::deeplink( self::normalize( $url ), $merchant['api_id'], ! self::isSearchUrl( $url ) );
-            if ( $deeplink ) return $deeplink;
+        // Wishlist products get their Deeplink API link generated in the background; search pages only when clicked.
+        if ( self::apiEnabled() && ! self::isSearchUrl( $url ) ) Involve::deeplink( self::normalize( $url ), $merchant['api_id'], true );
 
-            // Shopee / Lazada: the plain link below would lose the page, so the click goes through
-            // our redirect, which generates the deeplink on the spot.
-            if ( $merchant['api_only'] ) return self::goUrl( $url, $placement, $groupId );
-        }
-
-        return self::classicLink( $url, $merchant, $placement, $groupId );
+        // Every store link goes through our redirect (go()): it picks the best link at click time
+        // (stored deeplink, a fresh one, or the plain tracking link) and counts the click in Insights.
+        return self::goUrl( $url, $placement, $groupId );
     }
 
     /**
@@ -162,11 +156,7 @@ class Affiliate {
         $url = self::searchUrl( $merchant, 'x' );
         if ( ! self::merchantFor( $url ) ) return '';
 
-        $link = ( self::apiEnabled() && ! empty( self::$merchants[ $merchant ]['api_only'] ) )
-            ? self::goUrl( $url, $placement, $groupId )
-            : self::classicLink( $url, self::merchantFor( $url ), $placement, $groupId );
-
-        return preg_replace( '~([?&](?:u|url)=).*$~', '$1', $link );
+        return preg_replace( '~([?&]u=).*$~', '$1', self::goUrl( $url, $placement, $groupId ) );
     }
 
     protected static function apiEnabled() {
@@ -213,7 +203,8 @@ class Affiliate {
             if ( ! $target && self::mayGenerate() ) $target = Involve::deeplinkNow( $url, $merchant['api_id'] );
         }
 
-        if ( ! $target ) $target = $merchant['api_only'] ? $url : self::classicLink( $url, $merchant, $placement, $groupId ? $groupId : '' );
+        // Without a deeplink, Lazada / Shopee open the page itself (the plain link would lose it) while the API is on.
+        if ( ! $target ) $target = ( $merchant['api_only'] && self::apiEnabled() ) ? $url : self::classicLink( $url, $merchant, $placement, $groupId ? $groupId : '' );
 
         // Insights: one small row per real click (crawlers and link previews are skipped).
         if ( class_exists( 'Insights' ) && ! preg_match( '~bot|crawl|spider|slurp|preview|facebookexternalhit|mediapartners|curl|wget|python|scan~i', (string) ( $_SERVER['HTTP_USER_AGENT'] ?? '' ) ) ) {
@@ -434,6 +425,27 @@ class Affiliate {
         $html .= self::anchor( self::searchUrl( 'shopee', $query, $max ), '<i class="fas fa-bag-shopping"></i> Shopee', $placement, $groupId, 'mm-store mm-store--shopee' );
         $html .= '</div>';
         $html .= '</div>';
+
+        return $html;
+    }
+
+    /**
+     * Email version of shopButtonsHtml: "Shop for Ana" with store searches for their wishlist, within the budget.
+     * Empty when there is no keyword (the generic gift ideas cover that case).
+     */
+    public static function shopEmailHtml( $groupId, $placement, $keyword, $title ) {
+        $keyword = trim( (string) $keyword );
+        if ( $keyword === '' ) return '';
+
+        $max = self::budget( $groupId );
+        $btn = 'display:inline-block;padding:9px 16px;margin:6px 6px 0 0;border-radius:999px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;';
+        $html  = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 0;font-family:Arial,Helvetica,sans-serif;background:#f3fbfb;border-radius:12px;">';
+        $html .= '<tr><td style="padding:16px 18px;">';
+        $html .= '<div style="font-size:16px;font-weight:bold;color:#1b1b1b;">' . esc_html( $title ) . '</div>';
+        $html .= '<div style="margin-top:2px;font-size:13px;color:#6d6d6d;">From their wishlist: &ldquo;' . esc_html( $keyword ) . '&rdquo;' . ( $max > 0 ? ' &middot; budget &#8369;' . number_format( $max ) : '' ) . '</div>';
+        $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'lazada', $keyword, $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#0f146d;">Search Lazada</a>';
+        $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'shopee', $keyword, $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#ee4d2d;">Search Shopee</a>';
+        $html .= '</td></tr></table>';
 
         return $html;
     }
