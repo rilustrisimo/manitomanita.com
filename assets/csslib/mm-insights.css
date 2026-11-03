@@ -1,0 +1,385 @@
+/* Manito Insights (WP Admin page + dashboard widget). Loaded only on those screens. */
+
+.mmi {
+    --mi-ink: #1b1b1b;
+    --mi-accent: #2a9d99;
+    --mi-soft: rgba(62, 199, 194, .12);
+    --mi-gold: #d4af37;
+    --mi-line: #e3e5e8;
+    --mi-text: #50575e;
+    max-width: 1280px;
+}
+
+.mmi-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 8px 0 14px;
+}
+
+.mmi-top h1 {
+    margin: 0;
+    padding: 0;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.mmi-sub {
+    margin: 4px 0 0;
+    color: var(--mi-text);
+}
+
+.mmi-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.mmi-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid var(--mi-line);
+    font-size: 13px;
+}
+
+.mmi-live i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #1f8a5b;
+    box-shadow: 0 0 0 0 rgba(31, 138, 91, .5);
+    animation: mmiPulse 2s infinite;
+}
+
+@keyframes mmiPulse {
+    70% { box-shadow: 0 0 0 8px rgba(31, 138, 91, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(31, 138, 91, 0); }
+}
+
+.mmi-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--mi-line);
+}
+
+.mmi-tabs button {
+    margin-bottom: -1px;
+    padding: 10px 14px;
+    border: 1px solid transparent;
+    border-radius: 8px 8px 0 0;
+    background: none;
+    color: var(--mi-text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.mmi-tabs button.is-on {
+    border-color: var(--mi-line);
+    border-bottom-color: #f0f0f1;
+    background: #f0f0f1;
+    color: var(--mi-ink);
+}
+
+.mmi-body.is-loading {
+    opacity: .5;
+    transition: opacity .2s;
+}
+
+.mmi-range {
+    margin: 0 0 12px;
+    color: var(--mi-text);
+    font-size: 13px;
+}
+
+.mmi-range span {
+    margin-left: 8px;
+    color: #8c8f94;
+}
+
+.mmi-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.mmi-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 16px;
+    border: 1px solid var(--mi-line);
+    border-radius: 12px;
+    background: #fff;
+}
+
+.mmi-card__label {
+    color: var(--mi-text);
+    font-size: 13px;
+}
+
+.mmi-card__value {
+    color: var(--mi-ink);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.mmi-card__foot {
+    color: #8c8f94;
+    font-size: 12px;
+}
+
+.mmi-card__foot em {
+    font-style: normal;
+}
+
+.mmi-chg {
+    font-weight: 700;
+}
+
+.mmi-chg.is-up { color: #1f8a5b; }
+.mmi-chg.is-down { color: #b32d2e; }
+.mmi-chg.is-new { color: var(--mi-accent); }
+
+.mmi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.mmi-panel {
+    margin-bottom: 14px;
+    padding: 16px;
+    border: 1px solid var(--mi-line);
+    border-radius: 12px;
+    background: #fff;
+}
+
+.mmi-grid > .mmi-panel {
+    margin-bottom: 0;
+}
+
+.mmi-panel h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+}
+
+.mmi-panel h3 small {
+    margin-left: 6px;
+    color: #8c8f94;
+    font-weight: 400;
+}
+
+.mmi-chart {
+    position: relative;
+    height: 280px;
+}
+
+.mmi-bar,
+.mmi-funnel {
+    display: grid;
+    grid-template-columns: minmax(110px, 38%) 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
+    font-size: 13px;
+}
+
+.mmi-funnel {
+    grid-template-columns: minmax(130px, 34%) 1fr auto 110px;
+}
+
+.mmi-funnel em {
+    color: #8c8f94;
+    font-size: 12px;
+    font-style: normal;
+}
+
+.mmi-bar__name {
+    overflow: hidden;
+    color: var(--mi-ink);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mmi-bar__track {
+    height: 10px;
+    border-radius: 999px;
+    background: #f0f0f1;
+    overflow: hidden;
+}
+
+.mmi-bar__track i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--mi-accent);
+}
+
+.mmi-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.mmi-table th,
+.mmi-table td {
+    padding: 7px 6px;
+    border-bottom: 1px solid #f0f0f1;
+    text-align: left;
+}
+
+.mmi-table th {
+    color: var(--mi-text);
+    font-weight: 600;
+}
+
+.mmi-table .num {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.mmi-pro {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--mi-gold);
+    color: var(--mi-ink);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.mmi-muted,
+.mmi-empty {
+    color: #8c8f94;
+}
+
+.mmi-hints {
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    border-left: 4px solid var(--mi-gold);
+    border-radius: 8px;
+    background: #fffaf0;
+}
+
+.mmi-hints p {
+    margin: 4px 0;
+}
+
+.mmi-note {
+    margin: 0 0 12px;
+    color: var(--mi-text);
+    font-size: 13px;
+}
+
+.mmi-warn {
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #fcf0f1;
+    color: #8a2424;
+}
+
+.mmi-h2 {
+    margin: 22px 0 12px;
+    font-size: 18px;
+}
+
+.mmi-feed {
+    margin: 0;
+    max-height: 290px;
+    overflow-y: auto;
+}
+
+.mmi-feed li {
+    display: flex;
+    gap: 10px;
+    margin: 0;
+    padding: 7px 0;
+    border-bottom: 1px solid #f0f0f1;
+    font-size: 13px;
+}
+
+.mmi-feed em {
+    color: var(--mi-text);
+    font-style: normal;
+}
+
+.mmi-feed small {
+    display: block;
+    color: #8c8f94;
+}
+
+.mmi-setup ol {
+    margin-left: 18px;
+}
+
+.mmi-setup li {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.mmi-setup pre {
+    margin: 8px 0 0;
+    padding: 10px;
+    border-radius: 6px;
+    background: #f6f7f7;
+    font-size: 12px;
+    white-space: pre-wrap;
+}
+
+.mmi-foot {
+    color: #8c8f94;
+    font-size: 12px;
+}
+
+/* Dashboard widget */
+.mmi-wcards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.mmi-wcards div {
+    padding: 10px;
+    border: 1px solid #e3e5e8;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.mmi-wcards b {
+    display: block;
+    font-size: 20px;
+}
+
+.mmi-wcards span {
+    color: #8c8f94;
+    font-size: 11px;
+}
+
+@media (max-width: 782px) {
+    .mmi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mmi-funnel {
+        grid-template-columns: 1fr auto;
+    }
+
+    .mmi-funnel .mmi-bar__track,
+    .mmi-funnel em {
+        display: none;
+    }
+}

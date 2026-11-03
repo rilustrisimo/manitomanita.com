@@ -277,6 +277,7 @@ class Payments {
         update_field( 'order_id', $current !== '' ? $current . ',' . $orderId : $orderId, $gid );
 
         self::$tracked = self::ga4Purchase( $orderId, $product, (float) $amount['value'] );
+        if ( class_exists( 'Insights' ) ) Insights::log( 'purchase', $gid, 0, (float) $amount['value'], $product );
         if ( $product === 'pro' ) self::emailModerator( $gid );
 
         return true;

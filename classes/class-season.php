@@ -223,7 +223,7 @@ class Season {
             update_option( $optKey, $done, false );
             update_post_meta( $gid, $meta, time() );
 
-            if ( self::send( $gid ) ) $q['sent']++;
+            if ( self::send( $gid ) ) { $q['sent']++; if ( class_exists( 'Insights' ) ) Insights::log( 'season_email', $gid ); }
             else $q['failed']++;
         }
 

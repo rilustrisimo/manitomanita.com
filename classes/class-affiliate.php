@@ -215,6 +215,11 @@ class Affiliate {
 
         if ( ! $target ) $target = $merchant['api_only'] ? $url : self::classicLink( $url, $merchant, $placement, $groupId ? $groupId : '' );
 
+        // Insights: one small row per real click (crawlers and link previews are skipped).
+        if ( class_exists( 'Insights' ) && ! preg_match( '~bot|crawl|spider|slurp|preview|facebookexternalhit|mediapartners|curl|wget|python|scan~i', (string) ( $_SERVER['HTTP_USER_AGENT'] ?? '' ) ) ) {
+            Insights::log( 'affiliate_click', $groupId, 0, 0, $merchant['name'] . '|' . $placement );
+        }
+
         wp_redirect( $target, 302 );
         exit;
     }

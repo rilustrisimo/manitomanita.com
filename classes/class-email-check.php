@@ -327,6 +327,7 @@ class EmailCheck {
             } else {
                 wp_update_post( array( 'ID' => $uid, 'post_status' => 'publish' ) );
                 self::sendWelcome( $uid );
+                if ( class_exists( 'Insights' ) ) Insights::log( 'member_confirmed', $gid, $uid );
             }
         }
 

@@ -318,6 +318,7 @@ KB;
         if ( $cid ) {
             self::addTurn( $cid, 'u', '[Talk to a person] ' . $msg, 'handoff' );
             update_post_meta( $cid, '_mm_sc_status', 'pending' );
+            if ( class_exists( 'Insights' ) ) Insights::log( 'support_handoff' );
             update_post_meta( $cid, '_mm_sc_email', $email );
             if ( $name !== '' ) update_post_meta( $cid, '_mm_sc_name', $name );
         }

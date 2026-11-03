@@ -889,6 +889,7 @@ class Groups extends Theme {
      * their match is cancelled and the group is open again.
      */
     public function resetMatches($gid, $notify = true){
+        if(class_exists('Insights')) Insights::log('unshuffle', $gid);
         $name = (string) get_field('group_name', $gid);
 
         foreach(self::memberIds($gid) as $uid){
@@ -1238,6 +1239,7 @@ class Groups extends Theme {
                     $this->setUserGroupSession($post_id, get_field('group_password', $post_id));
                     $this->setEmailForCreateGroup($post_id);
                     do_action('mm_group_created', $post_id); // e.g. Repeat: invites from last year's group
+                    if(class_exists('Insights')) Insights::log('group_created', $post_id);
 
 
                     // Retrieve the initial redirect URL (you may have it set as a parameter or derived in your function)
@@ -1406,6 +1408,7 @@ class Groups extends Theme {
 
         $this->setEmailForMembers($gid);
         $this->reliable_update_field('matched', true, $gid, $maxRetries);
+        if(class_exists('Insights')) Insights::log('shuffle', $gid);
 
         return array('result' => true, 'message' => 'success');
     }

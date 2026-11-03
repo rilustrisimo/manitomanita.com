@@ -173,6 +173,7 @@ class Repeat {
 
         update_post_meta( $newGid, self::FROM_META, (int) $from );
         update_post_meta( $from, self::NEXT_META, (int) $newGid );
+        if ( class_exists( 'Insights' ) ) Insights::log( 'repeat_group', $newGid, 0, 0, (string) $from );
 
         $pick = array_map( 'intval', (array) ( $_POST['mm_invite'] ?? array() ) );
         $allowed = self::invitable( $from );
