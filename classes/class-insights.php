@@ -231,7 +231,7 @@ class Insights {
             global $wpdb;
             $a = $from . ' 00:00:00';
             $b = $to . ' 23:59:59';
-            $name = function ( $gid ) { return (string) get_post_meta( $gid, 'group_name', true ); };
+            $name = function ( $gid ) { return html_entity_decode( (string) get_post_meta( $gid, 'group_name', true ), ENT_QUOTES, 'UTF-8' ); };
 
             $rows = $wpdb->get_results( $wpdb->prepare(
                 "SELECT g.ID gid, COUNT(u.ID) n FROM {$wpdb->posts} g
@@ -334,7 +334,7 @@ class Insights {
                 'when'   => human_time_diff( strtotime( $r->t ), current_time( 'timestamp' ) ) . ' ago',
                 'label'  => $labels[ $r->type ] ?? $r->type,
                 'type'   => $r->type,
-                'group'  => $r->gid ? (string) get_post_meta( $r->gid, 'group_name', true ) : '',
+                'group'  => $r->gid ? html_entity_decode( (string) get_post_meta( $r->gid, 'group_name', true ), ENT_QUOTES, 'UTF-8' ) : '',
                 'amount' => (float) $r->amount,
                 'meta'   => $r->type === 'affiliate_click' ? $r->meta : '',
             );
