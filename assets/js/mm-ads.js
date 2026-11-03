@@ -78,53 +78,122 @@
         });
     }
 
-    /* ---------------------------------------------------------------- Builder */
+    /* ---------------------------------------------------------------- Wizard (book / edit) */
 
-    var $bld, logoUrl = '';
+    var $bld, logoUrl = '', step = 1, steps = [1, 2, 3], mode = 'new';
 
-    function card(c) {
-        var h = '<aside class="mm-spon"><span class="mm-spon__label">Sponsored</span><div class="mm-spon__body">';
+    function val(n) { return $.trim($bld.find('[name="' + n + '"]').val() || ''); }
+
+    function card(c, email) {
+        var h = '<aside class="mm-spon' + (email ? ' mm-spon--email' : '') + '"><span class="mm-spon__label">Sponsored</span><div class="mm-spon__body">';
         if (c.logo) h += '<img class="mm-spon__logo" src="' + esc(c.logo) + '" alt="" width="56" height="56">';
         h += '<div class="mm-spon__text"><span class="mm-spon__brand">' + esc(c.brand || 'Your brand') + '</span>';
         h += '<strong class="mm-spon__head">' + esc(c.headline || 'Your headline') + '</strong>';
         if (c.text) h += '<span class="mm-spon__copy">' + esc(c.text) + '</span>';
         if (c.promo) h += '<span class="mm-spon__promo">Use code <b>' + esc(c.promo) + '</b></span>';
         h += '</div></div><div class="mm-spon__actions"><span class="mm-spon__btn">' + esc(c.button || 'Shop now') + '</span>';
-        if (c.l1) h += '<span class="mm-spon__link">' + esc(c.l1) + '</span>';
-        if (c.l2) h += '<span class="mm-spon__link">' + esc(c.l2) + '</span>';
+        if (!email && c.l1) h += '<span class="mm-spon__link">' + esc(c.l1) + '</span>';
+        if (!email && c.l2) h += '<span class="mm-spon__link">' + esc(c.l2) + '</span>';
         return h + '</div></aside>';
     }
 
+    function current() {
+        return {
+            brand: val('c[brand]'), headline: val('c[headline]'), text: val('c[text]'), button: val('c[button]'), promo: val('c[promo]'), logo: logoUrl,
+            l1: val('c[links][1][1]') ? (val('c[links][1][0]') || 'More') : '', l2: val('c[links][2][1]') ? (val('c[links][2][0]') || 'More') : ''
+        };
+    }
+
     function preview() {
-        var v = function (n) { return $.trim($bld.find('[name="' + n + '"]').val() || ''); };
-        $bld.find('[data-mma-preview]').html(card({
-            brand: v('c[brand]'), headline: v('c[headline]'), text: v('c[text]'), button: v('c[button]'), promo: v('c[promo]'), logo: logoUrl,
-            l1: v('c[links][1][1]') ? (v('c[links][1][0]') || 'More') : '', l2: v('c[links][2][1]') ? (v('c[links][2][0]') || 'More') : ''
-        }));
+        var c = current(), email = $bld.find('[data-mma-frame]').attr('data-mma-frame') === 'email';
+        $bld.find('[data-mma-preview]').html(card(c, email));
+        $bld.find('[data-mma-preview2]').html(card(c, false));
+        $bld.find('[data-mma-thumb]').html(logoUrl ? '<img src="' + esc(logoUrl) + '" alt="">' : 'Logo');
         $bld.find('[data-mma-count]').each(function () {
             var $c = $(this), $i = $c.closest('label').find('input');
             $c.text(($i.val() || '').length + '/' + $c.attr('data-mma-count'));
         });
     }
 
+    function placement() { return $bld.find('[name=placement]:checked'); }
+
     function pickPlacement() {
-        var $r = $bld.find('[name=placement]:checked');
-        if (!$r.length) return;
-        var open = $r.attr('data-open') === '1', cads = ($r.attr('data-cadences') || 'weekly').split(',');
+        var $r = placement();
         $bld.find('.mma-opt').removeClass('is-on');
+        if (!$r.length) return;
+        var open = $r.attr('data-open') === '1';
         $r.closest('.mma-opt').addClass('is-on');
-        $bld.find('[data-mma-target]').prop('hidden', !$r.attr('data-target'));
-        $bld.find('[data-mma-wait]').prop('hidden', open);
-        $bld.find('[data-mma-save]').prop('disabled', !open);
-        $bld.find('[data-mma-price="weekly"]').text(peso($r.attr('data-weekly')) + '/week');
-        $bld.find('[data-mma-price="monthly"]').text(peso($r.attr('data-monthly')) + '/month');
+        $bld.find('[data-mma-target]').prop('hidden', !$r.attr('data-target') || !open);
+        $bld.find('[data-mma-waitbox]').prop('hidden', open);
+        say($bld, '');
+        nav();
+    }
+
+    function summary() {
+        var $r = placement();
+        if (!$r.length) return;
+        var w = +$r.attr('data-weekly'), m = +$r.attr('data-monthly'), cads = ($r.attr('data-cadences') || 'weekly').split(',');
+        var tgt = $bld.find('[name=target] option:selected');
+        var rows = [
+            ['Placement', esc($r.attr('data-label'))],
+            ['Where', esc($r.attr('data-where')) + (tgt.val() ? ' &middot; ' + esc(tgt.text()) : '')],
+            ['Runs', esc($r.attr('data-season'))],
+            ['Seats', esc($r.attr('data-seats'))]
+        ];
+        $bld.find('[data-mma-summary]').html(rows.map(function (x) { return '<div><dt>' + x[0] + '</dt><dd>' + x[1] + '</dd></div>'; }).join(''));
+        $bld.find('[data-mma-price="weekly"]').text(peso(w) + ' / week');
+        $bld.find('[data-mma-price="monthly"]').text(peso(m) + ' / month');
+        var save = w ? Math.round((1 - m / (w * 52 / 12)) * 100) : 0;
+        $bld.find('[data-mma-save-note]').text(cads.indexOf('monthly') < 0 ? 'Not available this close to Dec 20' : (save > 0 ? 'Save about ' + save + '%' : 'Billed once a month'));
         var $m = $bld.find('[name=cadence][value=monthly]');
-        $m.prop('disabled', cads.indexOf('monthly') < 0).closest('label').toggleClass('is-off', cads.indexOf('monthly') < 0);
-        if ($m.is(':disabled') && $m.is(':checked')) $bld.find('[name=cadence][value=weekly]').prop('checked', true);
+        $m.prop('disabled', cads.indexOf('monthly') < 0).closest('.mma-cad__opt').toggleClass('is-off', cads.indexOf('monthly') < 0);
+        if ($m.is(':disabled')) $bld.find('[name=cadence][value=weekly]').prop('checked', true);
+    }
+
+    /** Can we leave the current step? Returns an error message or ''. */
+    function check(n) {
+        if (n === 1) {
+            var $r = placement();
+            if (!$r.length) return 'Choose a placement.';
+            if ($r.attr('data-open') !== '1') return 'This placement is full right now. Join the waitlist or choose another.';
+            if ($r.attr('data-target') && !$bld.find('[name=target]').val()) return 'Choose which gift guide your ad should appear on.';
+        }
+        if (n === 2) {
+            if (!val('c[brand]')) return 'Add your brand name.';
+            if (!val('c[headline]')) return 'Add a headline.';
+            if (!/^https:\/\/\S+\.\S+/i.test(val('c[links][0][1]'))) return 'Add the link people should open. It must start with https://';
+            if (!$.trim(val('c[button]'))) $bld.find('[name="c[button]"]').val('Shop now');
+        }
+        return '';
+    }
+
+    function nav() {
+        var i = steps.indexOf(step), last = i === steps.length - 1;
+        $bld.find('[data-step]').each(function () { $(this).prop('hidden', +$(this).attr('data-step') !== step); });
+        $bld.find('.mma-progress li').each(function () {
+            var n = +$(this).attr('data-tab');
+            $(this).prop('hidden', steps.indexOf(n) < 0).toggleClass('is-on', n === step).toggleClass('is-done', steps.indexOf(n) > -1 && steps.indexOf(n) < i);
+        });
+        $bld.find('.mma-progress').prop('hidden', steps.length < 2);
+        $bld.find('[data-mma-back]').prop('hidden', i <= 0);
+        $bld.find('[data-mma-next]').prop('hidden', last).text(step === 1 ? 'Next: your card' : 'Next: review and pay');
+        var $save = $bld.find('[data-mma-save]').prop('hidden', !last);
+        if (mode === 'edit') $save.text('Save changes').prop('disabled', false);
+        else $save.text('Continue to payment').prop('disabled', !$bld.find('[data-mma-agree]').is(':checked'));
+        if (step === 1) $bld.find('[data-mma-next]').prop('disabled', !placement().length);
+        else $bld.find('[data-mma-next]').prop('disabled', false);
+        if (step === 3) summary();
+        preview();
+    }
+
+    function go(n) {
+        step = n;
+        nav();
+        $bld[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function fill(c) {
-        var set = function (n, val) { $bld.find('[name="' + n + '"]').val(val || ''); };
+        var set = function (n, v) { $bld.find('[name="' + n + '"]').val(v || ''); };
         set('c[brand]', c.brand); set('c[headline]', c.headline); set('c[text]', c.text); set('c[button]', c.button || 'Shop now'); set('c[promo]', c.promo);
         for (var i = 0; i < 3; i++) {
             var l = (c.links || [])[i] || ['', ''];
@@ -133,55 +202,95 @@
         }
         var b = c.b || {};
         set('c[b][headline]', b.headline); set('c[b][text]', b.text); set('c[b][button]', b.button);
+        if (b.headline || c.promo || (c.links || []).length > 1) $bld.find('.mma-more').prop('open', true);
         logoUrl = c.logo || '';
         $bld.find('[name=logo]').val('');
+    }
+
+    /** Open the wizard: 'new' (all steps), 'book' an unpaid ad (card + pay), 'edit' a booked ad's card. */
+    function open(m, $ad) {
+        mode = m;
+        $bld.attr('data-mode', m).prop('hidden', false);
+        $bld.find('[data-mma-pay]').prop('hidden', true).empty();
+        $bld.find('[data-mma-agree]').prop('checked', false);
+        say($bld, '');
+        if ($ad) {
+            fill(JSON.parse($ad.attr('data-c') || '{}'));
+            $bld.find('[name=ad]').val($ad.attr('data-mma-ad'));
+            $bld.find('[name=placement][value="' + $ad.attr('data-slot') + '"]').prop('checked', true);
+        } else {
+            $bld[0].reset();
+            $bld.find('[name=ad]').val('');
+            logoUrl = '';
+            pickPlacement();
+        }
+        steps = m === 'new' ? [1, 2, 3] : (m === 'book' ? [2, 3] : [2]);
+        $bld.find('[data-mma-wtitle]').text(m === 'new' ? 'Book a placement' : (m === 'book' ? 'Book this ad' : 'Edit your card'));
+        $('.mma-booknew').prop('hidden', true);
+        go(m === 'book' ? 3 : steps[0]);
     }
 
     function initBuilder() {
         $bld = $('[data-mma-builder]');
         if (!$bld.length) return;
-        $bld.on('input change', 'input, select', preview);
-        $bld.on('change', '[name=placement]', pickPlacement);
+        $bld.on('input change', 'input, select', function (e) {
+            if (e.target.name === 'placement') return pickPlacement();
+            if (e.target.hasAttribute('data-mma-agree')) return nav();
+            preview();
+        });
         $bld.on('change', '[name=logo]', function () {
             var f = this.files && this.files[0];
             if (f && f.size > 1048576) { say($bld, 'Please use a logo under 1 MB.', true); this.value = ''; return; }
-            logoUrl = f ? URL.createObjectURL(f) : '';
+            logoUrl = f ? URL.createObjectURL(f) : logoUrl;
             preview();
         });
+        $bld.on('click', '[data-mma-view]', function () {
+            var v = $(this).attr('data-mma-view');
+            $bld.find('[data-mma-view]').removeClass('is-on').attr('aria-selected', 'false');
+            $(this).addClass('is-on').attr('aria-selected', 'true');
+            $bld.find('[data-mma-frame]').attr('data-mma-frame', v);
+            preview();
+        });
+        $bld.on('click', '[data-mma-next]', function () {
+            var err = check(step);
+            if (err) return say($bld, err, true);
+            say($bld, '');
+            go(steps[steps.indexOf(step) + 1]);
+        });
+        $bld.on('click', '[data-mma-back]', function () { say($bld, ''); go(steps[steps.indexOf(step) - 1]); });
+        $bld.on('click', '[data-mma-close]', function () {
+            $bld.prop('hidden', true);
+            $('.mma-booknew').prop('hidden', false);
+        });
+        $('[data-mma-new]').on('click', function () { open('new'); });
         $bld.on('click', '[data-mma-wait]', function () {
             var $b = $(this).prop('disabled', true);
-            post('mm_ads_wait', { placement: $bld.find('[name=placement]:checked').val(), target: $bld.find('[name=target]').val() || '' })
+            post('mm_ads_wait', { placement: placement().val(), target: $bld.find('[name=target]').val() || '' })
                 .done(function (r) { r.success ? say($bld, r.data.message) : fail($bld)(r); })
                 .fail(fail($bld)).always(function () { $b.prop('disabled', false); });
         });
         $bld.on('submit', function (e) {
             e.preventDefault();
+            for (var k = 0; k < steps.length; k++) {
+                var err = check(steps[k]);
+                if (err && !(mode !== 'new' && steps[k] === 1)) { go(steps[k]); return say($bld, err, true); }
+            }
             var $b = $bld.find('[data-mma-save]').prop('disabled', true).text('Saving…');
-            var bookAfter = $bld.attr('data-book') !== '0';
             post('mm_ads_save', new FormData(this)).done(function (r) {
                 if (!r.success) return fail($bld)(r);
                 $bld.find('[name=ad]').val(r.data.ad);
-                say($bld, r.data.message);
-                if (bookAfter) checkout(r.data.ad, $bld.find('[name=cadence]:checked').val() || 'weekly', $bld);
-                else setTimeout(function () { location.reload(); }, 1200);
-            }).fail(fail($bld)).always(function () { $b.prop('disabled', false).text('Save and continue to payment'); });
+                if (mode === 'edit') {
+                    say($bld, r.data.message);
+                    setTimeout(function () { location.reload(); }, 1500);
+                    return;
+                }
+                say($bld, '');
+                $b.prop('hidden', true);
+                $bld.find('[data-mma-back]').prop('hidden', true);
+                checkout(r.data.ad, $bld.find('[name=cadence]:checked').val() || 'weekly', $bld);
+            }).fail(fail($bld)).always(function () { if (mode === 'edit') nav(); else $b.prop('disabled', false).text('Continue to payment'); });
         });
-        preview();
-    }
-
-    /** Edit or book an existing ad: the builder opens with its card (placement stays as booked). */
-    function openExisting($ad, book) {
-        var c = JSON.parse($ad.attr('data-c') || '{}');
-        fill(c);
-        $bld.find('[name=ad]').val($ad.attr('data-mma-ad'));
-        $bld.attr('data-book', book ? '1' : '0');
-        $bld.find('[data-mma-places]').prop('hidden', true);
-        $bld.find('[data-mma-billing]').prop('hidden', !book);
-        var cads = ($ad.attr('data-cadences') || 'weekly').split(',');
-        $bld.find('[name=cadence][value=monthly]').prop('disabled', cads.indexOf('monthly') < 0);
-        $bld.find('[data-mma-save]').prop('disabled', false).text(book ? 'Save and continue to payment' : 'Save changes');
-        preview();
-        $('#book').text(book ? 'Book this ad' : 'Edit your card')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (!$bld.prop('hidden')) open('new');
     }
 
     /* ---------------------------------------------------------------- Checkout */
@@ -225,8 +334,8 @@
     /* ---------------------------------------------------------------- Ad cards */
 
     function initAds() {
-        $(document).on('click', '[data-mma-edit]', function () { openExisting($(this).closest('[data-mma-ad]'), false); });
-        $(document).on('click', '[data-mma-book]', function () { openExisting($(this).closest('[data-mma-ad]'), true); });
+        $(document).on('click', '[data-mma-edit]', function () { var $ad = $(this).closest('[data-mma-ad]'); open(['checkout', 'ended', 'rejected'].indexOf($ad.attr('data-status')) > -1 ? 'book' : 'edit', $ad); });
+        $(document).on('click', '[data-mma-book]', function () { open('book', $(this).closest('[data-mma-ad]')); });
         $(document).on('click', '[data-mma-cancel]', function () {
             var $b = $(this), $ad = $b.closest('[data-mma-ad]');
             if (!$b.attr('data-sure')) {
@@ -257,6 +366,6 @@
         initAccount();
         initBuilder();
         initAds();
-        if (location.hash === '#book' && $bld && $bld.length) $bld[0].scrollIntoView();
+        if (location.hash === '#book' && $bld && $bld.length) open('new');
     });
 })(jQuery);

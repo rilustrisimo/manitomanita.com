@@ -59,6 +59,7 @@ class AdsPortal {
     public static function pages() {
         if ( get_option( self::PAGES_OPT ) ) {
             self::rulesLayout();
+            self::seoMeta();
             return;
         }
         if ( get_transient( 'mm_ads_pages_lock' ) ) return;
@@ -85,6 +86,24 @@ class AdsPortal {
         }
         if ( count( $ids ) === count( $defs ) ) update_option( self::PAGES_OPT, $ids, true );
         delete_transient( 'mm_ads_pages_lock' );
+    }
+
+    /** Search titles, descriptions and focus keyphrases for the ad pages (applied once per version). */
+    protected static function seoMeta() {
+        if ( (int) get_option( 'mm_ads_seo' ) >= 1 ) return;
+        $ids = (array) get_option( self::PAGES_OPT, array() );
+        $meta = array(
+            'advertise'     => array( 'Advertise in the Philippines: Reach Christmas Gift Buyers | Manito Manita', 'Advertise your shop to thousands of Filipino Secret Santa and Monito Monita gift buyers. Sponsored spots from PHP 300 a week, weekly or monthly, with live stats.', 'advertise in the Philippines' ),
+            'ad-guidelines' => array( 'Advertising Guidelines | Manito Manita', 'What shops and brands can advertise on Manito Manita, how ads are reviewed, and how payments and refunds work.', 'advertising guidelines' ),
+        );
+        foreach ( $meta as $slug => $m ) {
+            if ( empty( $ids[ $slug ] ) ) continue;
+            update_post_meta( $ids[ $slug ], '_yoast_wpseo_title', $m[0] );
+            update_post_meta( $ids[ $slug ], '_yoast_wpseo_metadesc', $m[1] );
+            update_post_meta( $ids[ $slug ], '_yoast_wpseo_focuskw', $m[2] );
+        }
+        if ( ! empty( $ids['advertise'] ) ) wp_update_post( array( 'ID' => $ids['advertise'], 'post_title' => 'Advertise with us' ) );
+        update_option( 'mm_ads_seo', 1, true );
     }
 
     /** /ad-guidelines/ uses the Landing "legal" layout (same as the Privacy Policy). Applied once. */

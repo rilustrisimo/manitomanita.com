@@ -120,70 +120,137 @@ foreach ( get_posts( array( 'post_type' => 'page', 'posts_per_page' => 50, 'meta
 			</div>
 			<?php endif; ?>
 
-			<h2 class="mmh-h2 mml-left" id="book">Book a placement</h2>
-			<form class="mma-card mma-form mma-builder" data-mma-builder novalidate>
+			<div class="mma-booknew"<?php echo $ads ? '' : ' hidden'; ?>>
+				<button type="button" class="mma-btn mma-btn--primary" data-mma-new><span aria-hidden="true">+</span> Book a new placement</button>
+			</div>
+
+			<form class="mma-wizard mma-form" id="book" data-mma-builder data-mode="new" novalidate<?php echo $ads ? ' hidden' : ''; ?>>
 				<input type="hidden" name="ad" value="">
-				<fieldset class="mma-places-pick" data-mma-places>
-					<legend>1. Where should your ad show?</legend>
-					<?php foreach ( Ads::placements() as $key => $pl ) :
-						if ( ! AdsPortal::sellable( $key ) ) continue;
-						$season = Ads::season( $key );
-						$left = empty( $pl['target'] ) ? AdsPortal::seatsLeft( $key, '', $aid ) : 1;
-						$row = Ads::prices()[ $key ][ $season === 'closed' ? 'peak' : $season ];
-						$open = $season !== 'closed' && $left > 0;
-						?>
-					<label class="mma-opt<?php echo $open ? '' : ' is-full'; ?>">
-						<input type="radio" name="placement" value="<?php echo esc_attr( $key ); ?>" data-open="<?php echo $open ? 1 : 0; ?>" data-cadences="<?php echo esc_attr( implode( ',', AdsPortal::cadences( $key ) ) ); ?>" data-weekly="<?php echo (int) $row[0]; ?>" data-monthly="<?php echo (int) $row[1]; ?>" data-target="<?php echo esc_attr( $pl['target'] ?? '' ); ?>">
-						<span><b><?php echo esc_html( $pl['label'] ); ?></b><small><?php echo esc_html( $pl['where'] ); ?></small></span>
-						<span class="mma-opt__price">&#8369;<?php echo esc_html( number_format( $row[0] ) ); ?>/wk<small><?php echo $season === 'closed' ? 'Opens Sep 1' : ( $open ? ( empty( $pl['target'] ) ? $left . ' of ' . Ads::SEATS . ' seats open' : 'Per page' ) : 'Full &middot; waitlist' ); ?></small></span>
-					</label>
-					<?php endforeach; ?>
-					<label class="mma-target" for="mma-target" data-mma-target hidden>Which gift guide?
+				<div class="mma-wizard__head">
+					<h2 data-mma-wtitle>Book a placement</h2>
+					<button type="button" class="mma-link" data-mma-close<?php echo $ads ? '' : ' hidden'; ?>>Close</button>
+				</div>
+				<ol class="mma-progress" aria-label="Steps">
+					<li data-tab="1" class="is-on"><span>1</span>Placement</li>
+					<li data-tab="2"><span>2</span>Your card</li>
+					<li data-tab="3"><span>3</span>Review &amp; pay</li>
+				</ol>
+
+				<!-- Step 1: placement -->
+				<section class="mma-step" data-step="1">
+					<p class="mma-step__lead">Where should your ad show? Each placement has <?php echo Ads::SEATS; ?> seats that take turns evenly.</p>
+					<div class="mma-pick" data-mma-places>
+						<?php foreach ( Ads::placements() as $key => $pl ) :
+							if ( ! AdsPortal::sellable( $key ) ) continue;
+							$season = Ads::season( $key );
+							$left = empty( $pl['target'] ) ? AdsPortal::seatsLeft( $key, '', $aid ) : 1;
+							$row = Ads::prices()[ $key ][ $season === 'closed' ? 'peak' : $season ];
+							$open = $season !== 'closed' && $left > 0;
+							$seatTxt = $season === 'closed' ? 'Opens Sep 1' : ( $open ? ( empty( $pl['target'] ) ? $left . ' of ' . Ads::SEATS . ' seats open' : 'Per page' ) : 'Full &middot; waitlist' );
+							?>
+						<label class="mma-opt<?php echo $open ? '' : ' is-full'; ?>">
+							<input type="radio" name="placement" value="<?php echo esc_attr( $key ); ?>" data-label="<?php echo esc_attr( $pl['label'] ); ?>" data-where="<?php echo esc_attr( $pl['where'] ); ?>" data-season="<?php echo esc_attr( $pl['season'] === 'xmas' ? 'Sep 1 - Dec 20' : 'All year' ); ?>" data-seats="<?php echo esc_attr( wp_strip_all_tags( html_entity_decode( $seatTxt ) ) ); ?>" data-open="<?php echo $open ? 1 : 0; ?>" data-cadences="<?php echo esc_attr( implode( ',', AdsPortal::cadences( $key ) ) ); ?>" data-weekly="<?php echo (int) $row[0]; ?>" data-monthly="<?php echo (int) $row[1]; ?>" data-target="<?php echo esc_attr( $pl['target'] ?? '' ); ?>">
+							<span class="mma-opt__top"><b><?php echo esc_html( $pl['label'] ); ?></b><span class="mma-chip <?php echo $open ? 'is-open' : 'is-wait'; ?>"><?php echo $seatTxt; ?></span></span>
+							<span class="mma-opt__where"><?php echo esc_html( $pl['where'] ); ?></span>
+							<span class="mma-opt__price"><b>&#8369;<?php echo esc_html( number_format( $row[0] ) ); ?></b> / week <em>&#8369;<?php echo esc_html( number_format( $row[1] ) ); ?> / month &middot; <?php echo $pl['season'] === 'xmas' ? 'Sep 1 &ndash; Dec 20' : 'All year'; ?></em></span>
+						</label>
+						<?php endforeach; ?>
+					</div>
+					<label class="mma-target" for="mma-target" data-mma-target hidden>Which gift guide should it appear on?
 						<select id="mma-target" name="target"><option value="">Choose a page</option><?php foreach ( $guides as $slug => $title ) echo '<option value="' . esc_attr( $slug ) . '">' . esc_html( $title ) . '</option>'; ?></select>
 					</label>
-					<button type="button" class="mma-btn" data-mma-wait hidden>Join the waitlist</button>
-				</fieldset>
+					<div class="mma-waitbox" data-mma-waitbox hidden>
+						<p>All seats for this placement are taken right now. Join the waitlist and we&rsquo;ll hold the next free seat for you for 48 hours.</p>
+						<button type="button" class="mma-btn" data-mma-wait>Join the waitlist</button>
+					</div>
+				</section>
 
-				<fieldset>
-					<legend>2. Your card</legend>
+				<!-- Step 2: the card -->
+				<section class="mma-step" data-step="2" hidden>
 					<div class="mma-two">
 						<div class="mma-fields">
-							<label for="mma-brand">Brand name<input id="mma-brand" type="text" name="c[brand]" maxlength="40" required></label>
-							<label for="mma-logo">Logo <small>Square PNG, JPG or WebP, under 1 MB</small><input id="mma-logo" type="file" name="logo" accept="image/png,image/jpeg,image/webp"></label>
-							<label for="mma-head">Headline <small data-mma-count="50">0/50</small><input id="mma-head" type="text" name="c[headline]" maxlength="50" required></label>
-							<label for="mma-text">One line about your offer <small data-mma-count="120">0/120</small><input id="mma-text" type="text" name="c[text]" maxlength="120"></label>
-							<label for="mma-btnl">Button label<input id="mma-btnl" type="text" name="c[button]" maxlength="24" value="Shop now"></label>
-							<label for="mma-l0">Main link <small>https:// your shop, Shopee, Lazada or website</small><input id="mma-l0" type="url" name="c[links][0][1]" placeholder="https://" required><input type="hidden" name="c[links][0][0]" value="Main"></label>
-							<details class="mma-more"><summary>More options</summary>
-								<label for="mma-l1l">Second link label<input id="mma-l1l" type="text" name="c[links][1][0]" maxlength="24" placeholder="Facebook"></label>
-								<label for="mma-l1">Second link<input id="mma-l1" type="url" name="c[links][1][1]" placeholder="https://"></label>
-								<label for="mma-l2l">Third link label<input id="mma-l2l" type="text" name="c[links][2][0]" maxlength="24" placeholder="Instagram"></label>
-								<label for="mma-l2">Third link<input id="mma-l2" type="url" name="c[links][2][1]" placeholder="https://"></label>
-								<label for="mma-promo">Promo code<input id="mma-promo" type="text" name="c[promo]" maxlength="24" placeholder="MANITO10"></label>
-								<label for="mma-bh">Version B headline <small>We rotate both and show which gets more clicks</small><input id="mma-bh" type="text" name="c[b][headline]" maxlength="50"></label>
-								<label for="mma-bt">Version B line<input id="mma-bt" type="text" name="c[b][text]" maxlength="120"></label>
-								<label for="mma-bb">Version B button<input id="mma-bb" type="text" name="c[b][button]" maxlength="24"></label>
+							<div class="mma-group">
+								<h3>Brand</h3>
+								<label for="mma-brand">Brand name<input id="mma-brand" type="text" name="c[brand]" maxlength="40" placeholder="e.g. Regalo Box PH" required></label>
+								<label class="mma-drop" for="mma-logo">
+									<span class="mma-drop__thumb" data-mma-thumb aria-hidden="true">Logo</span>
+									<span class="mma-drop__txt"><b>Upload your logo</b><small>Square PNG, JPG or WebP, under 1 MB</small></span>
+									<input id="mma-logo" type="file" name="logo" accept="image/png,image/jpeg,image/webp">
+								</label>
+							</div>
+							<div class="mma-group">
+								<h3>Message</h3>
+								<label for="mma-head">Headline <small data-mma-count="50">0/50</small><input id="mma-head" type="text" name="c[headline]" maxlength="50" placeholder="Gift boxes under &#8369;500, delivered in 2 days" required></label>
+								<label for="mma-text">One line about your offer <small data-mma-count="120">0/120</small><input id="mma-text" type="text" name="c[text]" maxlength="120" placeholder="What you sell and why it makes a great gift"></label>
+								<label for="mma-btnl">Button label<input id="mma-btnl" type="text" name="c[button]" maxlength="24" value="Shop now"></label>
+							</div>
+							<div class="mma-group">
+								<h3>Link</h3>
+								<label for="mma-l0">Where the button goes <small>Your shop, Shopee, Lazada or website (https://)</small><input id="mma-l0" type="url" name="c[links][0][1]" placeholder="https://" required><input type="hidden" name="c[links][0][0]" value="Main"></label>
+							</div>
+							<details class="mma-more">
+								<summary>Extras: more links, promo code, version B</summary>
+								<div class="mma-more__body">
+									<div class="mma-pair">
+										<label for="mma-l1l">Second link label<input id="mma-l1l" type="text" name="c[links][1][0]" maxlength="24" placeholder="Facebook"></label>
+										<label for="mma-l1">Second link<input id="mma-l1" type="url" name="c[links][1][1]" placeholder="https://"></label>
+									</div>
+									<div class="mma-pair">
+										<label for="mma-l2l">Third link label<input id="mma-l2l" type="text" name="c[links][2][0]" maxlength="24" placeholder="Instagram"></label>
+										<label for="mma-l2">Third link<input id="mma-l2" type="url" name="c[links][2][1]" placeholder="https://"></label>
+									</div>
+									<label for="mma-promo">Promo code <small>Shown on the card</small><input id="mma-promo" type="text" name="c[promo]" maxlength="24" placeholder="MANITO10"></label>
+									<p class="mma-fine">Version B: we rotate both versions evenly and show which gets more clicks.</p>
+									<label for="mma-bh">Version B headline<input id="mma-bh" type="text" name="c[b][headline]" maxlength="50"></label>
+									<div class="mma-pair">
+										<label for="mma-bt">Version B line<input id="mma-bt" type="text" name="c[b][text]" maxlength="120"></label>
+										<label for="mma-bb">Version B button<input id="mma-bb" type="text" name="c[b][button]" maxlength="24"></label>
+									</div>
+								</div>
 							</details>
 						</div>
 						<div class="mma-live">
-							<p class="mma-live__label">Preview</p>
-							<div data-mma-preview></div>
+							<div class="mma-live__tabs" role="tablist">
+								<button type="button" class="is-on" data-mma-view="site" role="tab" aria-selected="true">On the site</button>
+								<button type="button" data-mma-view="email" role="tab" aria-selected="false">In the email</button>
+							</div>
+							<div class="mma-live__frame" data-mma-frame="site"><div data-mma-preview></div></div>
+							<p class="mma-fine">This is exactly how people will see it. It&rsquo;s always labelled &ldquo;Sponsored&rdquo;.</p>
 						</div>
 					</div>
-				</fieldset>
+				</section>
 
-				<fieldset data-mma-billing>
-					<legend>3. Billing</legend>
-					<div class="mma-cad">
-						<label><input type="radio" name="cadence" value="weekly" checked> Weekly <b data-mma-price="weekly"></b></label>
-						<label><input type="radio" name="cadence" value="monthly"> Monthly <b data-mma-price="monthly"></b></label>
+				<!-- Step 3: review and pay -->
+				<section class="mma-step" data-step="3" hidden>
+					<div class="mma-two mma-two--review">
+						<div>
+							<dl class="mma-summary" data-mma-summary></dl>
+							<fieldset class="mma-cad" data-mma-billing>
+								<legend>Billing</legend>
+								<label class="mma-cad__opt"><input type="radio" name="cadence" value="weekly" checked><span><b>Weekly</b><em data-mma-price="weekly"></em><small>Most flexible</small></span></label>
+								<label class="mma-cad__opt"><input type="radio" name="cadence" value="monthly"><span><b>Monthly</b><em data-mma-price="monthly"></em><small data-mma-save-note></small></span></label>
+							</fieldset>
+							<ul class="mma-notes">
+								<li>Renews automatically until you cancel. Cancel anytime from this page.</li>
+								<li>We review every ad, usually within a day. Not approved? Full refund.</li>
+								<li>Pay with PayPal or a debit or credit card.</li>
+							</ul>
+							<label class="mma-agree"><input type="checkbox" name="agree" value="1" data-mma-agree> <span>My ad follows the <a href="<?php echo esc_url( AdsPortal::pageUrl( 'rules' ) ); ?>" target="_blank" rel="noopener">ad guidelines</a>.</span></label>
+						</div>
+						<div class="mma-live">
+							<p class="mma-live__label">Your card</p>
+							<div data-mma-preview2></div>
+						</div>
 					</div>
-					<p class="mma-fine">Renews automatically until you cancel. We review your ad after payment; if it isn&rsquo;t approved you get a full refund.</p>
-				</fieldset>
+					<div class="mma-pay" data-mma-pay hidden></div>
+				</section>
 
-				<button type="submit" class="mma-btn mma-btn--primary mma-btn--block" data-mma-save>Save and continue to payment</button>
-				<div class="mma-pay" data-mma-pay hidden></div>
 				<p class="mma-msg" data-mma-msg role="status" aria-live="polite"></p>
+				<div class="mma-nav">
+					<button type="button" class="mma-btn" data-mma-back hidden>Back</button>
+					<button type="button" class="mma-btn mma-btn--primary" data-mma-next>Next: your card</button>
+					<button type="submit" class="mma-btn mma-btn--primary" data-mma-save hidden>Continue to payment</button>
+				</div>
 			</form>
 <?php endif; ?>
 		</div>

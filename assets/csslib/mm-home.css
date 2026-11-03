@@ -1599,11 +1599,25 @@
 
 /* "Advertise with us" band (homepage, landing pages) */
 .mmh-bizband {
-    padding: 0 0 56px;
+    padding: 8px 0 72px;
+    background: var(--mm-soft); /* continues the FAQ section above it */
 }
 
-.mmh-bizband--plain {
-    padding-top: 8px;
+.mmh-bizband__card .mmh-btn {
+    flex: 0 0 auto;
+    min-height: 48px;
+    padding: 0 22px;
+    font-size: 15px;
+}
+
+@media (max-width: 640px) {
+    .mmh-bizband__card {
+        padding: 18px;
+    }
+
+    .mmh-bizband__card .mmh-btn {
+        flex: 1 1 100%;
+    }
 }
 
 .mmh-bizband__card {
@@ -1632,8 +1646,8 @@
 .mmh-bizband__txt {
     flex: 1 1 280px;
     color: var(--mm-text);
-    font-size: 15px;
-    line-height: 1.5;
+    font-size: 14px;
+    line-height: 1.55;
 }
 
 .mmh-bizband__txt strong {

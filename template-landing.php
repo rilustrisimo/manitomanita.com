@@ -180,7 +180,7 @@ endif;
 
 	<?php if ( get_option( 'mm_ads_pages' ) ) : ?>
 	<section class="mmh-bizband mmh-bizband--plain" aria-label="Advertise with us">
-		<div class="mmh-wrap">
+		<div class="mmh-wrap mmh-wrap--narrow">
 			<div class="mmh-bizband__card">
 				<span class="mmh-bizband__icon" aria-hidden="true"><i class="fas fa-store"></i></span>
 				<div class="mmh-bizband__txt"><strong><?php echo $p['type'] === 'guide' ? 'Sell gifts like these?' : 'Have a shop or brand?'; ?></strong><span><?php echo $p['type'] === 'guide' ? 'Feature your shop on this guide and in front of people shopping for their Secret Santa gift.' : 'Reach Filipino gift buyers while they plan their exchange. Weekly or monthly, cancel anytime.'; ?></span></div>

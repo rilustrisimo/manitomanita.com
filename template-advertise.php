@@ -26,6 +26,9 @@ $clicksDay = array( 21, 24, 30, 26, 33, 38, 29, 25, 31, 34, 40, 32, 28, 41 );
 $maxDay = max( $days );
 
 $faq = array(
+	array( 'How much does it cost to advertise on Manito Manita?', 'From &#8369;300 a week for gift guide and registry placements, and &#8369;800 to &#8369;1,500 a week for the match screen, group page and shuffle emails in peak season (Nov 1 &ndash; Dec 20). Monthly billing costs less per week. There are no setup fees and you can cancel anytime.' ),
+	array( 'Is this good for Shopee and Lazada sellers?', 'Yes. Most people here are about to buy a gift within a set budget, and your button can link straight to your Shopee or Lazada store, your website or your Facebook page. Add a promo code to see how many sales come from us.' ),
+	array( 'Can a small business advertise for Christmas?', 'Yes. Booking takes a few minutes, there&rsquo;s no agency or contract, and weekly billing lets you try one week first. It works well for gift shops, bakeries, gift boxes, personalised items, party suppliers and online sellers.' ),
 	array( 'Who sees my ad?', 'Members of Secret Santa, Kris Kringle and Monito Monita groups in the Philippines (offices, schools, families and barkadas) at the moment they find out who they&rsquo;re buying a gift for, plus visitors to our gift guides. Most groups set a budget of &#8369;300 to &#8369;1,000 per gift.' ),
 	array( 'How do I pay?', 'With PayPal or a debit or credit card through PayPal, weekly or monthly. It renews automatically until you cancel, and you can cancel anytime from your account.' ),
 	array( 'What happens after I pay?', 'We review every ad, usually within a day. Once approved it goes live right away. If we can&rsquo;t approve it, your payment is refunded in full.' ),
@@ -41,7 +44,7 @@ $faq = array(
 		<div class="mmh-wrap mma-hero__grid">
 			<div class="mma-hero__copy">
 				<p class="mmh-eyebrow">Advertise on Manito Manita</p>
-				<h1 class="mmh-hero__title">Reach Filipino gift buyers <span>the moment they shop</span></h1>
+				<h1 class="mmh-hero__title">Advertise to Filipino gift buyers <span>the moment they shop</span></h1>
 				<p class="mmh-hero__lead">When a group is shuffled, everyone finds out who they&rsquo;re buying for and starts looking for a gift. Put your shop in front of them on the match screen, in the &ldquo;your match is ready&rdquo; email and on our gift guides, and see every view and click.</p>
 				<div class="mmh-hero__actions">
 					<a class="mmh-btn mmh-btn--primary" href="<?php echo esc_url( $book ); ?>">Book a spot</a>
@@ -84,7 +87,9 @@ $faq = array(
 
 	<section class="mmh-section">
 		<div class="mmh-wrap">
-			<h2 class="mmh-h2">Why it works</h2>
+			<h2 class="mmh-h2">Christmas advertising in the Philippines, made simple</h2>
+			<p class="mmh-sub mma-intro">Manito Manita is where offices, schools and families draw names for their Secret Santa, Monito Monita and Kris Kringle exchanges. That makes it one of the few places online to reach people who are about to buy a gift, with a budget already set. Shopee and Lazada sellers, gift shops, bakeries and small businesses can book a sponsored spot in minutes and track every view and click.</p>
+			<h3 class="mma-h3">Why it works</h3>
 			<div class="mma-why">
 				<div><h3>They&rsquo;re about to buy</h3><p>Your card appears right after people learn who they&rsquo;re giving to, next to that person&rsquo;s wishlist and gift ideas.</p></div>
 				<div><h3>The budget is known</h3><p>Every group sets a gift budget, usually &#8369;300 to &#8369;1,000. Your offer lands with people shopping in that range.</p></div>
@@ -274,6 +279,25 @@ echo wp_json_encode( array(
 	'mainEntity' => array_map( function ( $q ) {
 		return array( '@type' => 'Question', 'name' => html_entity_decode( $q[0], ENT_QUOTES, 'UTF-8' ), 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => html_entity_decode( wp_strip_all_tags( $q[1] ), ENT_QUOTES, 'UTF-8' ) ) );
 	}, $faq ),
+), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+?></script>
+<script type="application/ld+json"><?php
+$mmLow = PHP_INT_MAX; $mmHigh = 0;
+foreach ( Ads::placements() as $k => $pl ) {
+	if ( ! AdsPortal::sellable( $k ) ) continue;
+	foreach ( Ads::prices()[ $k ] as $row ) { $mmLow = min( $mmLow, (int) $row[0] ); $mmHigh = max( $mmHigh, (int) $row[1] ); }
+}
+echo wp_json_encode( array(
+	'@context'    => 'https://schema.org',
+	'@type'       => 'Service',
+	'name'        => 'Advertising on Manito Manita',
+	'serviceType' => 'Online advertising',
+	'description' => 'Sponsored placements that reach Filipino Secret Santa, Monito Monita and Kris Kringle gift buyers: match screen, group pages, shuffle and reminder emails, and gift guides. Weekly or monthly, with live stats.',
+	'url'         => AdsPortal::pageUrl( 'advertise' ),
+	'areaServed'  => array( '@type' => 'Country', 'name' => 'Philippines' ),
+	'audience'    => array( '@type' => 'BusinessAudience', 'audienceType' => 'Shops, brands and online sellers' ),
+	'provider'    => array( '@type' => 'Organization', 'name' => 'Manito Manita', 'url' => home_url( '/' ) ),
+	'offers'      => array( '@type' => 'AggregateOffer', 'priceCurrency' => 'PHP', 'lowPrice' => $mmLow, 'highPrice' => $mmHigh, 'offerCount' => count( array_filter( array_keys( Ads::placements() ), array( 'AdsPortal', 'sellable' ) ) ) ),
 ), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
 ?></script>
 <?php
