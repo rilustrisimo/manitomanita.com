@@ -13,7 +13,7 @@
  */
 defined( 'ABSPATH' ) || die();
 
-if ( is_404() || is_page_template( 'template-homepage.php' ) || is_page_template( 'template-my-wishlist.php' ) || is_page_template( 'template-resetpw.php' ) || ( class_exists( 'Landing' ) && Landing::isActive() ) ) {
+if ( is_404() || is_page_template( 'template-homepage.php' ) || is_page_template( 'template-my-wishlist.php' ) || is_page_template( 'template-resetpw.php' ) || is_page_template( 'template-advertise.php' ) || is_page_template( 'template-advertiser.php' ) || ( class_exists( 'Landing' ) && Landing::isActive() ) ) {
 	return; // the homepage has its own hero
 }
 

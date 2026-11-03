@@ -421,7 +421,7 @@ class AdsPortal {
         update_post_meta( $id, '_mm_ad_plan', $plan );
         update_post_meta( $id, '_mm_ad_mode', $mode );
 
-        wp_send_json_success( array( 'plan' => $plan, 'clientId' => AdsPayPal::clientId( $mode ), 'custom' => (string) $id, 'price' => $price ) );
+        wp_send_json_success( array( 'plan' => $plan, 'clientId' => AdsPayPal::clientId( $mode ), 'custom' => (string) $id, 'price' => $price, 'mode' => $mode ) );
     }
 
     protected static function holdsWaitSeat( $placement, $target ) {

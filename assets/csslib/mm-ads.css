@@ -1643,3 +1643,240 @@
     color: var(--mm-accent-dark);
     text-decoration: underline;
 }
+
+/* Closing "Book a spot" button: clear space below the FAQ */
+.mm-adv p.mma-cta {
+    display: flex;
+    justify-content: center;
+    margin: 40px 0 0 !important;
+}
+
+.mm-adv p.mma-cta .mmh-btn {
+    min-width: 220px;
+}
+
+/* Step 3: billing cards and confirmation, balanced */
+.mm-adv .mma-cad__opt {
+    align-items: flex-start;
+    padding: 16px 18px !important;
+}
+
+.mm-adv .mma-cad__opt input[type="radio"] {
+    flex: 0 0 18px;
+    margin-top: 3px;
+}
+
+.mm-adv .mma-cad__opt em {
+    margin-top: 4px;
+    font-size: 20px;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.mm-adv .mma-cad__opt em span {
+    color: var(--mm-muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.mm-adv .mma-cad__opt small {
+    margin-top: 2px;
+}
+
+.mma-confirm {
+    margin-top: 22px;
+    padding: 18px 20px;
+    border-radius: 14px;
+    background: var(--mm-soft);
+}
+
+.mm-adv .mma-confirm .mma-notes {
+    margin: 0;
+    gap: 8px;
+}
+
+.mm-adv .mma-confirm .mma-agree {
+    display: grid !important;
+    grid-template-columns: 20px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px !important;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--mm-line);
+    color: var(--ma-ink);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.45;
+    cursor: pointer;
+}
+
+.mm-adv .mma-confirm .mma-agree input {
+    width: 20px;
+    height: 20px;
+    margin: 1px 0 0;
+}
+
+.mm-adv .mma-cad__opt em span {
+    display: inline;
+}
+
+/* Checkout panel */
+.mm-adv .mma-pay {
+    display: grid;
+    gap: 16px;
+    padding: 22px;
+    border: 1px solid var(--mm-line);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(23, 34, 31, .06);
+}
+
+.mma-pay__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.mma-pay__head b {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ma-ink);
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.mma-pay__head b i {
+    color: var(--mm-accent-dark);
+    font-size: 15px;
+}
+
+.mma-pay__sum {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--mm-soft);
+}
+
+.mma-pay__sum > div {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.mma-pay__sum span {
+    color: var(--ma-ink);
+    font-weight: 700;
+}
+
+.mma-pay__sum small {
+    color: var(--mm-muted);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.mma-pay__sum strong {
+    flex: 0 0 auto;
+    color: var(--ma-ink);
+    font-size: 24px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.mma-pay__sum strong span {
+    color: var(--mm-muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.mma-pay__btns {
+    min-height: 120px;
+}
+
+.mma-pay__foot {
+    margin: 0;
+    color: var(--mm-muted);
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.mma-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 110px;
+    color: var(--mm-muted);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.mma-spin {
+    width: 26px;
+    height: 26px;
+    border: 3px solid var(--mm-accent-soft);
+    border-top-color: var(--mm-accent-dark);
+    border-radius: 50%;
+    animation: mmaSpin .8s linear infinite;
+}
+
+@keyframes mmaSpin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mma-spin { animation-duration: 2.4s; }
+}
+
+.mma-done {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 6px 2px;
+}
+
+.mma-done i {
+    color: var(--ma-good);
+    font-size: 26px;
+}
+
+.mma-done div {
+    display: grid;
+    gap: 4px;
+}
+
+.mma-done b {
+    color: var(--ma-ink);
+    font-size: 17px;
+}
+
+.mma-done span {
+    color: var(--mm-text);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+    .mma-pay__sum {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+.mma-testbadge {
+    margin-left: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--ma-gold-soft);
+    color: var(--ma-gold);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}

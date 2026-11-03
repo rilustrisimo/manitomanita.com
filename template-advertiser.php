@@ -230,12 +230,14 @@ foreach ( get_posts( array( 'post_type' => 'page', 'posts_per_page' => 50, 'meta
 								<label class="mma-cad__opt"><input type="radio" name="cadence" value="weekly" checked><span><b>Weekly</b><em data-mma-price="weekly"></em><small>Most flexible</small></span></label>
 								<label class="mma-cad__opt"><input type="radio" name="cadence" value="monthly"><span><b>Monthly</b><em data-mma-price="monthly"></em><small data-mma-save-note></small></span></label>
 							</fieldset>
+							<div class="mma-confirm">
 							<ul class="mma-notes">
 								<li>Renews automatically until you cancel. Cancel anytime from this page.</li>
 								<li>We review every ad, usually within a day. Not approved? Full refund.</li>
 								<li>Pay with PayPal or a debit or credit card.</li>
 							</ul>
-							<label class="mma-agree"><input type="checkbox" name="agree" value="1" data-mma-agree> <span>My ad follows the <a href="<?php echo esc_url( AdsPortal::pageUrl( 'rules' ) ); ?>" target="_blank" rel="noopener">ad guidelines</a>.</span></label>
+							<label class="mma-agree"><input type="checkbox" name="agree" value="1" data-mma-agree> <span>I confirm my ad follows the <a href="<?php echo esc_url( AdsPortal::pageUrl( 'rules' ) ); ?>" target="_blank" rel="noopener">ad guidelines</a>.</span></label>
+							</div>
 						</div>
 						<div class="mma-live">
 							<p class="mma-live__label">Your card</p>
