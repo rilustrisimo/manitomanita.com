@@ -31,8 +31,8 @@ class SEO {
     const OLD_GIFT_IDEAS = 77; // redirected to /exchange-gift-ideas-500-pesos/ (Landing::redirects)
     const FACEBOOK       = 'https://www.facebook.com/manitomanitaph';
 
-    const HOME_TITLE = 'Manito Manita: Free Secret Santa & Kris Kringle Generator (Philippines)';
-    const HOME_DESC  = 'Draw names for your Monito Monita, Kris Kringle or Secret Santa in 2 minutes. Free forever: wishlists, gift ideas within budget and private matches. No sign-up.';
+    const HOME_TITLE = 'Manito Manita: Free Online Bunutan & Secret Santa Generator (PH)';
+    const HOME_DESC  = 'Do your Monito Monita, Kris Kringle or online bunutan in 2 minutes. Free forever: wishlists, gift ideas within budget and private matches. No sign-up.';
 
     protected static $hooked = false;
 
@@ -139,7 +139,7 @@ class SEO {
                     '@type'               => 'WebApplication',
                     '@id'                 => $home . '#mm-app',
                     'name'                => 'Manito Manita',
-                    'alternateName'       => array( 'Monito Monita generator', 'Kris Kringle generator', 'Secret Santa generator' ),
+                    'alternateName'       => array( 'Monito Monita generator', 'Kris Kringle generator', 'Secret Santa generator', 'Online bunutan' ),
                     'url'                 => $home,
                     'image'               => self::imageUrl(),
                     'description'         => self::HOME_DESC,

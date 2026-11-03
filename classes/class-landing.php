@@ -29,6 +29,85 @@ class Landing {
 
         add_action( 'template_redirect', array( __CLASS__, 'redirects' ), -1 );
         add_action( 'wp_head', array( __CLASS__, 'faqSchema' ), 40 );
+        add_action( 'wp_loaded', array( __CLASS__, 'seed' ) );
+    }
+
+    /**
+     * Landing pages added after the first migration: each is created once (published, with its fields
+     * and Yoast title/description). A page that already has the slug is left alone, so edits in
+     * WP Admin are never overwritten.
+     */
+    public static function newPages() {
+        return array(
+            'online-bunutan' => array(
+                'title'   => 'Online Bunutan for Christmas Party: Free Exchange Gift Draw | Manito Manita',
+                'desc'    => 'Do your exchange gift bunutan online, free. Share one link on Messenger, everyone joins and adds a wishlist, then shuffle. No paper slips, no app, no sign-up.',
+                'eyebrow' => 'Bunutan &middot; Exchange gift',
+                'h1'      => 'Online bunutan <span>for your Christmas party</span>',
+                'lead'    => 'No more paper slips in a bowl. Share one link on Messenger or Viber, everyone joins and adds a wishlist, and each person privately sees who they drew, on their phone.',
+                'intro'   => 'How to do an online bunutan for exchange gift',
+                'body'    => '<p>A <strong>bunutan</strong> (or <strong>bunot</strong>) is how most Filipino groups decide who gives a gift to whom at the Christmas party: everyone writes their name on a slip, draws one, and keeps it secret until the exchange. An <strong>online bunutan</strong> does the same draw without the bowl, so it also works for remote teammates, family abroad and barkadas who can&rsquo;t meet before the party.</p>'
+                    . '<p>To do your bunutan online, create a free group with your party name, the exchange date and the gift budget. Share the group link in your Messenger or Viber group chat. Each person joins with their email, confirms it, and adds a wishlist so their giver knows what to buy. When everyone is in, the organizer shuffles once, and each person sees only their own match, with gift ideas within the budget.</p>'
+                    . '<p>Nobody can draw their own name, nobody sees anyone else&rsquo;s match, and there&rsquo;s no app to install. It works for an office Christmas party, a family reunion, a barkada exchange gift or a class, from 3 people to over 100.</p>',
+                'faq'     => array(
+                    array( 'Is online bunutan free?', 'Yes, free forever with no limit on members. PRO is an optional &#8369;199 one-time add-on for organizers who want extra tools.' ),
+                    array( 'Can we do the bunutan through Messenger?', 'Yes. Share the group link in your Messenger, Viber or Teams chat. Everyone joins from the link, and each person gets their match by email and on the group page.' ),
+                    array( 'Do members need to download an app or sign up?', 'No. Members join from the link with their name and email. It works in any phone or computer browser.' ),
+                    array( 'What if someone draws their own name?', 'That can&rsquo;t happen. The shuffle makes sure nobody gets themselves, and each person can only see their own match.' ),
+                    array( 'Can couples or family members avoid drawing each other?', 'Yes, with PRO. The organizer adds exclusions before the shuffle, and those people never get each other.' ),
+                    array( 'What is bunutan in English?', 'Bunutan means &ldquo;drawing lots&rdquo;. For a Christmas party it&rsquo;s the same as Secret Santa, Kris Kringle or Monito Monita.' ),
+                ),
+                'related' => array( 'monito-monita-generator', 'kris-kringle-generator-philippines', 'exchange-gift-ideas-500-pesos' ),
+            ),
+        );
+    }
+
+    public static function seed() {
+        if ( ! function_exists( 'update_field' ) ) return;
+        $done = (array) get_option( 'mm_landing_seeded', array() );
+
+        foreach ( self::newPages() as $slug => $p ) {
+            if ( isset( $done[ $slug ] ) ) continue;
+            if ( get_transient( 'mm_seed_' . $slug ) ) continue; // another request is creating it
+            set_transient( 'mm_seed_' . $slug, 1, 120 );
+
+            $existing = get_posts( array( 'post_type' => 'page', 'name' => $slug, 'post_status' => 'any', 'posts_per_page' => 1, 'fields' => 'ids' ) );
+            $id = $existing ? (int) $existing[0] : wp_insert_post( array(
+                'post_type'    => 'page',
+                'post_status'  => 'publish',
+                'post_name'    => $slug,
+                'post_title'   => wp_strip_all_tags( html_entity_decode( $p['h1'], ENT_QUOTES, 'UTF-8' ) ),
+                'post_content' => $p['body'],
+            ), true );
+
+            if ( is_wp_error( $id ) || ! $id ) continue;
+
+            if ( ! $existing ) {
+                update_post_meta( $id, '_wp_page_template', 'template-landing.php' );
+                update_post_meta( $id, '_yoast_wpseo_title', html_entity_decode( $p['title'], ENT_QUOTES, 'UTF-8' ) );
+                update_post_meta( $id, '_yoast_wpseo_metadesc', html_entity_decode( $p['desc'], ENT_QUOTES, 'UTF-8' ) );
+                update_post_meta( $id, '_yoast_wpseo_focuskw', 'online bunutan' );
+                update_field( 'field_mm_land_type', 'tool', $id );
+                update_field( 'field_mm_land_eyebrow', $p['eyebrow'], $id );
+                update_field( 'field_mm_land_h1', $p['h1'], $id );
+                update_field( 'field_mm_land_lead', $p['lead'], $id );
+                update_field( 'field_mm_land_intro_title', $p['intro'], $id );
+                update_field( 'field_mm_land_updated', wp_date( 'Ymd' ), $id );
+                update_field( 'field_mm_land_faq', array_map( function ( $q ) {
+                    return array( 'field_mm_land_faq_q' => $q[0], 'field_mm_land_faq_a' => $q[1] );
+                }, $p['faq'] ), $id );
+                $rel = array();
+                foreach ( $p['related'] as $r ) {
+                    $rp = get_page_by_path( $r );
+                    if ( $rp ) $rel[] = (int) $rp->ID;
+                }
+                if ( $rel ) update_field( 'field_mm_land_related', $rel, $id );
+            }
+
+            $done[ $slug ] = (int) $id;
+            update_option( 'mm_landing_seeded', $done, true ); // autoloaded: no extra query per request
+            delete_transient( 'mm_seed_' . $slug );
+        }
     }
 
     public static function isActive() {
