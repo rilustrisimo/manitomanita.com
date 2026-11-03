@@ -397,6 +397,9 @@ class Insights {
                 $s = self::series( $from, $to );
                 $out = array( 'chart' => self::daysOf( $from, $to, $s, array( 'affiliate_click' ) ), 'by' => self::affiliate( $from, $to ), 'groups' => self::groups( $from, $to )['clicks'], 'features' => self::features(), 'events' => $g ? $g::events( $p ) : null );
                 break;
+            case 'export':
+                $out = array( 'markdown' => self::export( $p ), 'filename' => 'manito-insights-' . $from . '-to-' . $to . '.md' );
+                break;
             default:
                 wp_send_json_error( 'Unknown view.' );
         }
@@ -406,6 +409,215 @@ class Insights {
     }
 
     /* ------------------------------------------------------------------ Admin screens */
+
+    /**
+     * Everything for the period as one Markdown report, written for an AI to analyze.
+     * No emails, passwords or group links (links carry the group password).
+     */
+    public static function export( $p ) {
+        global $wpdb;
+        list( $from, $to, $pf, $pt, $days ) = $p;
+        $g = class_exists( 'InsightsGoogle' ) && InsightsGoogle::configured() ? 'InsightsGoogle' : null;
+        $dec = function ( $s ) { return html_entity_decode( (string) $s, ENT_QUOTES, 'UTF-8' ); };
+        $n = function ( $v ) { return is_numeric( $v ) ? ( floor( (float) $v ) == (float) $v ? number_format( (float) $v ) : number_format( (float) $v, 1 ) ) : (string) $v; };
+        $chg = function ( $c ) { return $c === null ? 'new' : ( $c > 0 ? '+' : '' ) . $c . '%'; };
+        $cell = function ( $v ) { return str_replace( array( '|', "\r", "\n" ), array( '/', ' ', ' ' ), (string) $v ); };
+        $table = function ( array $head, array $rows ) use ( $cell ) {
+            if ( ! $rows ) return "_No data._\n";
+            $o = '| ' . implode( ' | ', $head ) . " |\n|" . str_repeat( ' --- |', count( $head ) ) . "\n";
+            foreach ( $rows as $r ) $o .= '| ' . implode( ' | ', array_map( $cell, $r ) ) . " |\n";
+            return $o;
+        };
+        $err = function ( $x ) { return is_array( $x ) && ! empty( $x['error'] ) ? '_Unavailable: ' . $x['error'] . "_\n" : ''; };
+        $named = function ( $list ) use ( $table, $n, $err ) {
+            if ( $e = $err( $list ) ) return $e;
+            return $table( array( 'Name', 'Value' ), array_map( function ( $r ) use ( $n ) { return array( $r['name'], $n( $r['value'] ) ); }, (array) $list ) );
+        };
+        $since = (string) $wpdb->get_var( 'SELECT MIN(t) FROM ' . self::table() );
+        $since = $since ? substr( $since, 0, 10 ) : 'no events yet';
+
+        $md = array();
+        $md[] = '# Manito Manita analytics export';
+        $md[] = '- Period: **' . $from . ' to ' . $to . '** (' . $days . ' days)';
+        $md[] = '- Compared with: ' . $pf . ' to ' . $pt;
+        $md[] = '- Generated: ' . wp_date( 'Y-m-d H:i' ) . ' (' . wp_timezone_string() . ')';
+        $md[] = '';
+        $md[] = '## About the site';
+        $md[] = 'manitomanita.com is a free Secret Santa (Manito Manita / Kris Kringle) organizer, mostly used in the Philippines. An organizer creates a group (name, exchange date, budget, password) and shares the group link; members join with their email and confirm it; each member adds a wishlist; the organizer shuffles (draws) and everyone sees who they give to. PRO is a paid one-time upgrade per group (PayPal or card, in PHP) that unlocks extras: exclusions, Weekly Drops gift themes, anonymous Q&A, co-organizer, group themes. Gift idea links go to stores (Lazada and others) as affiliate links. "My Wishlist" is a standalone shareable wishlist. Peak season is October to December.';
+        $md[] = '';
+        $md[] = '## Data notes';
+        $md[] = '- Groups, members and confirmations come from the database and are complete for any period.';
+        $md[] = '- PRO sales, revenue, affiliate clicks, shuffles and repeat groups come from an event log that started on **' . $since . '**. Zeros before that date mean "not recorded", not "none happened".';
+        $md[] = '- GA4 (traffic, events, funnel) can lag a few hours. Search Console lags 2-3 days, so its range is shifted (see that section).';
+        $md[] = '- Most traffic is "Direct" because members open group links shared in chats and work tools.';
+        $md[] = '';
+
+        // Site KPIs
+        $k = self::kpis( $p );
+        $rows = array();
+        foreach ( $k as $m => $x ) $rows[] = array( $dec( $x['label'] ), $n( $x['value'] ) . ( $x['suffix'] ?? '' ), $x['prev'] === null ? '-' : $n( $x['prev'] ), $x['prev'] === null ? '-' : $chg( $x['change'] ) );
+        $md[] = '## 1. Key numbers (site data)';
+        $md[] = $table( array( 'Metric', 'This period', 'Previous period', 'Change' ), $rows );
+
+        // Daily site activity
+        $metrics = array( 'groups' => 'Groups', 'members_joined' => 'Members joined', 'members_confirmed' => 'Confirmed', 'shuffle' => 'Shuffles', 'repeat_group' => 'Repeat groups', 'affiliate_click' => 'Affiliate clicks', 'purchase' => 'PRO sales', 'revenue' => 'Revenue' );
+        $d = self::daysOf( $from, $to, self::series( $from, $to ), array_keys( $metrics ) );
+        $rows = array();
+        foreach ( $d['labels'] as $i => $day ) {
+            $r = array( $day . ' ' . wp_date( 'D', strtotime( $day ) ) );
+            foreach ( array_keys( $metrics ) as $m ) $r[] = $n( $d['data'][ $m ][ $i ] );
+            $rows[] = $r;
+        }
+        $md[] = '## 2. Daily site activity';
+        $md[] = $table( array_merge( array( 'Date' ), array_values( $metrics ) ), $rows );
+
+        // Groups
+        $gr = self::groups( $from, $to );
+        $md[] = '## 3. Groups';
+        $md[] = '- Average size of groups created in this period: ' . $gr['avg_size'] . ' members';
+        $md[] = '';
+        $md[] = '### Biggest groups created in this period';
+        $md[] = $table( array( 'Group', 'Members', 'PRO' ), array_map( function ( $r ) { return array( $r['name'], $r['members'], $r['pro'] ? 'yes' : 'no' ); }, $gr['biggest'] ) );
+        $md[] = '### Groups with the most affiliate clicks';
+        $md[] = $table( array( 'Group', 'Clicks' ), array_map( function ( $r ) { return array( $r['name'], $r['clicks'] ); }, $gr['clicks'] ) );
+        $md[] = '### Exchanges in the next 14 days';
+        $md[] = $table( array( 'Group', 'Date', 'Shuffled', 'PRO' ), array_map( function ( $r ) { return array( $r['name'], $r['date'], $r['shuffled'] ? 'yes' : 'not yet', $r['pro'] ? 'yes' : 'no' ); }, $gr['upcoming'] ) );
+        $md[] = '### Newest groups';
+        $md[] = $table( array( 'Group', 'Created', 'Members' ), array_map( function ( $r ) { return array( $r['name'], $r['created'], $r['members'] ); }, $gr['newest'] ) );
+
+        // Revenue / funnel
+        $md[] = '## 4. PRO funnel (GA4, people per step)';
+        if ( $g ) {
+            $f = $g::funnel( $p );
+            if ( $e = $err( $f ) ) {
+                $md[] = $e;
+            } else {
+                $rows = array();
+                $prev = null;
+                foreach ( $f['steps'] as $s ) {
+                    $rows[] = array( $s['step'], $n( $s['users'] ), $n( $s['count'] ), $prev ? round( $s['users'] / $prev * 100, 1 ) . '%' : '-' );
+                    $prev = $s['users'];
+                }
+                $md[] = $table( array( 'Step', 'People', 'Events', '% of previous step' ), $rows );
+                $md[] = '### Where people saw the PRO offer (creative slot)';
+                $md[] = $named( $f['slots'] );
+            }
+        } else {
+            $md[] = "_Google not connected._\n";
+        }
+
+        // Features
+        $fe = self::features();
+        $md[] = '## 5. Feature adoption (all time, site data)';
+        $labels = array( 'groups' => 'Groups (all time)', 'members' => 'Confirmed members (all time)', 'pro_groups' => 'PRO groups', 'exclusions' => 'Groups using exclusions', 'weekly_drops' => 'Groups using Weekly Drops', 'qa' => 'Groups using anonymous Q&A', 'co_organizer' => 'Groups with a co-organizer', 'group_theme' => 'Groups with a custom theme', 'revealed' => 'Groups that revealed', 'my_wishlists' => 'My Wishlists created', 'reservations' => 'My Wishlists with reserved gifts' );
+        $rows = array();
+        foreach ( $labels as $key => $l ) $rows[] = array( $l, $n( $fe[ $key ] ?? 0 ) );
+        foreach ( (array) $fe['chats'] as $s => $c ) $rows[] = array( 'Support chats: ' . $s, $n( $c ) );
+        $md[] = $table( array( 'Feature', 'Count' ), $rows );
+
+        // Affiliate
+        $af = self::affiliate( $from, $to );
+        $md[] = '## 6. Affiliate clicks (since ' . $since . ')';
+        $md[] = '### By store';
+        $md[] = $table( array( 'Store', 'Clicks' ), array_map( null, array_keys( $af['store'] ), array_values( $af['store'] ) ) );
+        $md[] = '### By placement';
+        $md[] = $table( array( 'Placement', 'Clicks' ), array_map( null, array_keys( $af['placement'] ), array_values( $af['placement'] ) ) );
+
+        // Traffic
+        $md[] = '## 7. Traffic (GA4)';
+        if ( $g ) {
+            $t = $g::traffic( $p );
+            if ( ! empty( $t['error'] ) ) {
+                $md[] = '_Unavailable: ' . $t['error'] . "_\n";
+            } else {
+                $kl = array( 'sessions' => 'Visits (sessions)', 'users' => 'People', 'new_users' => 'New people', 'views' => 'Page views', 'engagement' => 'Engagement rate', 'avg_duration' => 'Avg. visit (seconds)' );
+                $rows = array();
+                foreach ( $kl as $key => $l ) {
+                    $x = $t['kpis'][ $key ] ?? null;
+                    if ( ! $x ) continue;
+                    $fmt = $key === 'engagement' ? function ( $v ) { return round( $v * 100, 1 ) . '%'; } : $n;
+                    $rows[] = array( $l, $fmt( $x['value'] ), $fmt( $x['prev'] ), $chg( $x['change'] ) );
+                }
+                $md[] = $table( array( 'Metric', 'This period', 'Previous period', 'Change' ), $rows );
+                $md[] = '### Daily visits';
+                $md[] = $table( array( 'Date', 'Visits', 'People' ), array_map( null, $t['trend']['labels'], $t['trend']['sessions'], $t['trend']['users'] ) );
+                $md[] = '### Channels';
+                $md[] = $named( $t['channels'] );
+                $md[] = '### Source / medium';
+                $md[] = $named( $t['sources'] );
+                $md[] = '### Devices';
+                $md[] = $named( $t['devices'] );
+                $md[] = '### Countries';
+                $md[] = $named( $t['countries'] );
+                $md[] = '### Top pages';
+                $md[] = $table( array( 'Page', 'Views', 'People', 'Avg. engaged seconds per person' ), array_map( function ( $r ) use ( $n ) { return array( preg_replace( '/([?&]pw=)[^&]*/', '$1***', $r['path'] ), $n( $r['views'] ), $n( $r['users'] ), $r['time'] ); }, $t['pages'] ) );
+            }
+            $ev = $g::events( $p );
+            $md[] = '### All GA4 events';
+            if ( $e = $err( $ev ) ) {
+                $md[] = $e;
+            } else {
+                uasort( $ev, function ( $a, $b ) { return $b['count'] <=> $a['count']; } );
+                $md[] = $table( array( 'Event', 'Count', 'People' ), array_map( function ( $name, $x ) use ( $n ) { return array( $name, $n( $x['count'] ), $n( $x['users'] ) ); }, array_keys( $ev ), array_values( $ev ) ) );
+            }
+        } else {
+            $md[] = "_Google not connected._\n";
+        }
+
+        // Search Console
+        $md[] = '## 8. Google Search (Search Console)';
+        if ( $g ) {
+            $s = $g::seo( $p );
+            if ( $e = $err( $s ) ) {
+                $md[] = $e;
+            } else {
+                $md[] = '- Range used: ' . $s['range'][0] . ' to ' . $s['range'][1] . ' (shifted for the 2-3 day delay), compared with the same number of days before it.';
+                $md[] = '';
+                $rows = array();
+                foreach ( array( 'clicks' => 'Clicks', 'impressions' => 'Impressions', 'ctr' => 'CTR %', 'position' => 'Avg. position (lower is better)' ) as $key => $l ) {
+                    $x = $s['kpis'][ $key ];
+                    $rows[] = array( $l, $n( $x['value'] ), $n( $x['prev'] ), $chg( $x['change'] ) );
+                }
+                $md[] = $table( array( 'Metric', 'This period', 'Previous period', 'Change' ), $rows );
+                $q = function ( $list ) use ( $table, $n ) { return $table( array( 'Item', 'Clicks', 'Impressions', 'CTR %', 'Position' ), array_map( function ( $r ) use ( $n ) { return array( $r['key'], $n( $r['clicks'] ), $n( $r['impressions'] ), $r['ctr'], $r['position'] ); }, $list ) ); };
+                $md[] = '### Daily';
+                $md[] = $table( array( 'Date', 'Clicks', 'Impressions' ), array_map( null, $s['trend']['labels'], $s['trend']['clicks'], $s['trend']['impressions'] ) );
+                $md[] = '### Top queries';
+                $md[] = $q( $s['queries'] );
+                $md[] = '### Top pages';
+                $md[] = $q( $s['pages'] );
+                $md[] = '### Countries';
+                $md[] = $q( $s['countries'] );
+                $md[] = '### Devices';
+                $md[] = $q( $s['devices'] );
+            }
+        } else {
+            $md[] = "_Google not connected._\n";
+        }
+
+        // Right now
+        if ( $g ) {
+            $rt = $g::realtime();
+            $md[] = '## 9. Right now (GA4 realtime, last 30 minutes)';
+            if ( $e = $err( $rt ) ) {
+                $md[] = $e;
+            } else {
+                $md[] = '- Active people: ' . $rt['active'];
+                $md[] = '';
+                $md[] = '### Pages';
+                $md[] = $named( $rt['pages'] );
+            }
+        }
+
+        $md[] = '## 10. Automatic hints';
+        $h = self::hints( $k );
+        $md[] = $h ? '- ' . implode( "\n- ", $h ) . "\n" : "_None._\n";
+
+        $md[] = '## What I want from you';
+        $md[] = 'Analyze this period for Manito Manita. 1) Summarize what is happening and how it compares with the previous period. 2) Point out anything unusual (spikes, drops, weak funnel steps, pages or queries with many impressions but low CTR). 3) Explain likely causes, using the season and day-of-week patterns. 4) Give the 5 most valuable, concrete actions for the next 7 days to grow groups, PRO sales and affiliate clicks, each with the metric in this report that would show it worked.';
+
+        return implode( "\n", $md ) . "\n";
+    }
 
     public static function menu() {
         add_menu_page( 'Manito Insights', 'Manito Insights', 'manage_options', self::PAGE, array( __CLASS__, 'page' ), 'dashicons-chart-area', 2 );
@@ -432,6 +644,7 @@ class Insights {
         echo '<div class="mmi-controls"><span class="mmi-live" data-mmi-live><i></i> Live: <b data-mmi-active>&ndash;</b> on the site now</span>';
         echo '<select data-mmi-period aria-label="Period"><option value="today">Today</option><option value="7d">Last 7 days</option><option value="30d" selected>Last 30 days</option><option value="90d">Last 90 days</option><option value="season">This season (since Sep 1)</option><option value="365d">Last 12 months</option><option value="custom">Custom&hellip;</option></select>';
         echo '<span class="mmi-custom" data-mmi-custom hidden><input type="date" data-mmi-from> &ndash; <input type="date" data-mmi-to> <button type="button" class="button" data-mmi-apply>Apply</button></span>';
+        echo '<button type="button" class="button" data-mmi-export title="One Markdown file with every section for this period, ready to paste into an AI">Export for AI</button>';
         echo '</div></div>';
         echo '<nav class="mmi-tabs" role="tablist">';
         foreach ( array( 'overview' => 'Overview', 'growth' => 'Growth &amp; groups', 'revenue' => 'Revenue &amp; PRO', 'traffic' => 'Traffic &amp; SEO', 'affiliate' => 'Affiliate &amp; features' ) as $k => $l ) {

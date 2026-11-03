@@ -231,6 +231,18 @@
                 state.view = $(this).attr('data-mmi-tab');
                 render();
             });
+            root.find('[data-mmi-export]').on('click', function () {
+                var btn = $(this).prop('disabled', true).text('Preparing\u2026');
+                post('export').done(function (r) {
+                    if (!r || !r.success) { window.alert('Export failed: ' + ((r && r.data) || 'unknown error')); return; }
+                    var url = URL.createObjectURL(new Blob([r.data.markdown], { type: 'text/markdown;charset=utf-8' }));
+                    var a = $('<a>').attr({ href: url, download: r.data.filename }).appendTo('body');
+                    a[0].click();
+                    a.remove();
+                    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+                }).fail(function () { window.alert('Export failed. Please try again.'); })
+                    .always(function () { btn.prop('disabled', false).text('Export for AI'); });
+            });
             if (state.period === 'custom') state.period = '30d';
             render();
         } else {
