@@ -1,0 +1,925 @@
+/* Advertise (/advertise/) and advertiser account (/advertiser/). Builds on mm-home.css tokens (.mm-home). */
+
+.mm-adv {
+    --ma-ink: #17221f;
+    --ma-gold: #b8901f;
+    --ma-gold-soft: #fbf3dc;
+    --ma-good: #1f8a5b;
+    --ma-bad: #b32d2e;
+    --ma-card: #ffffff;
+}
+
+/* ---------------------------------------------------------------- Hero */
+.mma-hero__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+    gap: 40px;
+    align-items: center;
+}
+
+.mma-hero__copy {
+    min-width: 0;
+}
+
+.mma-trust {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 18px 0 0;
+    padding: 0;
+    list-style: none;
+    color: rgba(255, 255, 255, .78);
+    font-size: 14px;
+}
+
+.mma-trust li::before {
+    content: "\2713";
+    margin-right: 6px;
+    color: var(--mm-accent);
+    font-weight: 700;
+}
+
+.mma-hero__panel {
+    padding: 22px;
+    border: 1px solid var(--mm-line);
+    border-radius: 20px;
+    background: var(--ma-card);
+    box-shadow: 0 24px 60px rgba(23, 34, 31, .10);
+}
+
+.mma-panel__label {
+    margin: 0 0 14px;
+    color: var(--mm-muted);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.mma-panel__kpis {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.mma-panel__kpis b,
+.mma-stats b {
+    display: block;
+    color: var(--ma-ink);
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.mma-panel__kpis span,
+.mma-stats span {
+    color: var(--mm-muted);
+    font-size: 13px;
+}
+
+.mma-spark {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 70px;
+    margin: 18px 0 8px;
+}
+
+.mma-spark i {
+    flex: 1;
+    border-radius: 6px 6px 2px 2px;
+    background: linear-gradient(180deg, var(--mm-accent), var(--mm-accent-dark));
+}
+
+.mma-panel__foot {
+    margin: 0;
+    color: var(--mm-muted);
+    font-size: 12px;
+}
+
+/* ---------------------------------------------------------------- Audience band */
+.mma-band {
+    padding-top: 26px;
+    padding-bottom: 26px;
+    border-top: 1px solid var(--mm-line);
+    border-bottom: 1px solid var(--mm-line);
+}
+
+.mma-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 18px 24px;
+}
+
+.mma-stats > div {
+    padding-left: 14px;
+    border-left: 3px solid var(--mm-accent);
+}
+
+.mma-note {
+    margin: 16px 0 0;
+    color: var(--mm-muted);
+    font-size: 14px;
+}
+
+/* ---------------------------------------------------------------- Why / tracking / manage grids */
+.mma-why,
+.mma-count,
+.mma-manage {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 22px;
+}
+
+.mma-why > div,
+.mma-count > div,
+.mma-manage > div {
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid var(--mm-line);
+    border-radius: var(--mm-radius);
+    background: var(--ma-card);
+}
+
+.mma-why h3,
+.mma-count h3,
+.mma-manage h3 {
+    margin: 0 0 6px;
+    color: var(--ma-ink);
+    font-size: 17px;
+}
+
+.mma-why p,
+.mma-count p,
+.mma-manage p {
+    margin: 0;
+    color: var(--mm-text);
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.mma-count code {
+    display: block;
+    margin-top: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--mm-soft);
+    color: var(--mm-accent-dark);
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.mma-manage h3::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: var(--mm-accent);
+    vertical-align: middle;
+}
+
+/* ---------------------------------------------------------------- Placements */
+.mma-places {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-top: 22px;
+}
+
+.mma-place {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px;
+    border: 1px solid var(--mm-line);
+    border-radius: var(--mm-radius);
+    background: var(--ma-card);
+}
+
+.mma-place header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.mma-place h3 {
+    margin: 0;
+    color: var(--ma-ink);
+    font-size: 18px;
+}
+
+.mma-place p {
+    margin: 0;
+    color: var(--mm-text);
+    font-size: 15px;
+}
+
+.mma-price {
+    margin-top: auto !important;
+    padding-top: 6px;
+}
+
+.mma-price b {
+    color: var(--ma-ink);
+    font-size: 24px;
+}
+
+.mma-price span {
+    display: block;
+}
+
+.mma-price span,
+.mma-season {
+    color: var(--mm-muted) !important;
+    font-size: 13px !important;
+}
+
+.mma-chip {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--mm-soft);
+    color: var(--mm-muted);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.mma-chip.is-open,
+.mma-chip.is-live {
+    background: rgba(31, 138, 91, .12);
+    color: var(--ma-good);
+}
+
+.mma-chip.is-wait,
+.mma-chip.is-review {
+    background: var(--ma-gold-soft);
+    color: var(--ma-gold);
+}
+
+.mma-chip.is-bad {
+    background: rgba(179, 45, 46, .1);
+    color: var(--ma-bad);
+}
+
+/* ---------------------------------------------------------------- Card preview split */
+.mma-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 40px;
+    align-items: center;
+}
+
+.mma-split h2 {
+    margin-bottom: 12px;
+}
+
+.mma-list {
+    display: grid;
+    gap: 8px;
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mma-list li {
+    position: relative;
+    padding-left: 24px;
+    color: var(--mm-text);
+}
+
+.mma-list li::before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    color: var(--mm-accent-dark);
+    font-weight: 700;
+}
+
+.mma-preview .mm-spon {
+    box-shadow: 0 18px 40px rgba(23, 34, 31, .08);
+}
+
+/* ---------------------------------------------------------------- Sample dashboard */
+.mma-dash {
+    margin-top: 24px;
+    padding: 20px;
+    border: 1px solid var(--mm-line);
+    border-radius: 20px;
+    background: var(--ma-card);
+    box-shadow: 0 24px 60px rgba(23, 34, 31, .08);
+}
+
+.mma-dash__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--mm-line);
+}
+
+.mma-dash__title {
+    color: var(--ma-ink);
+    font-weight: 700;
+}
+
+.mma-dash__range {
+    margin-left: auto;
+    color: var(--mm-muted);
+    font-size: 13px;
+}
+
+.mma-dash__kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.mma-dash__kpis > div {
+    display: grid;
+    gap: 2px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--mm-soft);
+}
+
+.mma-dash__kpis span {
+    color: var(--mm-muted);
+    font-size: 12px;
+}
+
+.mma-dash__kpis b {
+    color: var(--ma-ink);
+    font-size: 22px;
+    font-variant-numeric: tabular-nums;
+}
+
+.mma-dash__kpis em {
+    color: var(--mm-muted);
+    font-size: 12px;
+    font-style: normal;
+}
+
+.mma-dash__kpis em.up {
+    color: var(--ma-good);
+}
+
+.mma-dash__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.mma-dash__panel {
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--mm-line);
+    border-radius: 12px;
+}
+
+.mma-dash__wide {
+    grid-column: 1 / -1;
+}
+
+.mma-dash__panel h3 {
+    margin: 0 0 10px;
+    color: var(--ma-ink);
+    font-size: 14px;
+}
+
+.mma-dash__panel h3 small {
+    color: var(--mm-muted);
+    font-weight: 400;
+}
+
+.mma-dash__panel h3 + .mma-table,
+.mma-table + h3,
+.mma-hbar + h3 {
+    margin-top: 14px;
+}
+
+.mma-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 160px;
+    padding-top: 6px;
+    background: repeating-linear-gradient(to top, transparent 0, transparent 39px, var(--mm-line) 39px, var(--mm-line) 40px);
+}
+
+.mma-bars__col {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: flex-end;
+    height: 100%;
+}
+
+.mma-bars__col i {
+    width: 100%;
+    border-radius: 6px 6px 0 0;
+    background: rgba(62, 199, 194, .35);
+}
+
+.mma-bars__col b {
+    position: absolute;
+    left: 30%;
+    bottom: 0;
+    width: 40%;
+    border-radius: 4px 4px 0 0;
+    background: var(--mm-accent-dark);
+}
+
+.mma-legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 0;
+    color: var(--mm-muted);
+    font-size: 12px;
+}
+
+.mma-legend span {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+}
+
+.mma-legend .v { background: rgba(62, 199, 194, .35); }
+.mma-legend .c { margin-left: 8px; background: var(--mm-accent-dark); }
+
+.mma-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.mma-table td {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--mm-line);
+    color: var(--mm-text);
+}
+
+.mma-table td + td {
+    padding-left: 8px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.mma-win {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(31, 138, 91, .12);
+    color: var(--ma-good);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.mma-hbar {
+    display: grid;
+    grid-template-columns: minmax(90px, 40%) 1fr 36px;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 13px;
+}
+
+.mma-hbar span {
+    color: var(--mm-text);
+}
+
+.mma-hbar i {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--mm-accent);
+}
+
+.mma-hbar b {
+    color: var(--ma-ink);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.mma-heat {
+    display: grid;
+    grid-template-columns: 30px repeat(8, minmax(0, 1fr));
+    gap: 3px;
+    font-size: 10px;
+}
+
+.mma-heat i {
+    height: 16px;
+    border-radius: 3px;
+    background: var(--mm-accent-dark);
+}
+
+.mma-heat__d,
+.mma-heat em {
+    color: var(--mm-muted);
+    font-style: normal;
+}
+
+.mma-heat em {
+    text-align: center;
+}
+
+.mma-fine {
+    margin: 8px 0 0;
+    color: var(--mm-muted);
+    font-size: 13px;
+}
+
+.mma-cta {
+    margin-top: 24px;
+}
+
+/* ---------------------------------------------------------------- Account page */
+.mma-account {
+    display: grid;
+    gap: 18px;
+}
+
+.mma-card {
+    padding: 20px;
+    border: 1px solid var(--mm-line);
+    border-radius: var(--mm-radius);
+    background: var(--ma-card);
+}
+
+.mma-form {
+    display: grid;
+    gap: 14px;
+}
+
+.mma-form h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.mma-form label {
+    display: grid;
+    gap: 6px;
+    color: var(--ma-ink);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.mma-form label small {
+    color: var(--mm-muted);
+    font-weight: 400;
+}
+
+.mma-form input[type="text"],
+.mma-form input[type="email"],
+.mma-form input[type="url"],
+.mma-form input[type="file"],
+.mma-form select {
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 12px;
+    border: 1px solid var(--mm-line);
+    border-radius: 10px;
+    background: #fff;
+    font: inherit;
+    font-weight: 400;
+}
+
+.mma-form input:focus,
+.mma-form select:focus {
+    border-color: var(--mm-accent);
+    outline: 2px solid var(--mm-accent-soft);
+}
+
+.mma-form fieldset {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.mma-form legend {
+    margin-bottom: 4px;
+    color: var(--ma-ink);
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.mma-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid var(--mm-line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--ma-ink);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.mma-btn--primary {
+    border-color: var(--mm-dark);
+    background: var(--mm-dark);
+    color: #fff;
+}
+
+.mma-btn--primary:hover {
+    background: var(--mm-accent-dark);
+    border-color: var(--mm-accent-dark);
+}
+
+.mma-btn--block {
+    width: 100%;
+}
+
+.mma-btn:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+.mma-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--mm-accent-dark);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.mma-link--danger {
+    color: var(--ma-bad);
+}
+
+.mma-msg {
+    margin: 0;
+    min-height: 1em;
+    color: var(--ma-good);
+    font-size: 14px;
+}
+
+.mma-msg.is-bad,
+.mma-bad {
+    color: var(--ma-bad);
+}
+
+.mma-msg:empty {
+    display: none;
+}
+
+.mma-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: var(--mm-muted);
+    font-size: 14px;
+}
+
+.mma-notice {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--mm-accent-soft);
+    color: var(--ma-ink);
+}
+
+.mma-ads {
+    display: grid;
+    gap: 14px;
+}
+
+.mma-ad {
+    display: grid;
+    gap: 12px;
+}
+
+.mma-ad header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.mma-ad h3 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.mma-ad h3 small,
+.mma-meta {
+    color: var(--mm-muted);
+    font-size: 13px;
+    font-weight: 400;
+}
+
+.mma-meta {
+    margin: 4px 0 0;
+}
+
+.mma-ad__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+}
+
+.mma-ad__card .mm-spon {
+    margin: 0;
+}
+
+.mma-kpis {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0;
+}
+
+.mma-kpis div {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--mm-soft);
+}
+
+.mma-kpis dt {
+    color: var(--mm-muted);
+    font-size: 12px;
+}
+
+.mma-kpis dd {
+    margin: 0;
+    color: var(--ma-ink);
+    font-size: 18px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.mma-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+}
+
+.mma-pay {
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--mm-soft);
+}
+
+.mma-pay__sum {
+    margin: 0 0 10px;
+    font-weight: 700;
+}
+
+.mma-places-pick {
+    gap: 8px !important;
+}
+
+.mma-opt {
+    display: grid !important;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px !important;
+    padding: 12px 14px;
+    border: 1px solid var(--mm-line);
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.mma-opt.is-on {
+    border-color: var(--mm-accent);
+    background: var(--mm-accent-soft);
+}
+
+.mma-opt.is-full {
+    opacity: .75;
+}
+
+.mma-opt span {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.mma-opt small {
+    color: var(--mm-muted);
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.mma-opt__price {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.mma-two {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.mma-fields {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+
+.mma-more summary {
+    color: var(--mm-accent-dark);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.mma-more[open] {
+    display: grid;
+    gap: 12px;
+}
+
+.mma-live {
+    position: sticky;
+    top: 90px;
+    min-width: 0;
+}
+
+.mma-live__label {
+    margin: 0 0 6px;
+    color: var(--mm-muted);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.mma-live .mm-spon {
+    margin: 0;
+}
+
+.mma-cad {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.mma-cad label {
+    display: flex !important;
+    align-items: center;
+    gap: 8px !important;
+    padding: 10px 14px;
+    border: 1px solid var(--mm-line);
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.mma-cad label.is-off {
+    opacity: .45;
+}
+
+/* ---------------------------------------------------------------- Responsive */
+@media (max-width: 900px) {
+    .mma-hero__grid,
+    .mma-split,
+    .mma-two,
+    .mma-ad__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mma-dash__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mma-live {
+        position: static;
+    }
+}
+
+@media (max-width: 480px) {
+    .mma-dash {
+        padding: 14px;
+    }
+
+    .mma-bars {
+        height: 120px;
+        gap: 3px;
+    }
+
+    .mma-dash__range {
+        margin-left: 0;
+    }
+}

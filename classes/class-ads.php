@@ -63,6 +63,7 @@ class Ads {
             add_action( 'manage_' . self::CPT . '_posts_custom_column', array( __CLASS__, 'column' ), 10, 2 );
             add_filter( 'post_row_actions', array( __CLASS__, 'rowActions' ), 10, 2 );
             add_action( 'admin_post_mm_ad_review', array( __CLASS__, 'review' ) );
+            add_action( 'admin_post_nopriv_mm_ad_review', array( __CLASS__, 'reviewLogin' ) );
             add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
             add_action( 'admin_notices', array( __CLASS__, 'notices' ) );
         }
@@ -291,11 +292,16 @@ class Ads {
         return add_query_arg( $args, home_url( '/' ) );
     }
 
-    public static function cardHtml( array $ad, $placement, $gid = 0 ) {
+    /** $preview: no tracking and no click links (advertiser's own previews, sample cards). */
+    public static function cardHtml( array $ad, $placement, $gid = 0, $preview = false ) {
         $c = self::variant( $ad['c'], $ad['v'] );
         $id = (int) $ad['id'];
+        $href = function ( $link ) use ( $id, $placement, $ad, $gid, $preview, $c ) {
+            if ( $preview ) return esc_url( (string) ( $c['links'][ $link ][1] ?? '#' ) );
+            return esc_url( self::clickUrl( $id, $placement, $ad['v'], $link, $gid ) );
+        };
 
-        $h  = '<aside class="mm-spon" data-mm-spon="' . $id . '" data-v="' . esc_attr( $ad['v'] ) . '" data-s="' . esc_attr( $placement ) . '">';
+        $h  = $preview ? '<aside class="mm-spon">' : '<aside class="mm-spon" data-mm-spon="' . $id . '" data-v="' . esc_attr( $ad['v'] ) . '" data-s="' . esc_attr( $placement ) . '">';
         $h .= '<span class="mm-spon__label">Sponsored</span>';
         $h .= '<div class="mm-spon__body">';
         if ( $c['logo'] ) $h .= '<img class="mm-spon__logo" src="' . esc_url( $c['logo'] ) . '" alt="' . esc_attr( $c['brand'] ) . '" width="56" height="56" loading="lazy">';
@@ -304,10 +310,10 @@ class Ads {
         if ( $c['text'] ) $h .= '<span class="mm-spon__copy">' . esc_html( $c['text'] ) . '</span>';
         if ( $c['promo'] ) $h .= '<span class="mm-spon__promo">Use code <b>' . esc_html( $c['promo'] ) . '</b></span>';
         $h .= '</div></div>';
-        $h .= '<div class="mm-spon__actions"><a class="mm-spon__btn" href="' . esc_url( self::clickUrl( $id, $placement, $ad['v'], 0, $gid ) ) . '" target="_blank" rel="sponsored noopener">' . esc_html( $c['button'] ?: 'Learn more' ) . '</a>';
+        $h .= '<div class="mm-spon__actions"><a class="mm-spon__btn" href="' . $href( 0 ) . '" target="_blank" rel="sponsored noopener">' . esc_html( $c['button'] ?: 'Learn more' ) . '</a>';
         foreach ( array_slice( (array) $c['links'], 1, 2 ) as $i => $l ) {
             if ( empty( $l[1] ) ) continue;
-            $h .= '<a class="mm-spon__link" href="' . esc_url( self::clickUrl( $id, $placement, $ad['v'], $i + 1, $gid ) ) . '" target="_blank" rel="sponsored noopener">' . esc_html( $l[0] ?: 'More' ) . '</a>';
+            $h .= '<a class="mm-spon__link" href="' . $href( $i + 1 ) . '" target="_blank" rel="sponsored noopener">' . esc_html( $l[0] ?: 'More' ) . '</a>';
         }
         $h .= '</div></aside>';
 
@@ -564,7 +570,10 @@ class Ads {
             array( 'key' => '_mm_ad_status', 'value' => 'live' ),
             array( 'key' => '_mm_ad_end', 'value' => time(), 'compare' => '<=', 'type' => 'NUMERIC' ),
         ) ) );
-        foreach ( $ended as $id ) update_post_meta( $id, '_mm_ad_status', 'ended' );
+        foreach ( $ended as $id ) {
+            update_post_meta( $id, '_mm_ad_status', 'ended' );
+            if ( class_exists( 'AdsPortal' ) && (int) self::meta( $id, 'adv', 0 ) ) AdsPortal::mailAdvertiser( $id, 'ended' );
+        }
         if ( $ended ) self::flush();
 
         $wpdb->query( $wpdb->prepare( 'DELETE FROM ' . self::uniqTable() . ' WHERE d < %s LIMIT 5000', wp_date( 'Y-m-d', strtotime( '-90 days' ) ) ) );
@@ -639,7 +648,7 @@ class Ads {
         echo '</div>';
 
         if ( $c['headline'] ) {
-            echo '<h4>Preview</h4><div style="max-width:560px">' . self::cardHtml( array( 'id' => $post->ID, 'v' => 'a', 'c' => $c ), $f( 'slot' ) ) . '</div>';
+            echo '<h4>Preview</h4><div style="max-width:560px">' . self::cardHtml( array( 'id' => $post->ID, 'v' => 'a', 'c' => $c ), $f( 'slot' ), 0, true ) . '</div>';
         }
     }
 
@@ -736,6 +745,9 @@ class Ads {
                 $s = self::meta( $id, 'status', 'review' );
                 $color = array( 'live' => '#1f8a5b', 'review' => '#b8901f', 'rejected' => '#b32d2e' )[ $s ] ?? '#646970';
                 echo '<b style="color:' . $color . '">' . esc_html( self::statuses()[ $s ] ?? $s ) . '</b>';
+                if ( is_array( get_post_meta( $id, '_mm_ad_pending', true ) ) ) echo '<br><small style="color:#b8901f">Edit to review</small>';
+                if ( self::meta( $id, 'cancelled' ) ) echo '<br><small>Cancelled, runs to end</small>';
+                if ( self::meta( $id, 'mode' ) === 'sandbox' ) echo '<br><small>Sandbox test</small>';
                 break;
             case 'mm_end':
                 $e = (int) self::meta( $id, 'end', 0 );
@@ -757,8 +769,10 @@ class Ads {
         if ( $post->post_type !== self::CPT || ! current_user_can( 'manage_options' ) ) return $actions;
         $s = self::meta( $post->ID, 'status', 'review' );
         $url = function ( $do ) use ( $post ) { return wp_nonce_url( admin_url( 'admin-post.php?action=mm_ad_review&do=' . $do . '&id=' . $post->ID ), 'mm_ad_review_' . $post->ID ); };
-        if ( in_array( $s, array( 'review', 'paused', 'rejected' ), true ) ) $actions['mm_approve'] = '<a href="' . esc_url( $url( 'approve' ) ) . '" style="color:#1f8a5b;font-weight:600">Approve</a>';
-        if ( $s === 'review' ) $actions['mm_reject'] = '<a href="' . esc_url( $url( 'reject' ) ) . '" style="color:#b32d2e">Reject</a>';
+        $pending = is_array( get_post_meta( $post->ID, '_mm_ad_pending', true ) );
+        if ( in_array( $s, array( 'review', 'paused' ), true ) || ( $s === 'rejected' && self::meta( $post->ID, 'sub' ) === '' ) ) $actions['mm_approve'] = '<a href="' . esc_url( $url( 'approve' ) ) . '" style="color:#1f8a5b;font-weight:600">Approve</a>';
+        if ( $pending ) $actions['mm_approve'] = '<a href="' . esc_url( $url( 'approve' ) ) . '" style="color:#1f8a5b;font-weight:600">Approve edit</a>';
+        if ( $s === 'review' || $pending ) $actions['mm_reject'] = '<a href="' . esc_url( $url( 'reject' ) ) . '" style="color:#b32d2e">' . ( $pending ? 'Reject edit' : 'Reject' . ( self::meta( $post->ID, 'sub' ) ? ' &amp; refund' : '' ) ) . '</a>';
         if ( $s === 'live' ) $actions['mm_pause'] = '<a href="' . esc_url( $url( 'pause' ) ) . '">Pause</a>';
 
         return $actions;
@@ -768,9 +782,12 @@ class Ads {
     public static function review() {
         $id = absint( $_GET['id'] ?? 0 );
         $do = sanitize_key( (string) ( $_GET['do'] ?? '' ) );
-        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( (string) ( $_GET['_wpnonce'] ?? '' ), 'mm_ad_review_' . $id ) || get_post_type( $id ) !== self::CPT ) wp_die( 'Not allowed.' );
+        $signed = class_exists( 'AdsPortal' ) && AdsPortal::validReviewKey( $id, $do, $_GET['k'] ?? '' ); // link from the review email
+        if ( ! current_user_can( 'manage_options' ) || ( ! $signed && ! wp_verify_nonce( (string) ( $_GET['_wpnonce'] ?? '' ), 'mm_ad_review_' . $id ) ) || get_post_type( $id ) !== self::CPT ) wp_die( 'Not allowed.' );
 
-        if ( $do === 'approve' ) {
+        if ( class_exists( 'AdsPortal' ) && in_array( $do, array( 'approve', 'reject' ), true ) ) {
+            if ( $do === 'approve' ) AdsPortal::approve( $id ); else AdsPortal::reject( $id );
+        } elseif ( $do === 'approve' ) {
             if ( ! (int) self::meta( $id, 'start', 0 ) ) update_post_meta( $id, '_mm_ad_start', time() );
             if ( (int) self::meta( $id, 'end', 0 ) <= time() ) update_post_meta( $id, '_mm_ad_end', time() + ( self::meta( $id, 'cadence', 'weekly' ) === 'monthly' ? 30 : 7 ) * DAY_IN_SECONDS );
             update_post_meta( $id, '_mm_ad_status', 'live' );
@@ -779,10 +796,17 @@ class Ads {
             update_post_meta( $id, '_mm_ad_status', 'rejected' );
         } elseif ( $do === 'pause' ) {
             update_post_meta( $id, '_mm_ad_status', 'paused' );
+            if ( class_exists( 'AdsPortal' ) && (int) self::meta( $id, 'adv', 0 ) ) AdsPortal::mailAdvertiser( $id, 'paused' );
         }
         self::flush();
 
         wp_safe_redirect( add_query_arg( 'mm_ad_done', $do, admin_url( 'edit.php?post_type=' . self::CPT ) ) );
+        exit;
+    }
+
+    /** Review link opened while signed out: sign in to WordPress, then come back to it. */
+    public static function reviewLogin() {
+        wp_safe_redirect( wp_login_url( add_query_arg( array_map( 'rawurlencode', wp_unslash( $_GET ) ), admin_url( 'admin-post.php' ) ) ) );
         exit;
     }
 

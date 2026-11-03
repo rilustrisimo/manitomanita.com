@@ -64,6 +64,7 @@ if ( qed_get_option( 'is_testimonial_enabled', 'option' ) && qed_is_display_test
 					<li><a href="#ask-manito" data-mm-support-open>Ask Manito (help chat)</a></li>
 					<li><a href="<?php echo esc_url( home_url( '/privacy-policy/' ) ); ?>">Privacy Policy</a></li>
 					<li><a href="<?php echo esc_url( home_url( '/terms/' ) ); ?>">Terms of Use</a></li>
+					<?php if ( get_option( 'mm_ads_pages' ) ) : // shows once the ad pages exist ?><li><a href="<?php echo esc_url( home_url( '/advertise/' ) ); ?>">Advertise with us</a></li><?php endif; ?>
 				</ul>
 			</div>
 		</nav>
