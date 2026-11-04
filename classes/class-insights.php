@@ -378,7 +378,7 @@ class Insights {
     /** Latest events for the live feed. */
     public static function feed( $limit = 15 ) {
         global $wpdb;
-        $labels = array( 'group_created' => 'Group created', 'repeat_group' => 'Group started from an old one', 'member_confirmed' => 'Member confirmed', 'purchase' => 'PRO purchase', 'affiliate_click' => 'Affiliate click', 'shuffle' => 'Group shuffled', 'unshuffle' => 'Group unshuffled', 'season_email' => 'Season email sent', 'support_handoff' => 'Support: talk to a person', 'shuffle_reminder' => 'Shuffle reminder sent', 'wishlist_create' => 'Wishlist / registry created', 'wishlist_reserve' => 'Registry gift reserved', 'ad_payment' => 'Ad payment', 'sponsor_click' => 'Sponsor click' );
+        $labels = array( 'group_created' => 'Group created', 'repeat_group' => 'Group started from an old one', 'member_confirmed' => 'Member confirmed', 'purchase' => 'PRO purchase', 'affiliate_click' => 'Affiliate click', 'shuffle' => 'Group shuffled', 'unshuffle' => 'Group unshuffled', 'season_email' => 'Season email sent', 'support_handoff' => 'Support: talk to a person', 'shuffle_reminder' => 'Shuffle reminder sent', 'wishlist_create' => 'Wishlist / registry created', 'wishlist_reserve' => 'Registry gift reserved', 'ad_payment' => 'Ad payment', 'sponsor_click' => 'Sponsor click', 'sale_email' => 'Sale-day emails sent' );
         $out = array();
         foreach ( $wpdb->get_results( $wpdb->prepare( 'SELECT t, type, gid, amount, meta FROM ' . self::table() . ' ORDER BY id DESC LIMIT %d', $limit ) ) as $r ) {
             $out[] = array(

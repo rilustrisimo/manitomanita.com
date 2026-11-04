@@ -234,6 +234,7 @@ class Payments {
 
         if ( $result !== true ) {
             error_log( 'Payments: order ' . $orderId . ' not applied (' . $result . ')' );
+            do_action( 'mm_alert', 'payment', 'PRO payment not applied: ' . $result, array( 'order' => $orderId, 'group' => (int) ( $_POST['gid'] ?? 0 ) ) );
             wp_send_json_error( 'We could not confirm your payment. If you were charged, please contact us with your PayPal receipt.' );
         }
 
@@ -353,6 +354,7 @@ class Payments {
 
         if ( empty( $body['access_token'] ) ) {
             error_log( 'Payments: PayPal authentication failed' );
+            do_action( 'mm_alert', 'paypal', 'PayPal sign-in failed for PRO payments (check the client ID and secret in wp-config.php)' );
             return '';
         }
 

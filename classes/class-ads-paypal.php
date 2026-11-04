@@ -253,7 +253,11 @@ class AdsPayPal {
         if ( ! is_array( $event ) || empty( $event['event_type'] ) ) return new WP_REST_Response( array( 'ok' => false ), 400 );
 
         $mode = self::verify( $req, $event );
-        if ( $mode === '' ) return new WP_REST_Response( array( 'ok' => false ), 401 );
+        if ( $mode === '' ) {
+            // Only calls that look like PayPal's (signed headers) are worth an alert; random probes are ignored.
+            if ( $req->get_header( 'paypal-transmission-id' ) ) do_action( 'mm_alert', 'webhook', 'PayPal webhook could not be verified (check PAYPAL_WEBHOOK_ID)', array( 'event' => (string) $event['event_type'] ) );
+            return new WP_REST_Response( array( 'ok' => false ), 401 );
+        }
 
         // PayPal retries; handle each event once.
         $seen = 'mm_ads_pp_evt_' . md5( (string) ( $event['id'] ?? '' ) );

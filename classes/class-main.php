@@ -63,7 +63,7 @@ class Theme {
     
 
     function __autoload() {
-        $classes = array('affiliate', 'captcha', 'emails', 'email-check', 'seo', 'landing', 'themes', 'qa', 'gift-ai', 'involve', 'payments', 'groups', 'member-rules', 'group-extras', 'repeat', 'registries', 'my-wishlist', 'registry-extras', 'season', 'support-bot', 'account', 'admin-lists', 'insights', 'insights-google', 'ads', 'ads-paypal', 'ads-portal', 'ads-report', 'logs', 'users', 'wishlists');
+        $classes = array('error-alerts', 'affiliate', 'captcha', 'emails', 'email-check', 'seo', 'landing', 'themes', 'qa', 'gift-ai', 'involve', 'payments', 'groups', 'member-rules', 'group-extras', 'repeat', 'registries', 'my-wishlist', 'registry-extras', 'season', 'sale-days', 'support-bot', 'account', 'admin-lists', 'insights', 'insights-google', 'ads', 'ads-paypal', 'ads-portal', 'ads-report', 'logs', 'users', 'wishlists');
 
         foreach($classes as $value){
             require_once PARENT_DIR . '/classes/class-'. $value .'.php';

@@ -705,6 +705,7 @@ class AdsPortal {
         if ( $amount !== null && $amount <= 0 ) return false;
         if ( ! AdsPayPal::refundSale( $mode, $sale, $amount !== null && $amount < (float) $row['amount'] ? $amount : null ) ) {
             self::refundFailed( $id, $sale, $amount === null ? (float) $row['amount'] : $amount, $mode );
+            do_action( 'mm_alert', 'refund', 'Ad refund failed at PayPal', array( 'ad' => (int) $id, 'sale' => $sale, 'mode' => $mode ) );
             return false;
         }
         foreach ( $pays as &$p ) if ( ( $p['sale'] ?? '' ) === $sale ) { $p['refunded'] = 1; $p['refund_amount'] = $amount === null ? (float) $row['amount'] : $amount; }
