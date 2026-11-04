@@ -324,10 +324,61 @@ class Insights {
         } );
     }
 
+    /**
+     * Registries (My Wishlist lists): created and reserved in the period by occasion (event log), all-time
+     * lists by occasion, events coming up, cash QR use, and affiliate clicks from registry placements.
+     */
+    public static function registries( $from, $to ) {
+        return self::cached( 'reg|' . $from . '|' . $to . '|' . floor( time() / 600 ), $to, function () use ( $from, $to ) {
+            global $wpdb;
+            $label = function ( $k ) { return class_exists( 'Registries' ) ? html_entity_decode( Registries::get( $k )['label'], ENT_QUOTES, 'UTF-8' ) : $k; };
+            $logged = function ( $type ) use ( $wpdb, $from, $to, $label ) {
+                $out = array();
+                foreach ( $wpdb->get_results( $wpdb->prepare( 'SELECT meta, COUNT(*) n FROM ' . self::table() . ' WHERE type = %s AND t BETWEEN %s AND %s GROUP BY meta ORDER BY n DESC', $type, $from . ' 00:00:00', $to . ' 23:59:59' ) ) as $r ) {
+                    $k = $label( $r->meta ?: 'any' );
+                    $out[ $k ] = ( $out[ $k ] ?? 0 ) + (int) $r->n;
+                }
+                arsort( $out );
+
+                return $out;
+            };
+
+            $all = array();
+            foreach ( $wpdb->get_results( "SELECT COALESCE(NULLIF(m.meta_value, ''), 'any') occ, COUNT(*) n FROM {$wpdb->posts} p LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = '_mm_wl_occasion' WHERE p.post_type = 'mm_wishlist' AND p.post_status = 'publish' GROUP BY occ ORDER BY n DESC" ) as $r ) {
+                $k = $label( $r->occ );
+                $all[ $k ] = ( $all[ $k ] ?? 0 ) + (int) $r->n;
+            }
+            arsort( $all );
+            $meta = function ( $key ) use ( $wpdb ) {
+                return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(DISTINCT m.post_id) FROM {$wpdb->postmeta} m JOIN {$wpdb->posts} p ON p.ID = m.post_id AND p.post_type = 'mm_wishlist' AND p.post_status = 'publish' WHERE m.meta_key = %s AND m.meta_value <> '' AND m.meta_value <> 'a:0:{}'", $key ) );
+            };
+            $today = wp_date( 'Y-m-d' );
+            $upcoming = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->postmeta} m JOIN {$wpdb->posts} p ON p.ID = m.post_id AND p.post_type = 'mm_wishlist' AND p.post_status = 'publish' WHERE m.meta_key = '_mm_wl_date' AND m.meta_value BETWEEN %s AND %s", $today, wp_date( 'Y-m-d', strtotime( '+30 days' ) ) ) );
+            $owners = (int) $wpdb->get_var( "SELECT COUNT(*) FROM (SELECT m.meta_value FROM {$wpdb->postmeta} m JOIN {$wpdb->posts} p ON p.ID = m.post_id AND p.post_type = 'mm_wishlist' AND p.post_status = 'publish' WHERE m.meta_key = '_mm_wl_email' GROUP BY m.meta_value HAVING COUNT(*) > 1) x" );
+
+            $clicks = array();
+            foreach ( self::affiliate( $from, $to )['placement'] as $pl => $n ) {
+                if ( strpos( $pl, 'registry' ) === 0 || strpos( $pl, 'my-wishlist' ) === 0 ) $clicks[ $pl ] = $n;
+            }
+
+            return array(
+                'created'   => $logged( 'wishlist_create' ),
+                'reserved'  => $logged( 'wishlist_reserve' ),
+                'all'       => $all,
+                'total'     => array_sum( $all ),
+                'with_res'  => $meta( '_mm_wl_res' ),
+                'cash'      => $meta( '_mm_wl_qr' ),
+                'upcoming'  => $upcoming,
+                'multi'     => $owners,
+                'clicks'    => $clicks,
+            );
+        } );
+    }
+
     /** Latest events for the live feed. */
     public static function feed( $limit = 15 ) {
         global $wpdb;
-        $labels = array( 'group_created' => 'Group created', 'repeat_group' => 'Group started from an old one', 'member_confirmed' => 'Member confirmed', 'purchase' => 'PRO purchase', 'affiliate_click' => 'Affiliate click', 'shuffle' => 'Group shuffled', 'unshuffle' => 'Group unshuffled', 'season_email' => 'Season email sent', 'support_handoff' => 'Support: talk to a person', 'shuffle_reminder' => 'Shuffle reminder sent' );
+        $labels = array( 'group_created' => 'Group created', 'repeat_group' => 'Group started from an old one', 'member_confirmed' => 'Member confirmed', 'purchase' => 'PRO purchase', 'affiliate_click' => 'Affiliate click', 'shuffle' => 'Group shuffled', 'unshuffle' => 'Group unshuffled', 'season_email' => 'Season email sent', 'support_handoff' => 'Support: talk to a person', 'shuffle_reminder' => 'Shuffle reminder sent', 'wishlist_create' => 'Wishlist / registry created', 'wishlist_reserve' => 'Registry gift reserved', 'ad_payment' => 'Ad payment', 'sponsor_click' => 'Sponsor click' );
         $out = array();
         foreach ( $wpdb->get_results( $wpdb->prepare( 'SELECT t, type, gid, amount, meta FROM ' . self::table() . ' ORDER BY id DESC LIMIT %d', $limit ) ) as $r ) {
             $out[] = array(
@@ -336,7 +387,7 @@ class Insights {
                 'type'   => $r->type,
                 'group'  => $r->gid ? html_entity_decode( (string) get_post_meta( $r->gid, 'group_name', true ), ENT_QUOTES, 'UTF-8' ) : '',
                 'amount' => (float) $r->amount,
-                'meta'   => $r->type === 'affiliate_click' ? $r->meta : '',
+                'meta'   => $r->type === 'affiliate_click' ? $r->meta : ( in_array( $r->type, array( 'wishlist_create', 'wishlist_reserve' ), true ) && class_exists( 'Registries' ) ? html_entity_decode( Registries::get( $r->meta )['label'], ENT_QUOTES, 'UTF-8' ) : '' ),
             );
         }
 
@@ -397,6 +448,9 @@ class Insights {
                 $s = self::series( $from, $to );
                 $out = array( 'chart' => self::daysOf( $from, $to, $s, array( 'affiliate_click' ) ), 'by' => self::affiliate( $from, $to ), 'groups' => self::groups( $from, $to )['clicks'], 'features' => self::features(), 'events' => $g ? $g::events( $p ) : null );
                 break;
+            case 'registries':
+                $out = self::registries( $from, $to );
+                break;
             case 'sponsors':
                 $out = class_exists( 'AdsReport' ) ? AdsReport::adminSummary( $from, $to ) : array( 'rows' => array(), 'revenue' => 0, 'mrr' => 0, 'live' => 0, 'seats' => array() );
                 break;
@@ -446,7 +500,7 @@ class Insights {
         $md[] = '- Generated: ' . wp_date( 'Y-m-d H:i' ) . ' (' . wp_timezone_string() . ')';
         $md[] = '';
         $md[] = '## About the site';
-        $md[] = 'manitomanita.com is a free Secret Santa (Manito Manita / Kris Kringle) organizer, mostly used in the Philippines. An organizer creates a group (name, exchange date, budget, password) and shares the group link; members join with their email and confirm it; each member adds a wishlist; the organizer shuffles (draws) and everyone sees who they give to. PRO is a paid one-time upgrade per group (PayPal or card, in PHP) that unlocks extras: exclusions, Weekly Drops gift themes, anonymous Q&A, co-organizer, group themes. Gift idea links go to stores (Lazada and others) as affiliate links. "My Wishlist" is a standalone shareable wishlist. Peak season is October to December.';
+        $md[] = 'manitomanita.com is a free Secret Santa (Manito Manita / Kris Kringle) organizer, mostly used in the Philippines. An organizer creates a group (name, exchange date, budget, password) and shares the group link; members join with their email and confirm it; each member adds a wishlist; the organizer shuffles (draws) and everyone sees who they give to. PRO is a paid one-time upgrade per group (PayPal or card, in PHP) that unlocks extras: exclusions, Weekly Drops gift themes, anonymous Q&A, co-organizer, group themes. Gift idea links go to stores (Lazada and others) as affiliate links. "My Wishlist" is a standalone shareable wishlist that doubles as an occasion gift registry (wedding, debut, baptism, baby shower and more), with per-item quantities, guest reservations and an optional cash gift QR; registry guide pages bring search traffic to it all year. Brands can book self-serve sponsor placements (weekly or monthly PayPal subscriptions, 3 rotating seats per placement) in group emails, the match screen, gift guides and registries; PRO groups never see ads. Peak season is October to December.';
         $md[] = '';
         $md[] = '## Data notes';
         $md[] = '- Groups, members and confirmations come from the database and are complete for any period.';
@@ -612,12 +666,47 @@ class Insights {
             }
         }
 
-        $md[] = '## 10. Automatic hints';
+        // Registries
+        $rg = self::registries( $from, $to );
+        $kv = function ( $o, $head ) use ( $table ) { return $o ? $table( $head, array_map( null, array_keys( $o ), array_values( $o ) ) ) : "_None in this period._\n"; };
+        $md[] = '## 10. Registries (My Wishlist lists by occasion, site data)';
+        $md[] = $table( array( 'Metric', 'Value' ), array(
+            array( 'Lists created in this period', $n( array_sum( $rg['created'] ) ) ),
+            array( 'Gifts reserved in this period (logged since 2026-11-04)', $n( array_sum( $rg['reserved'] ) ) ),
+            array( 'Lists (all time)', $n( $rg['total'] ) ),
+            array( 'Lists with reserved gifts (all time)', $n( $rg['with_res'] ) ),
+            array( 'Lists with an event in the next 30 days', $n( $rg['upcoming'] ) ),
+            array( 'Lists with a cash gift QR', $n( $rg['cash'] ) ),
+            array( 'People with 2+ lists', $n( $rg['multi'] ) ),
+        ) );
+        $md[] = '### Created by occasion (this period)';
+        $md[] = $kv( $rg['created'], array( 'Occasion', 'Lists' ) );
+        $md[] = '### Reserved by occasion (this period)';
+        $md[] = $kv( $rg['reserved'], array( 'Occasion', 'Reservations' ) );
+        $md[] = '### All lists by occasion';
+        $md[] = $kv( $rg['all'], array( 'Occasion', 'Lists' ) );
+        $md[] = '### Affiliate clicks from lists and registry guides';
+        $md[] = $kv( $rg['clicks'], array( 'Placement', 'Clicks' ) );
+
+        // Sponsors
+        $md[] = '## 11. Sponsors (self-serve ads, site data)';
+        if ( class_exists( 'AdsReport' ) ) {
+            $sp = AdsReport::adminSummary( $from, $to );
+            $md[] = $table( array( 'Metric', 'Value' ), array( array( 'Ad revenue paid in this period (live, PHP)', $n( $sp['revenue'] ) ), array( 'Monthly recurring revenue (PHP)', $n( $sp['mrr'] ) ), array( 'Live ads now', $n( $sp['live'] ) ) ) );
+            $md[] = '### Seats in use (3 per placement)';
+            $md[] = $table( array( 'Placement', 'Live ads' ), array_map( function ( $x ) { return array( $x['name'], $x['live'] ); }, $sp['seats'] ) );
+            $md[] = '### Ads (this period)';
+            $md[] = $sp['rows'] ? $table( array( 'Brand', 'Placement', 'Status', 'Views', 'Emails sent', 'Clicks', 'CTR %', 'Paid (PHP)' ), array_map( function ( $r ) use ( $dec ) { return array( $dec( $r['brand'] ), $r['place'], $r['status'], $r['views'], $r['sent'], $r['clicks'], $r['ctr'] === null ? '-' : $r['ctr'], $r['paid'] ); }, $sp['rows'] ) ) : "_No ads booked yet._\n";
+        } else {
+            $md[] = "_Ads are not enabled._\n";
+        }
+
+        $md[] = '## 12. Automatic hints';
         $h = self::hints( $k );
         $md[] = $h ? '- ' . implode( "\n- ", $h ) . "\n" : "_None._\n";
 
         $md[] = '## What I want from you';
-        $md[] = 'Analyze this period for Manito Manita. 1) Summarize what is happening and how it compares with the previous period. 2) Point out anything unusual (spikes, drops, weak funnel steps, pages or queries with many impressions but low CTR). 3) Explain likely causes, using the season and day-of-week patterns. 4) Give the 5 most valuable, concrete actions for the next 7 days to grow groups, PRO sales and affiliate clicks, each with the metric in this report that would show it worked.';
+        $md[] = 'Analyze this period for Manito Manita. 1) Summarize what is happening and how it compares with the previous period. 2) Point out anything unusual (spikes, drops, weak funnel steps, pages or queries with many impressions but low CTR). 3) Explain likely causes, using the season and day-of-week patterns. 4) Give the 5 most valuable, concrete actions for the next 7 days to grow groups, PRO sales, affiliate clicks, registries and sponsor revenue, each with the metric in this report that would show it worked.';
 
         return implode( "\n", $md ) . "\n";
     }
@@ -650,7 +739,7 @@ class Insights {
         echo '<button type="button" class="button" data-mmi-export title="One Markdown file with every section for this period, ready to paste into an AI">Export for AI</button>';
         echo '</div></div>';
         echo '<nav class="mmi-tabs" role="tablist">';
-        foreach ( array( 'overview' => 'Overview', 'growth' => 'Growth &amp; groups', 'revenue' => 'Revenue &amp; PRO', 'traffic' => 'Traffic &amp; SEO', 'affiliate' => 'Affiliate &amp; features', 'sponsors' => 'Sponsors' ) as $k => $l ) {
+        foreach ( array( 'overview' => 'Overview', 'growth' => 'Growth &amp; groups', 'revenue' => 'Revenue &amp; PRO', 'traffic' => 'Traffic &amp; SEO', 'affiliate' => 'Affiliate &amp; features', 'registries' => 'Registries', 'sponsors' => 'Sponsors' ) as $k => $l ) {
             echo '<button type="button" role="tab" data-mmi-tab="' . $k . '"' . ( $k === 'overview' ? ' class="is-on" aria-selected="true"' : '' ) . '>' . $l . '</button>';
         }
         echo '</nav><div class="mmi-body" data-mmi-body><p class="mmi-loading">Loading&hellip;</p></div>';

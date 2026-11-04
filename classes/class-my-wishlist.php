@@ -440,6 +440,7 @@ class MyWishlist {
         $list[] = array( 'by' => mb_substr( sanitize_text_field( wp_unslash( (string) ( $_POST['by'] ?? '' ) ) ), 0, 40 ), 't' => time(), 'h' => wp_hash( $token ) );
         $res[ $key ] = $list;
         update_post_meta( $id, '_mm_wl_res', $res );
+        if ( class_exists( 'Insights' ) ) Insights::log( 'wishlist_reserve', 0, 0, 0, Registries::occasionOf( $id ) );
 
         wp_send_json_success( array( 'token' => $token, 'n' => count( $list ), 'qty' => $qty ) );
     }

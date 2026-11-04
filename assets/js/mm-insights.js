@@ -153,6 +153,15 @@
                 if (s.trend) line('mmi-c5', s.trend.labels, [{ label: 'Clicks', data: s.trend.clicks }, { label: 'Impressions', data: s.trend.impressions, axis: 'y2' }], { y2: true });
             } };
         },
+        registries: function (d) {
+            var sum = function (o) { return Object.keys(o || {}).reduce(function (a, k) { return a + o[k]; }, 0); };
+            var h = '<div class="mmi-cards">' + card('Lists created', num(sum(d.created)), false, 'in this period') + card('Gifts reserved', num(sum(d.reserved)), false, 'in this period (counted from Nov 4, 2026)') +
+                card('Lists (all time)', num(d.total), false, num(d.with_res) + ' with reserved gifts') + card('Events in the next 30 days', num(d.upcoming), false, 'lists with a date coming up') +
+                card('Cash gift QR', num(d.cash), false, 'lists with a GCash/Maya/bank QR') + card('People with 2+ lists', num(d.multi), false, 'same email, several occasions') + '</div>';
+            h += '<div class="mmi-grid">' + bars('Lists created by occasion (this period)', objBars(d.created)) + bars('Gifts reserved by occasion (this period)', objBars(d.reserved)) + '</div>';
+            h += '<div class="mmi-grid">' + bars('All lists by occasion (all time)', objBars(d.all)) + bars('Affiliate clicks from lists and registry guides', objBars(d.clicks)) + '</div>';
+            return { html: h };
+        },
         sponsors: function (d) {
             var h = '<div class="mmi-cards">' + card('Ad revenue', peso(d.revenue), false, 'paid in this period (live only)') + card('Monthly recurring', peso(d.mrr), false, 'from live subscriptions') + card('Live ads', num(d.live), false, 'right now') + '</div>';
             h += bars('Seats in use (of 3)', (d.seats || []).map(function (x) { return { name: x.name, value: x.live }; }));
