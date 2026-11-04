@@ -994,3 +994,27 @@
         flex-basis: 100%;
     }
 }
+
+/* Registry guides: link under gift ideas, chips on the landing */
+.mm-wl-auth {
+    scroll-margin-top: 90px; /* /my-wishlist/#create from a registry guide */
+}
+
+.mm-wl .mm-wl-guide {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    color: var(--mm-accent-dark, #2a9d99);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.mm-wl .mm-wl-guide:hover {
+    text-decoration: underline;
+}
+
+.mm-wl-guides {
+    margin: 28px 0 0;
+}

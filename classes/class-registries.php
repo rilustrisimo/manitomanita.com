@@ -53,9 +53,43 @@ class Registries {
         return ! empty( self::get( $key )['major'] ) ? 'registry-major' : 'registry';
     }
 
-    /** Registry ads open with the registry landing pages (step 4). */
+    /** Registry ads are open now that the registry guides exist; set option mm_registry_ads to 0 to close them. */
     public static function adsOpen() {
-        return (bool) get_option( 'mm_registry_ads' );
+        return (bool) get_option( 'mm_registry_ads', 1 );
+    }
+
+    /** Published registry guides, occasion => url (one query per request). */
+    public static function guides() {
+        static $out = null;
+        if ( $out !== null ) return $out;
+        $out = array();
+        $slugs = Landing::registrySlugs();
+        $pages = get_posts( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_name__in' => array_values( $slugs ), 'posts_per_page' => count( $slugs ) ) );
+        $by = array();
+        foreach ( $pages as $pg ) $by[ $pg->post_name ] = get_permalink( $pg );
+        foreach ( $slugs as $k => $slug ) if ( isset( $by[ $slug ] ) ) $out[ $k ] = $by[ $slug ];
+
+        return $out;
+    }
+
+    /** The occasion's registry guide (published landing page), or ''. */
+    public static function guideUrl( $key ) {
+        return self::guides()[ self::valid( $key ) ] ?? '';
+    }
+
+    /** Link to create a list with this occasion picked (jumps to the form). */
+    public static function createUrl( $key ) {
+        $key = self::valid( $key );
+
+        return add_query_arg( $key === 'any' ? array() : array( 'occasion' => $key ), home_url( '/my-wishlist/' ) ) . '#create';
+    }
+
+    /** Placeholder for "Who is it for?" per occasion. */
+    public static function forHint( $key ) {
+        $h = array( 'wedding' => 'e.g. Mark & Joy', 'bridal-shower' => 'e.g. Joy', 'baptism' => 'e.g. Baby Ana', 'first-birthday' => 'e.g. Baby Ana', 'baby-shower' => 'e.g. Baby Santos',
+            'kiddie-party' => 'e.g. Miguel', 'housewarming' => 'e.g. The Santos Family', 'anniversary' => 'e.g. Mark & Joy', 'communion' => 'e.g. Ana' );
+
+        return $h[ self::valid( $key ) ] ?? 'e.g. Ana';
     }
 
     /** Gift ideas per occasion (label, icon, keyword) for the editor and the guest page. */

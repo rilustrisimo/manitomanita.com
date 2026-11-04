@@ -35,6 +35,7 @@ class MyWishlist {
 
         add_action( 'init', array( __CLASS__, 'register' ) );
         add_action( 'wp_loaded', array( __CLASS__, 'setupOnce' ) );
+        add_action( 'wp_loaded', array( __CLASS__, 'seoOnce' ) );
         add_action( 'template_redirect', array( __CLASS__, 'loginLink' ), 1 );
 
         foreach ( array( 'create', 'login', 'magic', 'save', 'reserve', 'unreserve', 'delete', 'logout', 'cash' ) as $a ) {
@@ -90,6 +91,21 @@ class MyWishlist {
         }
 
         flush_rewrite_rules( false );
+    }
+
+    /** Once: the /my-wishlist/ Yoast title and description cover registries (only if still the first seeded text). */
+    public static function seoOnce() {
+        if ( get_option( 'mm_wl_seo_v2' ) ) return;
+        update_option( 'mm_wl_seo_v2', time(), true );
+        $page = get_page_by_path( self::PAGE_SLUG );
+        if ( ! $page ) return;
+
+        if ( (string) get_post_meta( $page->ID, '_yoast_wpseo_title', true ) === 'Free Online Wishlist You Can Share (Birthday, Christmas, Any Day) | Manito Manita' ) {
+            update_post_meta( $page->ID, '_yoast_wpseo_title', 'Free Gift Registry & Wishlist Maker: Wedding, Debut, Baptism, Birthday | Manito Manita' );
+        }
+        if ( strpos( (string) get_post_meta( $page->ID, '_yoast_wpseo_metadesc', true ), 'Make a free wishlist with links to Lazada' ) === 0 ) {
+            update_post_meta( $page->ID, '_yoast_wpseo_metadesc', 'Make a free gift registry or wishlist for a wedding, debut, baptism, birthday or any day. Add Lazada and Shopee links and a GCash QR, share one link, and guests reserve so nothing is doubled.' );
+        }
     }
 
     /* ------------------------------------------------------------------ Data */

@@ -83,12 +83,9 @@ endif;
 
 $statusLabel = array( 'checkout' => array( 'Not booked yet', 'is-draft' ), 'review' => array( 'In review', 'is-review' ), 'live' => array( 'Live', 'is-live' ), 'paused' => array( 'Paused', 'is-draft' ), 'ended' => array( 'Ended', 'is-draft' ), 'removed' => array( 'Removed', 'is-bad' ), 'rejected' => array( 'Not approved', 'is-bad' ) );
 
-// Gift guide pages an ad can target (Landing pages that aren't legal pages).
-$guides = array();
-foreach ( get_posts( array( 'post_type' => 'page', 'posts_per_page' => 50, 'meta_key' => '_wp_page_template', 'meta_value' => 'template-landing.php', 'orderby' => 'title', 'order' => 'ASC' ) ) as $gp ) {
-	if ( function_exists( 'get_field' ) && get_field( 'mm_type', $gp->ID ) === 'legal' ) continue;
-	$guides[ $gp->post_name ] = get_the_title( $gp );
-}
+// Where a targeted ad can show: gift guide pages for `guide`, occasions for the registry placements.
+$guides = AdsPortal::targets( 'guide' );
+$targetNames = $guides + AdsPortal::targets( 'registry-major' ) + AdsPortal::targets( 'registry' );
 ?>
 <div class="mm-home mm-landing mm-adv mm-adv--account" data-mm-ads>
 	<section class="mmh-hero mml-hero">
@@ -148,7 +145,7 @@ foreach ( get_posts( array( 'post_type' => 'page', 'posts_per_page' => 50, 'meta
 					?>
 				<article class="mma-card mma-ad" id="ad-<?php echo (int) $id; ?>" data-mma-ad="<?php echo (int) $id; ?>" data-status="<?php echo esc_attr( $st ); ?>" data-cadences="<?php echo esc_attr( implode( ',', AdsPortal::cadences( Ads::meta( $id, 'slot' ) ) ) ); ?>" data-c="<?php echo esc_attr( wp_json_encode( $c ) ); ?>" data-slot="<?php echo esc_attr( Ads::meta( $id, 'slot' ) ); ?>">
 					<header>
-						<div><h3><?php echo esc_html( $pl['label'] ); ?><?php echo Ads::meta( $id, 'target' ) ? ' <small>&middot; ' . esc_html( $guides[ Ads::meta( $id, 'target' ) ] ?? Ads::meta( $id, 'target' ) ) . '</small>' : ''; ?></h3>
+						<div><h3><?php echo esc_html( $pl['label'] ); ?><?php echo Ads::meta( $id, 'target' ) ? ' <small>&middot; ' .esc_html( $targetNames[ Ads::meta( $id, 'target' ) ] ?? Ads::meta( $id, 'target' ) ) . '</small>' : ''; ?></h3>
 						<p class="mma-meta">
 							<?php if ( $st === 'live' && $end ) echo 'Paid through ' . esc_html( wp_date( 'M j, g:i A', $end ) ) . ' &middot; '; ?>
 							<?php if ( in_array( $st, array( 'live', 'review' ), true ) ) echo esc_html( ucfirst( $cad ) ) . ', &#8369;' . esc_html( number_format( (float) Ads::meta( $id, 'price', 0 ) ) ) . ( $sub ? ', renews automatically' : ', cancelled' ); ?>
@@ -226,8 +223,12 @@ foreach ( get_posts( array( 'post_type' => 'page', 'posts_per_page' => 50, 'meta
 						</label>
 						<?php endforeach; ?>
 					</div>
-					<label class="mma-target" for="mma-target" data-mma-target hidden>Which gift guide should it appear on?
-						<select id="mma-target" name="target"><option value="">Choose a page</option><?php foreach ( $guides as $slug => $title ) echo '<option value="' . esc_attr( $slug ) . '">' . esc_html( $title ) . '</option>'; ?></select>
+					<label class="mma-target" for="mma-target" data-mma-target hidden><span data-mma-target-q>Which gift guide should it appear on?</span>
+						<select id="mma-target" name="target"><option value="">Choose one</option><?php
+						foreach ( array( 'guide', 'registry-major', 'registry' ) as $tk ) {
+							foreach ( AdsPortal::targets( $tk ) as $slug => $title ) echo '<option value="' . esc_attr( $slug ) . '" data-for="' . esc_attr( $tk ) . '" data-left="' . (int) AdsPortal::seatsLeft( $tk, $slug, $aid ) . '">' . esc_html( $title ) . '</option>';
+						}
+						?></select>
 					</label>
 					<div class="mma-waitbox" data-mma-waitbox hidden>
 						<p>All seats for this placement are taken right now. Join the waitlist and we&rsquo;ll hold the next free seat for you for 48 hours.</p>

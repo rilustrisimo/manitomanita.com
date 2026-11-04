@@ -1270,6 +1270,13 @@ var Theme = {
             }).fail(function(){ m.addClass('is-error').text('Network error. Please try again.'); btn.prop('disabled', false); });
         });
 
+        // Any occasion picker: "Who it's for" gets that occasion's example, and is hidden for "Any occasion"
+        root.find('[data-mm-wl-occ]').on('change', function(){
+            var f = $(this).closest('form'), o = $(this).find(':selected');
+            f.find('[data-mm-wl-for]').attr('placeholder', o.attr('data-hint') || '');
+            f.find('[data-mm-wl-forbox]').prop('hidden', o.val() === 'any');
+        });
+
         // Editor: a new occasion sets its usual "see who reserved" choice until the owner picks one
         var seeres = editor.find('[name="seeres"]'), seeTouched = false;
         seeres.on('change', function(){ seeTouched = true; });
@@ -1313,7 +1320,7 @@ var Theme = {
             });
             create.on('submit', function(e){
                 e.preventDefault();
-                var d = { action: 'mm_wl_create', name: $.trim(create.find('[name="name"]').val()), email: $.trim(email.val()), password: create.find('[name="password"]').val(), code: $.trim(create.find('[name="code"]').val()), occasion: create.find('[name="occasion"]').val(), date: create.find('[name="date"]').val() };
+                var d = { action: 'mm_wl_create', name: $.trim(create.find('[name="name"]').val()), email: $.trim(email.val()), password: create.find('[name="password"]').val(), code: $.trim(create.find('[name="code"]').val()),occasion: create.find('[name="occasion"]').val(), 'for': $.trim(create.find('[name="for"]').val() || ''), date: create.find('[name="date"]').val() };
                 if (!d.name) { cmsg.addClass('is-error').text('Please enter your name.'); return; }
                 if (!valid(d.email)) { cmsg.addClass('is-error').text('Please enter a valid email.'); return; }
                 if (!d.code) { cmsg.addClass('is-error').text('Tap \u201cSend verification code\u201d and enter the code we email you.'); return; }

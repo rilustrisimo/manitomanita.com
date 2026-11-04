@@ -117,14 +117,31 @@
 
     function placement() { return $bld.find('[name=placement]:checked'); }
 
+    var targetOpts = null; // every target option (gift guides and occasions), filtered per placement
+
+    /** The chosen target's option when its seats are all taken, else null. */
+    function targetFull() {
+        var $o = $bld.find('[name=target] option:selected');
+        return ($o.val() && $o.attr('data-left') === '0') ? $o : null;
+    }
+
     function pickPlacement() {
         var $r = placement();
         $bld.find('.mma-opt').removeClass('is-on');
         if (!$r.length) return;
-        var open = $r.attr('data-open') === '1';
+        var open = $r.attr('data-open') === '1', kind = $r.attr('data-target'), $sel = $bld.find('[name=target]');
         $r.closest('.mma-opt').addClass('is-on');
-        $bld.find('[data-mma-target]').prop('hidden', !$r.attr('data-target') || !open);
-        $bld.find('[data-mma-waitbox]').prop('hidden', open);
+        if (!targetOpts) targetOpts = $sel.find('option[data-for]').detach();
+        if (kind && $sel.attr('data-for') !== $r.val()) {
+            var keep = $sel.val();
+            $sel.find('option[data-for]').remove();
+            $sel.append(targetOpts.filter('[data-for="' + $r.val() + '"]').clone()).attr('data-for', $r.val());
+            $sel.val($sel.find('option[value="' + keep + '"]').length ? keep : '');
+            $bld.find('[data-mma-target-q]').text(kind === 'occasion' ? 'Which registries should it appear on?' : 'Which gift guide should it appear on?');
+        }
+        if (!kind) $sel.val('');
+        $bld.find('[data-mma-target]').prop('hidden', !kind || !open);
+        $bld.find('[data-mma-waitbox]').prop('hidden', open && !targetFull());
         say($bld, '');
         nav();
     }
@@ -156,7 +173,8 @@
             var $r = placement();
             if (!$r.length) return 'Choose a placement.';
             if ($r.attr('data-open') !== '1') return 'This placement is full right now. Join the waitlist or choose another.';
-            if ($r.attr('data-target') && !$bld.find('[name=target]').val()) return 'Choose which gift guide your ad should appear on.';
+            if ($r.attr('data-target') && !$bld.find('[name=target]').val()) return $r.attr('data-target') === 'occasion' ? 'Choose which registries your ad should appear on.' : 'Choose which gift guide your ad should appear on.';
+            if (targetFull()) return 'All seats there are taken right now. Join the waitlist or choose another.';
         }
         if (n === 2) {
             if (!val('c[brand]')) return 'Add your brand name.';
@@ -234,7 +252,7 @@
         $bld = $('[data-mma-builder]');
         if (!$bld.length) return;
         $bld.on('input change', 'input, select', function (e) {
-            if (e.target.name === 'placement') return pickPlacement();
+            if (e.target.name === 'placement' || e.target.name === 'target') return pickPlacement();
             if (e.target.hasAttribute('data-mma-agree')) return nav();
             preview();
         });

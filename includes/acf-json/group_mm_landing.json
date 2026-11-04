@@ -8,7 +8,13 @@
             "name": "mm_type",
             "type": "select",
             "instructions": "Tool: generator page with how-it-works. Guide: gift ideas with shop buttons. List: themes list. Legal: plain text page (the editor content).",
-            "choices": { "tool": "Tool page", "guide": "Gift guide", "list": "Themes list", "legal": "Legal page" },
+            "choices": {
+                "tool": "Tool page",
+                "guide": "Gift guide",
+                "list": "Themes list",
+                "legal": "Legal page",
+                "registry": "Registry guide"
+            },
             "default_value": "tool",
             "return_format": "value",
             "ui": 0
@@ -41,7 +47,55 @@
             "name": "mm_intro_title",
             "type": "text",
             "instructions": "Heading above the main editor content (not used on legal pages).",
-            "conditional_logic": [[{ "field": "field_mm_land_type", "operator": "!=", "value": "legal" }]]
+            "conditional_logic": [
+                [
+                    {
+                        "field": "field_mm_land_type",
+                        "operator": "!=",
+                        "value": "legal"
+                    }
+                ]
+            ]
+        },
+        {
+            "key": "field_mm_land_occasion",
+            "label": "Occasion",
+            "name": "mm_occasion",
+            "type": "select",
+            "instructions": "Registry guides: the \"Create your registry\" buttons open My Wishlist with this occasion picked, and registry sponsors of this occasion show here.",
+            "required": 0,
+            "conditional_logic": [
+                [
+                    {
+                        "field": "field_mm_land_type",
+                        "operator": "==",
+                        "value": "registry"
+                    }
+                ]
+            ],
+            "choices": {
+                "wedding": "Wedding",
+                "bridal-shower": "Bridal shower",
+                "debut": "Debut",
+                "baptism": "Baptism",
+                "first-birthday": "First birthday",
+                "kiddie-party": "Kiddie party",
+                "baby-shower": "Baby shower",
+                "housewarming": "Housewarming",
+                "graduation": "Graduation",
+                "despedida": "Despedida",
+                "retirement": "Retirement",
+                "anniversary": "Anniversary",
+                "communion": "Communion",
+                "birthday": "Birthday",
+                "christmas": "Christmas",
+                "valentines": "Valentine's"
+            },
+            "default_value": "wedding",
+            "return_format": "value",
+            "multiple": 0,
+            "allow_null": 0,
+            "ui": 0
         },
         {
             "key": "field_mm_land_budget",
@@ -49,7 +103,15 @@
             "name": "mm_budget",
             "type": "number",
             "instructions": "Shop buttons open the stores filtered to this price.",
-            "conditional_logic": [[{ "field": "field_mm_land_type", "operator": "==", "value": "guide" }]]
+            "conditional_logic": [
+                [
+                    {
+                        "field": "field_mm_land_type",
+                        "operator": "==",
+                        "value": "guide"
+                    }
+                ]
+            ]
         },
         {
             "key": "field_mm_land_groups",
@@ -58,10 +120,38 @@
             "type": "repeater",
             "layout": "block",
             "button_label": "Add group",
-            "conditional_logic": [[{ "field": "field_mm_land_type", "operator": "==", "value": "guide" }]],
+            "conditional_logic": [
+                [
+                    {
+                        "field": "field_mm_land_type",
+                        "operator": "==",
+                        "value": "guide"
+                    }
+                ],
+                [
+                    {
+                        "field": "field_mm_land_type",
+                        "operator": "==",
+                        "value": "registry"
+                    }
+                ]
+            ],
             "sub_fields": [
-                { "key": "field_mm_land_group_title", "label": "Group title", "name": "title", "type": "text" },
-                { "key": "field_mm_land_group_ideas", "label": "Ideas", "name": "ideas", "type": "textarea", "rows": 6, "new_lines": "", "instructions": "One per line: Label | store search keyword" }
+                {
+                    "key": "field_mm_land_group_title",
+                    "label": "Group title",
+                    "name": "title",
+                    "type": "text"
+                },
+                {
+                    "key": "field_mm_land_group_ideas",
+                    "label": "Ideas",
+                    "name": "ideas",
+                    "type": "textarea",
+                    "rows": 6,
+                    "new_lines": "",
+                    "instructions": "One per line: Label | store search keyword. Registry guides: add a third part for the price cap, e.g. Air fryer | air fryer | 3000"
+                }
             ]
         },
         {
@@ -71,10 +161,31 @@
             "type": "repeater",
             "layout": "block",
             "button_label": "Add list",
-            "conditional_logic": [[{ "field": "field_mm_land_type", "operator": "==", "value": "list" }]],
+            "conditional_logic": [
+                [
+                    {
+                        "field": "field_mm_land_type",
+                        "operator": "==",
+                        "value": "list"
+                    }
+                ]
+            ],
             "sub_fields": [
-                { "key": "field_mm_land_list_title", "label": "List title", "name": "title", "type": "text" },
-                { "key": "field_mm_land_list_items", "label": "Items", "name": "items", "type": "textarea", "rows": 6, "new_lines": "", "instructions": "One per line." }
+                {
+                    "key": "field_mm_land_list_title",
+                    "label": "List title",
+                    "name": "title",
+                    "type": "text"
+                },
+                {
+                    "key": "field_mm_land_list_items",
+                    "label": "Items",
+                    "name": "items",
+                    "type": "textarea",
+                    "rows": 6,
+                    "new_lines": "",
+                    "instructions": "One per line."
+                }
             ]
         },
         {
@@ -85,10 +196,30 @@
             "layout": "block",
             "button_label": "Add question",
             "instructions": "Shown on the page and added as FAQ structured data.",
-            "conditional_logic": [[{ "field": "field_mm_land_type", "operator": "!=", "value": "legal" }]],
+            "conditional_logic": [
+                [
+                    {
+                        "field": "field_mm_land_type",
+                        "operator": "!=",
+                        "value": "legal"
+                    }
+                ]
+            ],
             "sub_fields": [
-                { "key": "field_mm_land_faq_q", "label": "Question", "name": "question", "type": "text" },
-                { "key": "field_mm_land_faq_a", "label": "Answer", "name": "answer", "type": "textarea", "rows": 3, "new_lines": "" }
+                {
+                    "key": "field_mm_land_faq_q",
+                    "label": "Question",
+                    "name": "question",
+                    "type": "text"
+                },
+                {
+                    "key": "field_mm_land_faq_a",
+                    "label": "Answer",
+                    "name": "answer",
+                    "type": "textarea",
+                    "rows": 3,
+                    "new_lines": ""
+                }
             ]
         },
         {
@@ -96,11 +227,23 @@
             "label": "Related pages",
             "name": "mm_related",
             "type": "relationship",
-            "post_type": ["page"],
-            "filters": ["search"],
+            "post_type": [
+                "page"
+            ],
+            "filters": [
+                "search"
+            ],
             "return_format": "id",
             "max": 3,
-            "conditional_logic": [[{ "field": "field_mm_land_type", "operator": "!=", "value": "legal" }]]
+            "conditional_logic": [
+                [
+                    {
+                        "field": "field_mm_land_type",
+                        "operator": "!=",
+                        "value": "legal"
+                    }
+                ]
+            ]
         },
         {
             "key": "field_mm_land_updated",
@@ -114,7 +257,11 @@
     ],
     "location": [
         [
-            { "param": "page_template", "operator": "==", "value": "template-landing.php" }
+            {
+                "param": "page_template",
+                "operator": "==",
+                "value": "template-landing.php"
+            }
         ]
     ],
     "menu_order": 0,
@@ -125,5 +272,5 @@
     "hide_on_screen": "",
     "active": true,
     "description": "Fields for template-landing.php (generator pages, gift guides, theme lists, legal pages).",
-    "modified": 1793577600
+    "modified": 1793750400
 }

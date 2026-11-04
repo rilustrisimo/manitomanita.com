@@ -54,9 +54,18 @@ if ( qed_get_option( 'is_testimonial_enabled', 'option' ) && qed_is_display_test
 					<li><a href="<?php echo esc_url( home_url( '/secret-santa-generator/' ) ); ?>">Secret Santa generator</a></li>
 					<li><a href="<?php echo esc_url( home_url( '/exchange-gift-ideas-500-pesos/' ) ); ?>">Gift ideas under &#8369;500</a></li>
 					<li><a href="<?php echo esc_url( home_url( '/monito-monita-themes/' ) ); ?>">Monito Monita themes</a></li>
-					<li><a href="<?php echo esc_url( home_url( '/my-wishlist/' ) ); ?>">My Wishlist (any occasion)</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/my-wishlist/' ) ); ?>">Wishlists &amp; registries</a></li>
 				</ul>
 			</div>
+			<?php $mmRegGuides = class_exists( 'Registries' ) ? Registries::guides() : array(); if ( $mmRegGuides ) : ?>
+			<div>
+				<h3>Gift registries</h3>
+				<ul>
+					<?php foreach ( $mmRegGuides as $mmOcc => $mmUrl ) : ?><li><a href="<?php echo esc_url( $mmUrl ); ?>"><?php echo esc_html( preg_replace( '~\s*(/|\().*$~', '', html_entity_decode( Registries::get( $mmOcc )['label'], ENT_QUOTES, 'UTF-8' ) ) ); ?> registry</a></li><?php endforeach; ?>
+					<li><a href="<?php echo esc_url( home_url( '/my-wishlist/' ) ); ?>">All occasions</a></li>
+				</ul>
+			</div>
+			<?php endif; ?>
 			<div>
 				<h3>Help</h3>
 				<ul>

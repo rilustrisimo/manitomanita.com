@@ -21,6 +21,17 @@ the_post();
 $p = Landing::fromPage( get_the_ID() );
 $slot = 'landing:' . $p['slug'];
 
+// Registry guides send people to My Wishlist with the occasion picked; every other page creates a group.
+$isReg = $p['type'] === 'registry';
+$occ = $isReg ? Registries::get( $p['occasion'] ) : null;
+$ctaUrl = $isReg ? Registries::createUrl( $p['occasion'] ) : '#create-group';
+$ctaTxt = $isReg ? 'Create your ' . strtolower( wp_strip_all_tags( html_entity_decode( $occ['noun'] ) ) ) : 'Create a free group';
+$ctaAttr = function ( $where ) use ( $isReg, $slot, $p ) {
+	return $isReg
+		? 'data-mm-track="wishlist_cta" data-mm-slot="' . esc_attr( 'registry-guide-' . $p['occasion'] . ( $where ? ':' . $where : '' ) ) . '"'
+		: 'data-mm-track="create_group_click" data-mm-slot="' . esc_attr( $slot . ( $where ? ':' . $where : '' ) ) . '"';
+};
+
 get_header();
 
 if ( $p['type'] === 'legal' ) : ?>
@@ -63,17 +74,23 @@ endif;
 				<h1 class="mmh-hero__title"><?php echo $p['h1']; ?></h1>
 				<p class="mmh-hero__lead"><?php echo $p['lead']; ?></p>
 				<div class="mmh-hero__actions">
-					<a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="<?php echo esc_attr( $slot ); ?>">Create a free group</a>
-					<?php if ( $p['type'] === 'guide' || $p['type'] === 'list' ) : ?>
+					<a href="<?php echo esc_attr( $ctaUrl ); ?>" class="mmh-btn mmh-btn--primary" <?php echo $ctaAttr( '' ); ?>><?php echo esc_html( $ctaTxt ); ?></a>
+					<?php if ( $p['type'] === 'guide' || $p['type'] === 'list' || $isReg ) : ?>
 						<a href="#ideas" class="mmh-btn mmh-btn--ghost"><?php echo $p['type'] === 'list' ? 'See the themes' : 'See the gift ideas'; ?></a>
 					<?php else : ?>
 						<a href="#how-it-works" class="mmh-btn mmh-btn--ghost">How it works</a>
 					<?php endif; ?>
 				</div>
 				<ul class="mmh-hero__trust">
+					<?php if ( $isReg ) : ?>
+					<li><i class="fas fa-check"></i> Free, no app</li>
+					<li><i class="fas fa-check"></i> Guests reserve, no duplicates</li>
+					<li><i class="fas fa-check"></i> GCash QR for cash gifts</li>
+					<?php else : ?>
 					<li><i class="fas fa-check"></i> Free forever</li>
 					<li><i class="fas fa-check"></i> No app, no sign-up</li>
 					<li><i class="fas fa-check"></i> Works on any phone</li>
+					<?php endif; ?>
 				</ul>
 			</div>
 		</div>
@@ -87,8 +104,37 @@ endif;
 		</div>
 	</section>
 
-	<?php if ( class_exists( 'Ads' ) ) : // sponsor booked for this guide (fetched: this page is cached) ?>
-	<div class="mmh-wrap mmh-wrap--narrow"><?php echo Ads::lazySlot( 'guide', $p['slug'] ); ?></div>
+	<?php if ( $isReg ) : // what a registry looks like, then how to make one ?>
+	<section class="mmh-section" id="how-it-works">
+		<div class="mmh-wrap mml-reg">
+			<div class="mml-reg__copy">
+				<h2 class="mmh-h2 mml-left" data-reveal>How it works</h2>
+				<ol class="mml-reg__steps" data-reveal>
+					<li><span>1</span><div><strong>Create your list</strong>Add the date and the gifts you&rsquo;d love, with shop links and how many you need.</div></li>
+					<li><span>2</span><div><strong>Share one link</strong>On your invitation as a QR, or in Messenger and Viber group chats. Guests don&rsquo;t sign up.</div></li>
+					<li><span>3</span><div><strong>No double gifts</strong>Guests tap &ldquo;I&rsquo;ll get this&rdquo;. <?php echo $occ['seeres'] ? 'You see who reserved what, so thank-yous are easy.' : 'It stays a surprise until the day.'; ?></div></li>
+				</ol>
+				<a href="<?php echo esc_attr( $ctaUrl ); ?>" class="mmh-btn mmh-btn--primary" data-reveal <?php echo $ctaAttr( 'steps' ); ?>><?php echo esc_html( $ctaTxt ); ?></a>
+			</div>
+			<?php $mock = Registries::ideas( $p['occasion'] ); $mockName = trim( str_replace( 'e.g.', '', Registries::forHint( $p['occasion'] ) ) ); ?>
+			<div class="mml-regmock" style="--wl-occ:<?php echo esc_attr( $occ['accent'] ); ?>;" data-reveal aria-hidden="true">
+				<div class="mml-regmock__head">
+					<span class="mml-regmock__icon"><i class="<?php echo esc_attr( $occ['icon'] ); ?>"></i></span>
+					<div><strong><?php echo esc_html( $mockName ); ?>&rsquo;s <?php echo $occ['noun']; ?></strong><small>In 24 days</small></div>
+				</div>
+				<ul>
+					<li><span><?php echo esc_html( $mock[0]['label'] ); ?><em>2 of 6 reserved</em></span><b class="is-part">I&rsquo;ll get one</b></li>
+					<li><span><?php echo esc_html( $mock[1]['label'] ); ?><em class="is-top">Most wanted</em></span><b class="is-done"><i class="fas fa-check"></i> Reserved</b></li>
+					<li><span><?php echo esc_html( $mock[2]['label'] ); ?></span><b>I&rsquo;ll get this</b></li>
+					<li class="mml-regmock__cash"><i class="fa-solid fa-qrcode"></i> Cash gift: scan with GCash or Maya</li>
+				</ul>
+			</div>
+		</div>
+	</section>
+	<?php endif; ?>
+
+	<?php if ( class_exists( 'Ads' ) ) : // sponsor booked for this page (fetched: this page is cached); registry guides show that occasion's registry sponsors ?>
+	<div class="mmh-wrap mmh-wrap--narrow"><?php echo $isReg ? ( Registries::adsOpen() ? Ads::lazySlot( Registries::placement( $p['occasion'] ), $p['occasion'] ) : '' ) : Ads::lazySlot( 'guide', $p['slug'] ); ?></div>
 	<?php endif; ?>
 
 	<?php if ( $p['type'] === 'guide' ) : ?>
@@ -115,7 +161,35 @@ endif;
 			<div class="mml-tip" data-reveal>
 				<i class="fas fa-gift"></i>
 				<div><strong>Organizing the exchange?</strong> Create a free group: everyone adds a wishlist, so nobody has to guess. Gift ideas are picked within your budget automatically.</div>
-				<a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="<?php echo esc_attr( $slot ); ?>:tip">Create a free group</a>
+			<a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="<?php echo esc_attr( $slot ); ?>:tip">Create a free group</a>
+			</div>
+		</div>
+	</section>
+	<?php elseif ( $isReg ) : ?>
+	<section class="mmh-section mmh-section--soft" id="ideas">
+		<div class="mmh-wrap">
+			<h2 class="mmh-h2" data-reveal><?php echo esc_html( wp_strip_all_tags( html_entity_decode( $occ['label'] ) ) ); ?> gift ideas by budget</h2>
+			<p class="mmh-sub" data-reveal>Each button opens the store filtered to that price. Add the ones you like to your list.</p>
+			<?php foreach ( $p['groups'] as $g ) : ?>
+				<h3 class="mml-group" data-reveal><?php echo esc_html( $g[0] ); ?></h3>
+				<div class="mml-ideas">
+					<?php foreach ( $g[1] as $i => $idea ) : ?>
+					<div class="mml-idea" data-reveal style="--d:<?php echo esc_attr( ( $i % 3 ) * 0.08 ); ?>s">
+						<strong><?php echo esc_html( $idea[0] ); ?></strong>
+						<div class="mml-idea__shops">
+							<?php
+							echo Affiliate::anchor( Affiliate::searchUrl( 'lazada', $idea[1], $idea[2] ), 'Lazada', 'registry-guide-' . $p['occasion'], '', 'mml-shop mml-shop--lazada' );
+							echo Affiliate::anchor( Affiliate::searchUrl( 'shopee', $idea[1], $idea[2] ), 'Shopee', 'registry-guide-' . $p['occasion'], '', 'mml-shop mml-shop--shopee' );
+							?>
+						</div>
+					</div>
+					<?php endforeach; ?>
+				</div>
+			<?php endforeach; ?>
+			<div class="mml-tip" data-reveal>
+				<i class="<?php echo esc_attr( $occ['icon'] ); ?>"></i>
+				<div><strong>Make it a registry.</strong> Put the gifts you want in one list and share the link. Guests reserve what they&rsquo;ll bring, so nothing is doubled.</div>
+				<a href="<?php echo esc_attr( $ctaUrl ); ?>" class="mmh-btn mmh-btn--primary" <?php echo $ctaAttr( 'tip' ); ?>><?php echo esc_html( $ctaTxt ); ?></a>
 			</div>
 		</div>
 	</section>
@@ -183,7 +257,7 @@ endif;
 		<div class="mmh-wrap mmh-wrap--narrow">
 			<div class="mmh-bizband__card">
 				<span class="mmh-bizband__icon" aria-hidden="true"><i class="fas fa-store"></i></span>
-				<div class="mmh-bizband__txt"><strong><?php echo $p['type'] === 'guide' ? 'Sell gifts like these?' : 'Have a shop or brand?'; ?></strong><span><?php echo $p['type'] === 'guide' ? 'Feature your shop on this guide and in front of people shopping for their Secret Santa gift.' : 'Reach Filipino gift buyers while they plan their exchange. Weekly or monthly, cancel anytime.'; ?></span></div>
+				<div class="mmh-bizband__txt"><strong><?php echo $isReg ? esc_html( wp_strip_all_tags( html_entity_decode( $occ['label'] ) ) ) . ' supplier or shop?' : ( $p['type'] === 'guide' ? 'Sell gifts like these?' : 'Have a shop or brand?' ); ?></strong><span><?php echo $isReg ? 'Feature your business on this guide and on every ' . esc_html( strtolower( wp_strip_all_tags( html_entity_decode( $occ['noun'] ) ) ) ) . ' guests open. Weekly or monthly, cancel anytime.' : ( $p['type'] === 'guide' ? 'Feature your shop on this guide and in front of people shopping for their Secret Santa gift.' : 'Reach Filipino gift buyers while they plan their exchange. Weekly or monthly, cancel anytime.' ); ?></span></div>
 				<a href="<?php echo esc_url( home_url( '/advertise/' ) ); ?>" class="mmh-btn mmh-btn--ghost-dark" data-mm-track="advertise_cta" data-mm-slot="<?php echo esc_attr( 'landing-' . $p['slug'] ); ?>">Advertise with us</a>
 			</div>
 		</div>
@@ -192,7 +266,7 @@ endif;
 
 	<section class="mmh-section">
 		<div class="mmh-wrap">
-			<h2 class="mmh-h2" data-reveal>More free tools and guides</h2>
+			<h2 class="mmh-h2" data-reveal><?php echo $isReg ? 'More gift registry guides' : 'More free tools and guides'; ?></h2>
 			<div class="mml-related">
 				<?php foreach ( $p['related'] as $i => $r ) : if ( get_post_status( $r ) !== 'publish' ) continue; $rp = Landing::fromPage( $r ); ?>
 				<a class="mml-related__card" href="<?php echo esc_url( get_permalink( $r ) ); ?>" data-reveal style="--d:<?php echo esc_attr( $i * 0.08 ); ?>s">
@@ -207,14 +281,14 @@ endif;
 
 	<section class="mmh-final">
 		<div class="mmh-wrap mmh-center" data-reveal>
-			<h2>Ready for this year&rsquo;s exchange?</h2>
-			<p>Set it up in 2 minutes. Free forever.</p>
-			<a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="<?php echo esc_attr( $slot ); ?>:final">Create a free group</a>
+			<h2><?php echo $isReg ? 'Ready to share your list?' : 'Ready for this year&rsquo;s exchange?'; ?></h2>
+			<p><?php echo $isReg ? 'Set it up in 2 minutes. Free, and guests don&rsquo;t need an account.' : 'Set it up in 2 minutes. Free forever.'; ?></p>
+			<a href="<?php echo esc_attr( $ctaUrl ); ?>" class="mmh-btn mmh-btn--primary" <?php echo $ctaAttr( 'final' ); ?>><?php echo esc_html( $ctaTxt ); ?></a>
 		</div>
 	</section>
 
 	<div class="mmh-sticky" data-mm-sticky aria-hidden="true">
-		<a href="#create-group" class="mmh-btn mmh-btn--primary mmh-btn--block" data-mm-track="create_group_click" data-mm-slot="<?php echo esc_attr( $slot ); ?>:sticky" tabindex="-1">Create a free group</a>
+		<a href="<?php echo esc_attr( $ctaUrl ); ?>" class="mmh-btn mmh-btn--primary mmh-btn--block" <?php echo $ctaAttr( 'sticky' ); ?> tabindex="-1"><?php echo esc_html( $ctaTxt ); ?></a>
 	</div>
 </div>
 <?php

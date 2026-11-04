@@ -299,6 +299,8 @@ class AdsPortal {
         $placement = sanitize_key( (string) ( $_POST['placement'] ?? '' ) );
         $target = sanitize_title( (string) ( $_POST['target'] ?? '' ) );
         if ( ! isset( Ads::placements()[ $placement ] ) ) wp_send_json_error( 'Pick a placement.' );
+        if ( empty( Ads::placements()[ $placement ]['target'] ) ) $target = '';
+        elseif ( ! isset( self::targets( $placement )[ $target ] ) ) wp_send_json_error( 'Choose where your ad should appear first.' );
         $list = self::waitlist( $placement, $target );
         foreach ( $list as $w ) if ( (int) $w['adv'] === self::current() ) wp_send_json_success( array( 'message' => 'You&rsquo;re already on the waitlist. We&rsquo;ll email you when a seat opens.' ) );
         $list[] = array( 'adv' => self::current(), 't' => time(), 'hold' => 0 );
@@ -354,7 +356,8 @@ class AdsPortal {
             $placement = sanitize_key( (string) ( $_POST['placement'] ?? '' ) );
             if ( ! isset( Ads::placements()[ $placement ] ) || ! self::sellable( $placement ) ) wp_send_json_error( 'Pick a placement.' );
             $target = sanitize_title( (string) ( $_POST['target'] ?? '' ) );
-            if ( ! empty( Ads::placements()[ $placement ]['target'] ) && $target === '' ) wp_send_json_error( 'Pick which page your ad should appear on.' );
+            if ( empty( Ads::placements()[ $placement ]['target'] ) ) $target = '';
+            elseif ( ! isset( self::targets( $placement )[ $target ] ) ) wp_send_json_error( Ads::placements()[ $placement ]['target'] === 'occasion' ? 'Pick which occasion&rsquo;s registries your ad should appear on.' : 'Pick which page your ad should appear on.' );
             $id = wp_insert_post( array( 'post_type' => Ads::CPT, 'post_status' => 'draft', 'post_title' => $c['brand'] . ' - ' . Ads::placements()[ $placement ]['label'] ) );
             if ( ! $id || is_wp_error( $id ) ) wp_send_json_error( 'Something went wrong. Please try again.' );
             update_post_meta( $id, '_mm_ad_adv', $aid );
@@ -384,6 +387,28 @@ class AdsPortal {
         }
         Ads::flush();
         wp_send_json_success( array( 'ad' => $id, 'message' => 'Saved.' ) );
+    }
+
+    /**
+     * Targets a placement can be booked for, slug => label: gift guide pages (not legal pages or registry
+     * guides, which carry their occasion's registry ads) or occasions (wedding/debut for registry-major).
+     */
+    public static function targets( $placement ) {
+        $pl = Ads::placements()[ $placement ] ?? array();
+        $out = array();
+        if ( ( $pl['target'] ?? '' ) === 'page' ) {
+            foreach ( get_posts( array( 'post_type' => 'page', 'post_status' => 'publish', 'posts_per_page' => 50, 'meta_key' => '_wp_page_template', 'meta_value' => 'template-landing.php', 'orderby' => 'title', 'order' => 'ASC' ) ) as $gp ) {
+                if ( function_exists( 'get_field' ) && in_array( get_field( 'mm_type', $gp->ID ), array( 'legal', 'registry' ), true ) ) continue;
+                $out[ $gp->post_name ] = get_the_title( $gp );
+            }
+        } elseif ( ( $pl['target'] ?? '' ) === 'occasion' && class_exists( 'Registries' ) ) {
+            foreach ( Registries::occasions() as $k => $o ) {
+                if ( $k === 'any' || Registries::placement( $k ) !== $placement ) continue;
+                $out[ $k ] = html_entity_decode( $o['label'], ENT_QUOTES, 'UTF-8' ) . ' registries';
+            }
+        }
+
+        return $out;
     }
 
     /** Can this placement be booked now (registries once Registries::adsOpen(); Christmas placements Sep 1 - Dec 20)? */

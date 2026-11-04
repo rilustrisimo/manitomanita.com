@@ -154,8 +154,8 @@ class Ads {
             'match-ideas'      => array( 'label' => 'Match screen', 'where' => 'Above the gift ideas, where members see who they are buying for', 'kind' => 'web', 'season' => 'xmas' ),
             'dashboard-bottom' => array( 'label' => 'Group page', 'where' => 'Bottom of every group page', 'kind' => 'web', 'season' => 'xmas' ),
             'guide'            => array( 'label' => 'Gift guide page', 'where' => 'A gift guide or landing page, after its intro', 'kind' => 'web', 'season' => 'year', 'target' => 'page' ),
-            'registry-major'   => array( 'label' => 'Registry: wedding / debut', 'where' => 'Wedding and debut registries', 'kind' => 'web', 'season' => 'year', 'target' => 'occasion' ),
-            'registry'         => array( 'label' => 'Registry: other occasions', 'where' => 'Registries of one occasion (baptism, baby shower, birthday...)', 'kind' => 'web', 'season' => 'year', 'target' => 'occasion' ),
+            'registry-major'   => array( 'label' => 'Registry: wedding / debut', 'where' => 'Wedding or debut registries guests open, plus that occasion\'s registry guide', 'kind' => 'web', 'season' => 'year', 'target' => 'occasion' ),
+            'registry'         => array( 'label' => 'Registry: other occasions', 'where' => 'Registries of one occasion (baptism, baby shower, birthday...), plus its registry guide', 'kind' => 'web', 'season' => 'year', 'target' => 'occasion' ),
         );
     }
 

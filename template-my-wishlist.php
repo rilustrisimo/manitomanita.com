@@ -44,10 +44,18 @@ $hero = function ( $eyebrow, $title, $lead, $extra = '' ) { ?>
 $occSelect = function ( $name, $cur ) {
 	$h = '<select name="' . esc_attr( $name ) . '" data-mm-wl-occ>';
 	foreach ( Registries::occasions() as $k => $o ) {
-		$h .= '<option value="' . esc_attr( $k ) . '" data-seeres="' . (int) $o['seeres'] . '"' . selected( $cur, $k, false ) . '>' . $o['label'] . '</option>';
+		$h .= '<option value="' . esc_attr( $k ) . '" data-seeres="' . (int) $o['seeres'] . '" data-hint="' . esc_attr( Registries::forHint( $k ) ) . '"' . selected( $cur, $k, false ) . '>' . $o['label'] . '</option>';
 	}
 
 	return $h . '</select>';
+};
+
+// "More wedding gift ideas by budget" link to the occasion's registry guide, when it has one.
+$guideLink = function ( $occ ) {
+	$url = Registries::guideUrl( $occ );
+	if ( $url === '' ) return '';
+
+	return '<a class="mm-wl-guide" href="' . esc_url( $url ) . '">More ' . esc_html( strtolower( wp_strip_all_tags( html_entity_decode( Registries::get( $occ )['label'] ) ) ) ) . ' gift ideas by budget <i class="fa-solid fa-arrow-right"></i></a>';
 };
 
 echo '<div class="mm-home mm-landing mm-wl" style="--wl-occ:' . esc_attr( $wlO['accent'] ) . ';">';
@@ -112,7 +120,7 @@ if ( $wlId ) {
 						<input type="hidden" name="from" value="<?php echo (int) $wlId; ?>">
 						<input type="hidden" name="nonce" value="<?php echo esc_attr( $nonce ); ?>">
 						<label>Occasion<?php echo $occSelect( 'occasion', 'wedding' ); ?></label>
-						<label>Who it&rsquo;s for <small>(optional)</small><input type="text" name="for" maxlength="60" placeholder="e.g. Mark &amp; Joy, Baby Ana"></label>
+						<label>Who it&rsquo;s for <small>(optional)</small><input type="text" name="for" maxlength="60" placeholder="<?php echo esc_attr( Registries::forHint( 'wedding' ) ); ?>" data-mm-wl-for></label>
 						<label>Date <small>(optional)</small><input type="date" name="date"></label>
 						<p class="mm-wl-form__msg" data-mm-wl-msg role="status" aria-live="polite"></p>
 						<div class="mm-wl-another__acts"><button type="button" class="mm-wl-link" data-mm-wl-another-cancel>Cancel</button><button type="submit" class="mm-wl-btn mm-wl-btn--dark">Create list</button></div>
@@ -207,6 +215,7 @@ if ( $wlId ) {
 							</div>
 							<?php endforeach; ?>
 						</div>
+						<?php echo $isAny ? '' : $guideLink( $wlOcc ); ?>
 					</section>
 
 					<section class="mm-sec">
@@ -318,7 +327,7 @@ if ( $wlId ) {
 
 				<?php if ( ! $isAny ) {
 					echo Registries::sponsorHtml( $wlId );
-					echo '<div class="mm-match mm-wl-ideas">' . Affiliate::giftIdeasHtml( 0, 'registry-' . $wlOcc, false, Registries::ideas( $wlOcc ), 'More ideas for a ' . esc_html( strtolower( wp_strip_all_tags( html_entity_decode( $wlO['label'] ) ) ) ), 0 ) . '</div>';
+					echo '<div class="mm-match mm-wl-ideas">' . Affiliate::giftIdeasHtml( 0, 'registry-' . $wlOcc, false, Registries::ideas( $wlOcc ), 'More ideas for a ' . esc_html( strtolower( wp_strip_all_tags( html_entity_decode( $wlO['label'] ) ) ) ), 0 ) . $guideLink( $wlOcc ) . '</div>';
 				} ?>
 
 				<div class="mm-wl-cta">
@@ -349,7 +358,11 @@ $faq = array(
 	array( 'Who can see my list?', 'Only people you share your link with. Lists don&rsquo;t appear in search engines.' ),
 );
 
-$hero( 'My Wishlist &middot; free', 'Wishlists &amp; gift registries <span>for every occasion</span>', 'Weddings, debuts, baptisms, birthdays or just because. Add what you&rsquo;d love to receive and share one link with family and friends.' );
+if ( $wlOcc !== 'any' ) { // arrived from a registry guide or "Create mine" on someone's list
+	$hero( $wlO['label'] . ' &middot; free', 'Create your <span>' . strtolower( $wlO['noun'] ) . '</span>', 'Add the gifts you&rsquo;d love, with shop links and how many you need, then share one link. Guests reserve so nothing is doubled.' );
+} else {
+	$hero( 'My Wishlist &middot; free', 'Wishlists &amp; gift registries <span>for every occasion</span>', 'Weddings, debuts, baptisms, birthdays or just because. Add what you&rsquo;d love to receive and share one link with family and friends.' );
+}
 ?>
 <section class="mmh-section mm-wl-main">
 	<div class="mmh-wrap mmh-wrap--narrow">
@@ -364,7 +377,7 @@ $hero( 'My Wishlist &middot; free', 'Wishlists &amp; gift registries <span>for e
 			</div>
 		<?php endif; ?>
 
-		<div class="mm-wl-auth" data-mm-wl-auth>
+		<div class="mm-wl-auth" id="create" data-mm-wl-auth>
 			<div class="mm-wl-tabs" role="tablist">
 				<button type="button" role="tab" class="is-on" data-mm-wl-tab="create" aria-selected="true">Create a list</button>
 				<button type="button" role="tab" data-mm-wl-tab="login" aria-selected="false">I have one</button>
@@ -372,6 +385,7 @@ $hero( 'My Wishlist &middot; free', 'Wishlists &amp; gift registries <span>for e
 
 			<form class="mm-wl-form" data-mm-wl-form="create" novalidate>
 				<label>Occasion<?php echo $occSelect( 'occasion', $wlOcc ); ?></label>
+				<label data-mm-wl-forbox<?php echo $wlOcc === 'any' ? ' hidden' : ''; ?>>Who it&rsquo;s for <small>(optional, shown in the title)</small><input type="text" name="for" maxlength="60" placeholder="<?php echo esc_attr( Registries::forHint( $wlOcc ) ); ?>" data-mm-wl-for></label>
 				<label>Your name<input type="text" name="name" maxlength="60" autocomplete="name" placeholder="e.g. Ana Santos" required></label>
 				<label>Date <small>(optional, shows a countdown)</small><input type="date" name="date"></label>
 				<label>Your email<input type="email" name="email" maxlength="120" autocomplete="email" placeholder="you@example.com" required></label>
@@ -400,6 +414,19 @@ $hero( 'My Wishlist &middot; free', 'Wishlists &amp; gift registries <span>for e
 			<li><span>2</span><div><strong>Share one link</strong>Send it on Messenger or Viber, or add it to your invitation.</div></li>
 			<li><span>3</span><div><strong>No double gifts</strong>Guests tap &ldquo;I&rsquo;ll get this&rdquo;. See who reserved what, or keep it a surprise.</div></li>
 		</ol>
+
+		<?php
+		$guides = array();
+		foreach ( array_keys( Landing::registrySlugs() ) as $gk ) {
+			$gu = Registries::guideUrl( $gk );
+			if ( $gu !== '' ) $guides[] = '<a class="mm-wl-chip" href="' . esc_url( $gu ) . '"><i class="' . esc_attr( Registries::get( $gk )['icon'] ) . '"></i> ' . Registries::get( $gk )['label'] . '</a>';
+		}
+		if ( $guides ) : ?>
+		<div class="mm-wl-guides">
+			<p class="mm-wl-lists__label">Gift ideas and registry guides</p>
+			<div class="mm-wl-lists__row"><?php echo implode( '', $guides ); ?></div>
+		</div>
+		<?php endif; ?>
 
 		<div class="mm-wl-faq">
 			<h2 class="mmh-h2">Questions</h2>
