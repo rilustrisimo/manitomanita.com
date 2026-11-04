@@ -19,7 +19,7 @@
 .mm-footer__wrap {
     display: grid;
     gap: 36px;
-    max-width: 1120px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 48px 16px 40px;
 }
@@ -74,6 +74,11 @@
     font-weight: 700;
     text-decoration: none;
     transition: background .15s ease, color .15s ease;
+}
+
+.mm-footer .mm-footer__follow-label {
+    margin: 28px 0 12px;
+    font-size: 14px;
 }
 
 .mm-footer .mm-footer__cta:hover {
@@ -151,9 +156,17 @@
     }
 }
 
+/* Product + For businesses share a column, so the columns end at about the same height */
+.mm-footer__stack {
+    display: grid;
+    align-content: start;
+    gap: 28px;
+}
+
 @media (min-width: 640px) {
     .mm-footer__cols {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
+        gap: 32px 24px;
     }
 }
 
@@ -161,16 +174,21 @@
 
 @media (min-width: 900px) {
     .mm-footer__wrap {
-        grid-template-columns: 1.2fr 1.8fr;
-        gap: 48px;
+        grid-template-columns: minmax(240px, 1fr) 2.2fr;
+        gap: 56px;
         padding-top: 64px;
         padding-bottom: 48px;
     }
 }
 
-/* Four link columns (Product, Free tools, Help, For businesses) on wide screens */
+/* Four even link columns on wide screens: Product + For businesses, Free tools, Gift registries, Help */
 @media (min-width: 1100px) {
     .mm-footer__cols {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: 1fr 1.25fr 1fr 0.9fr;
+        gap: 32px;
+    }
+
+    .mm-footer__cols a {
+        white-space: nowrap; /* names stay on one line at this width */
     }
 }

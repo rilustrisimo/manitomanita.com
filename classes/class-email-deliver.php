@@ -28,6 +28,36 @@ class EmailDeliver {
         add_action( 'rest_api_init', array( __CLASS__, 'routes' ) );
         add_action( 'wp_mail_failed', array( __CLASS__, 'mailFailed' ) );
         add_action( 'template_redirect', array( __CLASS__, 'promoUnsubscribe' ), 1 );
+        add_action( 'wp_loaded', array( __CLASS__, 'policyOnce' ) );
+    }
+
+    /**
+     * Once: adds the promo email lines to the Privacy Policy page (offers + unsubscribe, opens/clicks,
+     * 90-day send logs, coded bounce list) and bumps its "last updated" date. Only inserts at known spots;
+     * a part whose spot was edited away is skipped (and reported), the rest of the page is untouched.
+     */
+    public static function policyOnce() {
+        if ( get_option( 'mm_policy_promo_v1' ) ) return;
+        update_option( 'mm_policy_promo_v1', time(), false );
+        $page = get_page_by_path( 'privacy-policy' );
+        if ( ! $page ) return;
+        $c = (string) $page->post_content;
+        if ( strpos( $c, 'offers and news' ) !== false ) return; // already there
+        $done = 0;
+
+        $c = preg_replace( '~(<li>\s*To show ads to free groups\.?\s*</li>)~i', '$1' . "\n" . '<li>To send occasional offers and news about Manito Manita, at most one every few days. Each has an <strong>unsubscribe</strong> link that stops only these emails, not your group&rsquo;s emails like your match and reminders. We record whether an offer email was opened or its links were clicked, to see what&rsquo;s useful and to stop emailing addresses that no longer work.</li>', $c, 1, $n );
+        $done += $n;
+        $c = preg_replace( '~to send confirmation, match and reminder emails\.~i', 'to send confirmation, match, reminder and occasional offer emails, and to tell us which addresses bounce or report an email as spam.', $c, 1, $n );
+        $done += $n;
+        $c = preg_replace( '~(<h2[^>]*>\s*8\.)~i', '<p>Email send logs (which address got an offer email, and whether it was opened or clicked) keep the address for 90 days; after that only totals remain. If an address bounces or reports an email as spam, we keep a coded (hashed) copy of it so we never email it again. An email you leave for a registry gift reminder is deleted once the reminder is sent.</p>' . "\n" . '$1', $c, 1, $n );
+        $done += $n;
+
+        if ( $done ) {
+            wp_update_post( array( 'ID' => $page->ID, 'post_content' => $c ) );
+            if ( function_exists( 'update_field' ) ) update_field( 'mm_updated', wp_date( 'Ymd' ), $page->ID );
+            do_action( 'litespeed_purge_post', $page->ID );
+        }
+        if ( $done < 3 ) do_action( 'mm_alert', 'policy', 'Privacy Policy: ' . ( 3 - $done ) . ' of 3 email lines could not be placed (the page was edited). Add them by hand.' );
     }
 
     public static function suppressTable() { global $wpdb; return $wpdb->prefix . 'mm_email_suppress'; }

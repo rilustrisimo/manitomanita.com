@@ -37,13 +37,26 @@ if ( qed_get_option( 'is_testimonial_enabled', 'option' ) && qed_is_display_test
 			<?php echo Theme::socialLinks( 'footer', 'mm-social' ); ?>
 		</div>
 		<nav class="mm-footer__cols" aria-label="Footer">
-			<div>
-				<h3>Product</h3>
-				<ul>
-					<li><a href="<?php echo esc_url( home_url( '/#how-it-works' ) ); ?>">How it works</a></li>
-					<li><a href="<?php echo esc_url( home_url( '/#pro' ) ); ?>">Free &amp; PRO</a></li>
-					<li><a href="<?php echo esc_url( home_url( '/#faq' ) ); ?>">FAQ</a></li>
-				</ul>
+			<div class="mm-footer__stack">
+				<div>
+					<h3>Product</h3>
+					<ul>
+						<li><a href="<?php echo esc_url( home_url( '/#how-it-works' ) ); ?>">How it works</a></li>
+						<li><a href="<?php echo esc_url( home_url( '/#pro' ) ); ?>">Free &amp; PRO</a></li>
+						<li><a href="<?php echo esc_url( home_url( '/#faq' ) ); ?>">FAQ</a></li>
+					</ul>
+				</div>
+				<?php if ( get_option( 'mm_ads_pages' ) ) : // shows once the ad pages exist ?>
+				<div>
+					<h3>For businesses</h3>
+					<ul>
+						<li><a href="<?php echo esc_url( home_url( '/advertise/' ) ); ?>" data-mm-track="advertise_cta" data-mm-slot="footer">Advertise with us</a></li>
+						<li><a href="<?php echo esc_url( home_url( '/advertise/#placements' ) ); ?>" data-mm-track="advertise_cta" data-mm-slot="footer-prices">Ad placements &amp; prices</a></li>
+						<li><a href="<?php echo esc_url( home_url( '/advertiser/' ) ); ?>">Advertiser sign in</a></li>
+						<li><a href="<?php echo esc_url( home_url( '/ad-guidelines/' ) ); ?>">Ad guidelines</a></li>
+					</ul>
+				</div>
+				<?php endif; ?>
 			</div>
 			<div>
 				<h3>Free tools</h3>
@@ -61,7 +74,7 @@ if ( qed_get_option( 'is_testimonial_enabled', 'option' ) && qed_is_display_test
 			<div>
 				<h3>Gift registries</h3>
 				<ul>
-					<?php foreach ( $mmRegGuides as $mmOcc => $mmUrl ) : ?><li><a href="<?php echo esc_url( $mmUrl ); ?>"><?php echo esc_html( preg_replace( '~\s*(/|\().*$~', '', html_entity_decode( Registries::get( $mmOcc )['label'], ENT_QUOTES, 'UTF-8' ) ) ); ?> registry</a></li><?php endforeach; ?>
+					<?php foreach ( $mmRegGuides as $mmOcc => $mmUrl ) : ?><li><a href="<?php echo esc_url( $mmUrl ); ?>"><?php echo esc_html( preg_replace( '~\s*(/|\().*$~', '', html_entity_decode( Registries::get( $mmOcc )['label'], ENT_QUOTES, 'UTF-8' ) ) ); ?></a></li><?php endforeach; ?>
 					<li><a href="<?php echo esc_url( home_url( '/my-wishlist/' ) ); ?>">All occasions</a></li>
 				</ul>
 			</div>
@@ -70,22 +83,11 @@ if ( qed_get_option( 'is_testimonial_enabled', 'option' ) && qed_is_display_test
 				<h3>Help</h3>
 				<ul>
 					<li><a href="mailto:rouie@manitomanita.com">Contact us</a></li>
-					<li><a href="#ask-manito" data-mm-support-open>Ask Manito (help chat)</a></li>
+					<li><a href="#ask-manito" data-mm-support-open>Help chat</a></li>
 					<li><a href="<?php echo esc_url( home_url( '/privacy-policy/' ) ); ?>">Privacy Policy</a></li>
 					<li><a href="<?php echo esc_url( home_url( '/terms/' ) ); ?>">Terms of Use</a></li>
 				</ul>
 			</div>
-			<?php if ( get_option( 'mm_ads_pages' ) ) : // shows once the ad pages exist ?>
-			<div>
-				<h3>For businesses</h3>
-				<ul>
-					<li><a href="<?php echo esc_url( home_url( '/advertise/' ) ); ?>" data-mm-track="advertise_cta" data-mm-slot="footer">Advertise with us</a></li>
-					<li><a href="<?php echo esc_url( home_url( '/advertise/#placements' ) ); ?>" data-mm-track="advertise_cta" data-mm-slot="footer-prices">Ad placements &amp; prices</a></li>
-					<li><a href="<?php echo esc_url( home_url( '/advertiser/' ) ); ?>">Advertiser sign in</a></li>
-					<li><a href="<?php echo esc_url( home_url( '/ad-guidelines/' ) ); ?>">Ad guidelines</a></li>
-				</ul>
-			</div>
-			<?php endif; ?>
 		</nav>
 	</div>
 	<div class="mm-footer__bottom">
