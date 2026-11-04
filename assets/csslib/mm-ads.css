@@ -2204,3 +2204,19 @@
         flex: 1 1 auto;
     }
 }
+
+.mma-reject {
+    display: grid;
+    gap: 4px;
+    padding: 12px 16px;
+    border-left: 4px solid var(--ma-bad);
+    border-radius: 10px;
+    background: rgba(179, 45, 46, .06);
+    color: var(--ma-ink);
+    font-size: 14px;
+}
+
+.mma-reject a {
+    color: var(--mm-accent-dark);
+    text-decoration: underline;
+}

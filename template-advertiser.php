@@ -69,7 +69,7 @@ if ( $rwho !== '' ) :
 	return;
 endif;
 
-$statusLabel = array( 'checkout' => array( 'Not booked yet', 'is-draft' ), 'review' => array( 'In review', 'is-review' ), 'live' => array( 'Live', 'is-live' ), 'paused' => array( 'Paused', 'is-draft' ), 'ended' => array( 'Ended', 'is-draft' ), 'rejected' => array( 'Not approved', 'is-bad' ) );
+$statusLabel = array( 'checkout' => array( 'Not booked yet', 'is-draft' ), 'review' => array( 'In review', 'is-review' ), 'live' => array( 'Live', 'is-live' ), 'paused' => array( 'Paused', 'is-draft' ), 'ended' => array( 'Ended', 'is-draft' ), 'removed' => array( 'Removed', 'is-bad' ), 'rejected' => array( 'Not approved', 'is-bad' ) );
 
 // Gift guide pages an ad can target (Landing pages that aren't legal pages).
 $guides = array();
@@ -145,6 +145,13 @@ foreach ( get_posts( array( 'post_type' => 'page', 'posts_per_page' => 50, 'meta
 						</p></div>
 						<span class="mma-chip <?php echo esc_attr( $statusLabel[ $st ][1] ?? '' ); ?>"><?php echo esc_html( $statusLabel[ $st ][0] ?? $st ); ?></span>
 					</header>
+					<?php if ( in_array( $st, array( 'rejected', 'removed' ), true ) ) : $why = (string) get_post_meta( $id, '_mm_ad_reason', true ); ?>
+					<div class="mma-reject">
+						<b><?php echo $st === 'removed' ? 'This ad was removed.' : 'This ad wasn&rsquo;t approved.'; ?></b>
+						<?php if ( $why !== '' ) : ?><span>Reason: <?php echo esc_html( $why ); ?></span><?php endif; ?>
+						<span>Edit the card to fix it, then book it again. It&rsquo;s reviewed again before going live. <a href="<?php echo esc_url( AdsPortal::pageUrl( 'rules' ) ); ?>" target="_blank" rel="noopener">Ad guidelines</a></span>
+					</div>
+					<?php endif; ?>
 					<div class="mma-ad__grid">
 						<div class="mma-ad__card"><?php echo Ads::cardHtml( array( 'id' => $id, 'v' => 'a', 'c' => $c ), Ads::meta( $id, 'slot' ), 0, true ); ?></div>
 						<dl class="mma-kpis">
@@ -156,9 +163,9 @@ foreach ( get_posts( array( 'post_type' => 'page', 'posts_per_page' => 50, 'meta
 						</dl>
 					</div>
 					<div class="mma-actions">
-						<?php if ( in_array( $st, array( 'live', 'ended', 'paused' ), true ) ) : ?><a class="mma-btn mma-btn--primary" href="<?php echo esc_url( AdsReport::url( $id ) ); ?>">View results</a><?php endif; ?>
-						<button type="button" class="mma-btn" data-mma-edit>Edit card</button>
-						<?php if ( in_array( $st, array( 'checkout', 'ended', 'rejected' ), true ) ) : ?><button type="button" class="mma-btn mma-btn--primary" data-mma-book>Pay and book</button><?php endif; ?>
+						<?php if ( in_array( $st, array( 'live', 'ended', 'paused', 'removed' ), true ) ) : ?><a class="mma-btn<?php echo in_array( $st, array( 'live', 'paused' ), true ) ? ' mma-btn--primary' : ''; ?>" href="<?php echo esc_url( AdsReport::url( $id ) ); ?>">View results</a><?php endif; ?>
+						<button type="button" class="mma-btn<?php echo in_array( $st, array( 'rejected', 'removed' ), true ) ? ' mma-btn--primary' : ''; ?>" data-mma-edit><?php echo in_array( $st, array( 'rejected', 'removed' ), true ) ? 'Edit and resubmit' : 'Edit card'; ?></button>
+						<?php if ( in_array( $st, array( 'checkout', 'ended' ), true ) ) : ?><button type="button" class="mma-btn mma-btn--primary" data-mma-book>Pay and book</button><?php endif; ?>
 						<?php if ( $sub && in_array( $st, array( 'live', 'review' ), true ) ) : ?>
 							<button type="button" class="mma-link" data-mma-switch>Switch to <?php echo $cad === 'monthly' ? 'weekly' : 'monthly'; ?> billing</button>
 							<button type="button" class="mma-link mma-link--danger" data-mma-cancel>Cancel subscription</button>

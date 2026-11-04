@@ -193,8 +193,10 @@ class AdsPayPal {
         return '';
     }
 
-    public static function refundSale( $mode, $saleId ) {
-        list( $code ) = self::request( $mode, 'POST', 'v1/payments/sale/' . rawurlencode( $saleId ) . '/refund', new stdClass() );
+    /** Full refund, or a partial one when $amount (PHP) is given. */
+    public static function refundSale( $mode, $saleId, $amount = null ) {
+        $body = $amount === null ? new stdClass() : array( 'amount' => array( 'total' => number_format( (float) $amount, 2, '.', '' ), 'currency' => 'PHP' ) );
+        list( $code ) = self::request( $mode, 'POST', 'v1/payments/sale/' . rawurlencode( $saleId ) . '/refund', $body );
         return $code >= 200 && $code < 300;
     }
 

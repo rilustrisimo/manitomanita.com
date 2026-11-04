@@ -63,6 +63,9 @@ class Ads {
             add_action( 'manage_' . self::CPT . '_posts_custom_column', array( __CLASS__, 'column' ), 10, 2 );
             add_filter( 'post_row_actions', array( __CLASS__, 'rowActions' ), 10, 2 );
             add_action( 'admin_post_mm_ad_review', array( __CLASS__, 'review' ) );
+            add_action( 'admin_post_mm_ad_manage', array( __CLASS__, 'manage' ) );
+            add_filter( 'views_edit-' . self::CPT, array( __CLASS__, 'statusViews' ) );
+            add_action( 'pre_get_posts', array( __CLASS__, 'filterList' ) );
             add_action( 'admin_post_nopriv_mm_ad_review', array( __CLASS__, 'reviewLogin' ) );
             add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
             add_action( 'admin_notices', array( __CLASS__, 'notices' ) );
@@ -613,11 +616,12 @@ class Ads {
     /* ------------------------------------------------------------------ Admin */
 
     public static function statuses() {
-        return array( 'checkout' => 'Awaiting payment', 'review' => 'Needs review', 'live' => 'Live', 'paused' => 'Paused', 'ended' => 'Ended', 'rejected' => 'Rejected' );
+        return array( 'checkout' => 'Awaiting payment', 'review' => 'Needs review', 'live' => 'Live', 'paused' => 'Paused', 'ended' => 'Ended', 'removed' => 'Removed', 'rejected' => 'Rejected' );
     }
 
     public static function metaBoxes() {
-        add_meta_box( 'mm_ad_box', 'Ad', array( __CLASS__, 'adBox' ), self::CPT, 'normal', 'high' );
+        add_meta_box( 'mm_ad_manage', 'Status & actions', array( __CLASS__, 'manageBox' ), self::CPT, 'normal', 'high' );
+        add_meta_box( 'mm_ad_box', 'Ad details', array( __CLASS__, 'adBox' ), self::CPT, 'normal', 'default' );
         add_meta_box( 'mm_ad_stats', 'Results', array( __CLASS__, 'statsBox' ), self::CPT, 'side' );
         add_meta_box( 'mm_adv_box', 'Advertiser', array( __CLASS__, 'advBox' ), self::ADV, 'normal', 'high' );
     }
@@ -668,6 +672,151 @@ class Ads {
         if ( $c['headline'] ) {
             echo '<h4>Preview</h4><div style="max-width:560px">' . self::cardHtml( array( 'id' => $post->ID, 'v' => 'a', 'c' => $c ), $f( 'slot' ), 0, true ) . '</div>';
         }
+    }
+
+    /** The control panel: who, what, money, results, and the actions that fit the status. */
+    public static function manageBox( $post ) {
+        $id = (int) $post->ID;
+        if ( get_post_status( $id ) === 'auto-draft' ) { echo '<p>Save the ad first.</p>'; return; }
+        $st = self::meta( $id, 'status', 'review' );
+        $adv = (int) self::meta( $id, 'adv', 0 );
+        $pl = self::placements()[ self::meta( $id, 'slot' ) ] ?? array( 'label' => '' );
+        $t = self::totals( $id );
+        $imp = $t['view'] + $t['open'];
+        $end = (int) self::meta( $id, 'end', 0 );
+        $start = (int) self::meta( $id, 'start', 0 );
+        $pays = (array) get_post_meta( $id, '_mm_ad_payments', true );
+        $chip = array( 'live' => array( '#1f8a5b', '#e6f4ed' ), 'review' => array( '#8a6a10', '#fbf3dc' ), 'rejected' => array( '#b32d2e', '#fbeaea' ), 'removed' => array( '#b32d2e', '#fbeaea' ) )[ $st ] ?? array( '#50575e', '#f0f0f1' );
+        $reason = (string) get_post_meta( $id, '_mm_ad_reason', true );
+        $pending = is_array( get_post_meta( $id, '_mm_ad_pending', true ) );
+        $unused = class_exists( 'AdsPortal' ) ? AdsPortal::unusedAmount( $id ) : 0;
+        $open = class_exists( 'AdsPortal' ) ? AdsPortal::openPayments( $id ) : array();
+        $last = $open ? end( $open ) : null;
+        $act = admin_url( 'admin-post.php' );
+        $nonce = wp_create_nonce( 'mm_ad_manage_' . $id );
+
+        echo '<style>
+            .mmam{display:grid;gap:16px}.mmam-top{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+            .mmam-chip{display:inline-block;padding:4px 12px;border-radius:999px;font-weight:700;font-size:13px}
+            .mmam-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+            .mmam-cell{padding:12px 14px;border:1px solid #e3e5e8;border-radius:10px;background:#fff}
+            .mmam-cell span{display:block;color:#646970;font-size:12px}.mmam-cell b{font-size:15px}
+            .mmam-act{display:grid;gap:12px;padding:14px;border-radius:10px;background:#f6f7f7}
+            .mmam-act h4{margin:0}.mmam-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+            .mmam-act textarea{width:100%;min-height:60px}.mmam-opts label{display:block;margin:4px 0}
+            .mmam .button-danger{background:#b32d2e;border-color:#b32d2e;color:#fff}.mmam .button-danger:hover{background:#8a2424;border-color:#8a2424;color:#fff}
+            .mmam table{width:100%}.mmam-note{color:#646970;margin:0}
+        </style><div class="mmam">';
+
+        echo '<div class="mmam-top"><span class="mmam-chip" style="color:' . $chip[0] . ';background:' . $chip[1] . '">' . esc_html( self::statuses()[ $st ] ?? $st ) . '</span>';
+        if ( $pending ) echo '<span class="mmam-chip" style="color:#8a6a10;background:#fbf3dc">Edit waiting for review</span>';
+        if ( self::meta( $id, 'mode' ) === 'sandbox' ) echo '<span class="mmam-chip" style="color:#8a6a10;background:#fbf3dc">Sandbox test</span>';
+        if ( get_post_meta( $id, '_mm_ad_refund_failed', true ) ) echo '<span class="mmam-chip" style="color:#b32d2e;background:#fbeaea">Refund failed: refund in PayPal</span>';
+        if ( class_exists( 'AdsReport' ) && in_array( $st, array( 'live', 'paused', 'ended', 'removed' ), true ) ) echo '<a class="button" href="' . esc_url( AdsReport::url( $id ) ) . '" target="_blank" rel="noopener">Open full results &#8599;</a>';
+        echo '</div>';
+        if ( $reason !== '' && in_array( $st, array( 'rejected', 'removed' ), true ) ) echo '<p class="mmam-note"><b>Reason given:</b> ' . esc_html( $reason ) . '</p>';
+
+        echo '<div class="mmam-grid">';
+        echo '<div class="mmam-cell"><span>Advertiser</span><b>' . esc_html( $adv ? get_the_title( $adv ) : '&ndash;' ) . '</b><br>' . esc_html( (string) get_post_meta( $adv, '_mm_adv_email', true ) ) . ( get_post_meta( $adv, '_mm_adv_contact', true ) ? '<br>' . esc_html( get_post_meta( $adv, '_mm_adv_contact', true ) ) : '' ) . '</div>';
+        echo '<div class="mmam-cell"><span>Placement</span><b>' . esc_html( $pl['label'] ) . '</b>' . ( self::meta( $id, 'target' ) ? '<br>' . esc_html( self::meta( $id, 'target' ) ) : '' ) . '</div>';
+        echo '<div class="mmam-cell"><span>Billing</span><b>' . esc_html( ucfirst( self::meta( $id, 'cadence', 'weekly' ) ) ) . ' &middot; &#8369;' . number_format( (float) self::meta( $id, 'price', 0 ) ) . '</b><br>' . ( self::meta( $id, 'sub' ) ? ( self::meta( $id, 'cancelled' ) ? 'Subscription cancelled' : 'Renews automatically' ) : 'No subscription' ) . '</div>';
+        echo '<div class="mmam-cell"><span>Period</span><b>' . ( $start ? esc_html( wp_date( 'M j', $start ) ) : '&ndash;' ) . ' &rarr; ' . ( $end ? esc_html( wp_date( 'M j, g:i A', $end ) ) : '&ndash;' ) . '</b></div>';
+        echo '<div class="mmam-cell"><span>Results so far</span><b>' . number_format( $t['view'] ) . ' views &middot; ' . number_format( $t['sent'] ) . ' emails &middot; ' . number_format( $t['click'] ) . ' clicks</b><br>CTR ' . ( $imp ? round( $t['click'] / $imp * 100, 2 ) . '%' : '&ndash;' ) . '</div>';
+        echo '<div class="mmam-cell"><span>Paid in total</span><b>&#8369;' . number_format( (float) self::meta( $id, 'paid', 0 ), 2 ) . '</b></div>';
+        echo '</div>';
+
+        $form = function ( $title, $inner, $note = '' ) use ( $act, $nonce, $id ) {
+            echo '<form class="mmam-act" method="post" action="' . esc_url( $act ) . '"><input type="hidden" name="action" value="mm_ad_manage"><input type="hidden" name="id" value="' . $id . '"><input type="hidden" name="_wpnonce" value="' . esc_attr( $nonce ) . '"><h4>' . $title . '</h4>' . ( $note ? '<p class="mmam-note">' . $note . '</p>' : '' ) . $inner . '</form>';
+        };
+        $reasonField = '<label>Reason for the advertiser (included in their email)<textarea name="reason" placeholder="e.g. The link goes to a different product than the ad describes."></textarea></label>';
+
+        if ( $st === 'review' || $pending ) {
+            $form( $pending ? 'Review the edit' : 'Review this ad', $reasonField . '<div class="mmam-row"><button class="button button-primary" name="do" value="approve">' . ( $pending ? 'Approve the edit' : 'Approve and go live' ) . '</button><button class="button button-danger" name="do" value="reject">' . ( $pending ? 'Reject the edit' : 'Reject and refund' . ( $open ? ' &#8369;' . number_format( array_sum( array_column( $open, 'amount' ) ), 2 ) : '' ) ) . '</button></div>', $pending ? 'The current card keeps running until you approve the edit.' : 'Check the card, link and promo code against the ad guidelines. Rejecting cancels the subscription and refunds every payment in full.' );
+        }
+        if ( in_array( $st, array( 'live', 'paused' ), true ) ) {
+            $btn = $st === 'live' ? '<button class="button" name="do" value="pause">Pause (stop showing, keep the subscription)</button>' : '<button class="button button-primary" name="do" value="approve">Resume</button>';
+            $form( $st === 'live' ? 'Pause' : 'Resume', '<div class="mmam-row">' . $btn . '</div>', $st === 'live' ? 'Pausing hides the ad but doesn&rsquo;t refund or cancel. The advertiser is emailed.' : 'Resuming shows the ad again until its paid-through date.' );
+            $opts = '<div class="mmam-opts">'
+                . '<label><input type="radio" name="refund" value="unused" checked> Refund the unused days' . ( $last ? ': <b>&#8369;' . number_format( $unused, 2 ) . '</b> of the last &#8369;' . number_format( (float) $last['amount'], 2 ) . ' payment' : '' ) . '</label>'
+                . '<label><input type="radio" name="refund" value="full"> Refund the last payment in full' . ( $last ? ': <b>&#8369;' . number_format( (float) $last['amount'], 2 ) . '</b>' : '' ) . '</label>'
+                . '<label><input type="radio" name="refund" value="none"> No refund</label></div>';
+            $form( 'Remove this ad', $opts . $reasonField . '<div class="mmam-row"><button class="button button-danger" name="do" value="remove" onclick="return this.form.querySelector(\'[name=sure]\').checked || (alert(\'Tick the confirmation box first.\'), false);">Remove ad now</button><label><input type="checkbox" name="sure" value="1"> I understand the ad stops now and the subscription is cancelled</label></div>', 'Use this when an approved ad breaks the guidelines or the advertiser asks to stop. The advertiser is emailed the reason and any refund.' );
+        }
+
+        echo '<div><h4 style="margin:4px 0 8px">Payments</h4>';
+        if ( ! $pays ) {
+            echo '<p class="mmam-note">No payments recorded yet. PayPal reports each payment a minute or two after it&rsquo;s made.</p>';
+        } else {
+            echo '<table class="widefat striped"><thead><tr><th>Date</th><th>Amount</th><th>PayPal transaction</th><th>Status</th><th></th></tr></thead><tbody>';
+            $pp = self::meta( $id, 'mode' ) === 'sandbox' ? 'https://www.sandbox.paypal.com/activity/payment/' : 'https://www.paypal.com/activity/payment/';
+            foreach ( array_reverse( $pays ) as $p ) {
+                $done = ! empty( $p['refunded'] );
+                echo '<tr><td>' . esc_html( wp_date( 'M j, Y g:i A', (int) $p['t'] ) ) . '</td><td>&#8369;' . number_format( (float) $p['amount'], 2 ) . '</td><td><a href="' . esc_url( $pp . rawurlencode( (string) $p['sale'] ) ) . '" target="_blank" rel="noopener">' . esc_html( (string) $p['sale'] ) . '</a></td>'
+                    . '<td>' . ( $done ? 'Refunded' . ( isset( $p['refund_amount'] ) && (float) $p['refund_amount'] < (float) $p['amount'] ? ' &#8369;' . number_format( (float) $p['refund_amount'], 2 ) : '' ) : 'Paid' ) . '</td><td>';
+                if ( ! $done && ! empty( $p['sale'] ) ) echo '<form method="post" action="' . esc_url( $act ) . '" style="margin:0"><input type="hidden" name="action" value="mm_ad_manage"><input type="hidden" name="id" value="' . $id . '"><input type="hidden" name="_wpnonce" value="' . esc_attr( $nonce ) . '"><input type="hidden" name="sale" value="' . esc_attr( $p['sale'] ) . '"><button class="button button-small" name="do" value="refund" onclick="return confirm(\'Refund this payment in full?\')">Refund</button></form>';
+                echo '</td></tr>';
+            }
+            echo '</tbody></table>';
+        }
+        echo '</div></div>';
+    }
+
+    /** Actions from the Status & actions panel. */
+    public static function manage() {
+        $id = absint( $_POST['id'] ?? 0 );
+        $do = sanitize_key( (string) ( $_POST['do'] ?? '' ) );
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( (string) ( $_POST['_wpnonce'] ?? '' ), 'mm_ad_manage_' . $id ) || get_post_type( $id ) !== self::CPT || ! class_exists( 'AdsPortal' ) ) wp_die( 'Not allowed.' );
+        $reason = wp_unslash( (string) ( $_POST['reason'] ?? '' ) );
+        $msg = '';
+        switch ( $do ) {
+            case 'approve':
+                AdsPortal::approve( $id );
+                $msg = 'approved';
+                break;
+            case 'reject':
+                AdsPortal::reject( $id, $reason );
+                $msg = 'rejected';
+                break;
+            case 'pause':
+                update_post_meta( $id, '_mm_ad_status', 'paused' );
+                self::flush();
+                if ( (int) self::meta( $id, 'adv', 0 ) ) AdsPortal::mailAdvertiser( $id, 'paused' );
+                $msg = 'paused';
+                break;
+            case 'remove':
+                if ( empty( $_POST['sure'] ) ) { $msg = 'confirm'; break; }
+                $amt = AdsPortal::remove( $id, sanitize_key( (string) ( $_POST['refund'] ?? 'none' ) ), $reason );
+                $msg = $amt > 0 ? 'removed-refund' : 'removed';
+                break;
+            case 'refund':
+                $msg = AdsPortal::refundOne( $id, sanitize_text_field( (string) ( $_POST['sale'] ?? '' ) ) ) ? 'refunded' : 'refund-failed';
+                break;
+        }
+        wp_safe_redirect( add_query_arg( 'mm_ad_done', $msg, get_edit_post_link( $id, 'url' ) ) );
+        exit;
+    }
+
+    /** "Needs review (2) | Live (3) | ..." above the list. */
+    public static function statusViews( $views ) {
+        global $wpdb;
+        $counts = array();
+        foreach ( $wpdb->get_results( "SELECT meta_value s, COUNT(*) n FROM {$wpdb->postmeta} m JOIN {$wpdb->posts} p ON p.ID = m.post_id AND p.post_type = '" . self::CPT . "' AND p.post_status <> 'trash' WHERE m.meta_key = '_mm_ad_status' GROUP BY meta_value" ) as $r ) $counts[ $r->s ] = (int) $r->n;
+        $cur = sanitize_key( (string) ( $_GET['mm_status'] ?? '' ) );
+        $out = array( 'all' => $views['all'] ?? '' );
+        foreach ( array( 'review', 'live', 'paused', 'checkout', 'ended', 'removed', 'rejected' ) as $s ) {
+            if ( empty( $counts[ $s ] ) ) continue;
+            $url = add_query_arg( array( 'post_type' => self::CPT, 'mm_status' => $s ), admin_url( 'edit.php' ) );
+            $label = self::statuses()[ $s ];
+            $out[ 'mm_' . $s ] = '<a href="' . esc_url( $url ) . '"' . ( $cur === $s ? ' class="current"' : '' ) . ( $s === 'review' ? ' style="font-weight:700;color:#8a6a10"' : '' ) . '>' . esc_html( $label ) . ' <span class="count">(' . $counts[ $s ] . ')</span></a>';
+        }
+        if ( isset( $views['trash'] ) ) $out['trash'] = $views['trash'];
+
+        return $out;
+    }
+
+    public static function filterList( $q ) {
+        if ( ! is_admin() || ! $q->is_main_query() || $q->get( 'post_type' ) !== self::CPT || empty( $_GET['mm_status'] ) ) return;
+        $q->set( 'meta_query', array( array( 'key' => '_mm_ad_status', 'value' => sanitize_key( (string) $_GET['mm_status'] ) ) ) );
     }
 
     public static function statsBox( $post ) {
@@ -746,7 +895,7 @@ class Ads {
     }
 
     public static function columns( $cols ) {
-        return array( 'cb' => $cols['cb'], 'title' => 'Ad', 'mm_slot' => 'Placement', 'mm_status' => 'Status', 'mm_end' => 'Paid through', 'mm_views' => 'Views / emails', 'mm_clicks' => 'Clicks', 'mm_ctr' => 'CTR' );
+        return array( 'cb' => $cols['cb'], 'title' => 'Ad', 'mm_adv' => 'Advertiser', 'mm_slot' => 'Placement', 'mm_status' => 'Status', 'mm_end' => 'Paid through', 'mm_views' => 'Views / emails', 'mm_clicks' => 'Clicks', 'mm_ctr' => 'CTR', 'mm_paid' => 'Paid' );
     }
 
     public static function column( $col, $id ) {
@@ -755,6 +904,13 @@ class Ads {
         $t = $cache[ $id ];
         $base = $t['view'] + $t['open'];
         switch ( $col ) {
+            case 'mm_adv':
+                $a = (int) self::meta( $id, 'adv', 0 );
+                echo $a ? esc_html( get_the_title( $a ) ) . '<br><small>' . esc_html( (string) get_post_meta( $a, '_mm_adv_email', true ) ) . '</small>' : '&ndash;';
+                break;
+            case 'mm_paid':
+                echo '&#8369;' . number_format( (float) self::meta( $id, 'paid', 0 ), 2 );
+                break;
             case 'mm_slot':
                 $p = self::placements()[ self::meta( $id, 'slot' ) ] ?? null;
                 echo esc_html( $p ? $p['label'] : '' ) . ( self::meta( $id, 'target' ) ? ' <small>(' . esc_html( self::meta( $id, 'target' ) ) . ')</small>' : '' );
@@ -831,7 +987,10 @@ class Ads {
 
     public static function notices() {
         $do = sanitize_key( (string) ( $_GET['mm_ad_done'] ?? '' ) );
-        $msg = array( 'approve' => 'Ad approved and live.', 'reject' => 'Ad rejected.', 'pause' => 'Ad paused.', 'prices' => 'Prices saved.' )[ $do ] ?? '';
+        $msg = array( 'approve' => 'Ad approved and live.', 'reject' => 'Ad rejected.', 'pause' => 'Ad paused.', 'prices' => 'Prices saved.',
+            'approved' => 'Approved. The advertiser has been emailed.', 'rejected' => 'Rejected: the subscription is cancelled, the payment is being refunded and the advertiser has been emailed.', 'paused' => 'Paused. The advertiser has been emailed.',
+            'removed' => 'Ad removed and subscription cancelled (no refund). The advertiser has been emailed.', 'removed-refund' => 'Ad removed, subscription cancelled and refund sent. The advertiser has been emailed.',
+            'refunded' => 'Refund sent to PayPal.', 'refund-failed' => 'PayPal didn&rsquo;t accept the refund. Check your email for the details and refund it in PayPal.', 'confirm' => 'Nothing changed: tick the confirmation box to remove the ad.' )[ $do ] ?? '';
         if ( $msg ) echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( $msg ) . '</p></div>';
     }
 

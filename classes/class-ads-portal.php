@@ -373,6 +373,11 @@ class AdsPortal {
             wp_send_json_success( array( 'ad' => $id, 'message' => 'Saved. Your current card keeps running until we approve the edit (usually within a day).' ) );
         }
         update_post_meta( $id, '_mm_ad_creative', $c );
+        if ( $status === 'rejected' || $status === 'removed' ) {
+            update_post_meta( $id, '_mm_ad_status', 'checkout' ); // edited: may be booked (and reviewed) again
+            Ads::flush();
+            wp_send_json_success( array( 'ad' => $id, 'message' => 'Saved. You can book it again now; we&rsquo;ll review the new version.' ) );
+        }
         if ( $status === 'review' ) {
             self::notifyAdmin( $id, 'edit' );
             self::mailAdvertiser( $id, 'edit-received' );
@@ -406,7 +411,9 @@ class AdsPortal {
         $target = Ads::meta( $id, 'target' );
         $mode = self::testMode() ? 'sandbox' : 'live';
 
-        if ( ! in_array( Ads::meta( $id, 'status' ), array( 'checkout', 'ended', 'rejected' ), true ) ) wp_send_json_error( 'This ad is already booked.' );
+        $st = Ads::meta( $id, 'status' );
+        if ( in_array( $st, array( 'rejected', 'removed' ), true ) ) wp_send_json_error( 'Please edit the card first, then book it again.' );
+        if ( ! in_array( $st, array( 'checkout', 'ended' ), true ) ) wp_send_json_error( 'This ad is already booked.' );
         if ( Ads::season( $placement ) === 'closed' ) wp_send_json_error( 'This placement opens again on Sep 1. Join the waitlist and we&rsquo;ll email you.' );
         if ( ! in_array( $cadence, self::cadences( $placement ), true ) ) wp_send_json_error( 'Monthly isn&rsquo;t available this close to Dec 20. Choose weekly.' );
         if ( self::seatsLeft( $placement, $target, self::current() ) < 1 && ! self::holdsWaitSeat( $placement, $target ) ) wp_send_json_error( 'All seats for this placement are taken. Join the waitlist and we&rsquo;ll email you when one opens.' );
@@ -566,13 +573,16 @@ class AdsPortal {
     }
 
     /** Reject: a pending edit is dropped; a new booking is cancelled and its first payment refunded. */
-    public static function reject( $id ) {
+    public static function reject( $id, $reason = '' ) {
+        $reason = mb_substr( sanitize_textarea_field( (string) $reason ), 0, 400 );
         if ( Ads::meta( $id, 'status' ) === 'live' && get_post_meta( $id, '_mm_ad_pending', true ) ) {
             delete_post_meta( $id, '_mm_ad_pending' );
+            update_post_meta( $id, '_mm_ad_reason', $reason );
             self::mailAdvertiser( $id, 'edit-rejected' );
             return;
         }
         update_post_meta( $id, '_mm_ad_status', 'rejected' );
+        update_post_meta( $id, '_mm_ad_reason', $reason );
         $mode = Ads::meta( $id, 'mode', 'live' );
         $sub = Ads::meta( $id, 'sub' );
         if ( $sub !== '' ) {
@@ -582,12 +592,73 @@ class AdsPortal {
             foreach ( (array) get_post_meta( $id, '_mm_ad_payments', true ) as $p ) {
                 if ( empty( $p['sale'] ) || ! empty( $p['refunded'] ) ) continue;
                 $tried = true;
-                if ( ! AdsPayPal::refundSale( $mode, $p['sale'] ) ) self::refundFailed( $id, $p['sale'], (float) ( $p['amount'] ?? 0 ), $mode );
+                self::refundOne( $id, $p['sale'] );
             }
             if ( ! $tried ) update_post_meta( $id, '_mm_ad_refund_due', 1 ); // the payment webhook refunds it when it arrives
         }
         Ads::flush();
         if ( (int) Ads::meta( $id, 'adv', 0 ) ) self::mailAdvertiser( $id, 'rejected' );
+    }
+
+    /** Payments not yet refunded, newest last. */
+    public static function openPayments( $id ) {
+        return array_values( array_filter( (array) get_post_meta( (int) $id, '_mm_ad_payments', true ), function ( $p ) { return ! empty( $p['sale'] ) && empty( $p['refunded'] ); } ) );
+    }
+
+    /** Unused share of the current paid period (PHP) for the latest payment. */
+    public static function unusedAmount( $id ) {
+        $pays = self::openPayments( $id );
+        if ( ! $pays ) return 0;
+        $last = end( $pays );
+        $len = ( Ads::meta( $id, 'cadence', 'weekly' ) === 'monthly' ? 30 : 7 ) * DAY_IN_SECONDS;
+        $left = max( 0, (int) Ads::meta( $id, 'end', 0 ) - time() );
+
+        return round( (float) $last['amount'] * min( 1, $left / $len ), 2 );
+    }
+
+    /** Refund one payment (full, or $amount). Records it; reports failures. Returns bool. */
+    public static function refundOne( $id, $sale, $amount = null ) {
+        $mode = Ads::meta( $id, 'mode', 'live' );
+        $pays = (array) get_post_meta( $id, '_mm_ad_payments', true );
+        $row = null;
+        foreach ( $pays as $p ) if ( ( $p['sale'] ?? '' ) === $sale ) $row = $p;
+        if ( ! $row || ! empty( $row['refunded'] ) ) return false;
+        $amount = $amount === null ? null : min( (float) $row['amount'], max( 0, (float) $amount ) );
+        if ( $amount !== null && $amount <= 0 ) return false;
+        if ( ! AdsPayPal::refundSale( $mode, $sale, $amount !== null && $amount < (float) $row['amount'] ? $amount : null ) ) {
+            self::refundFailed( $id, $sale, $amount === null ? (float) $row['amount'] : $amount, $mode );
+            return false;
+        }
+        foreach ( $pays as &$p ) if ( ( $p['sale'] ?? '' ) === $sale ) { $p['refunded'] = 1; $p['refund_amount'] = $amount === null ? (float) $row['amount'] : $amount; }
+        unset( $p );
+        update_post_meta( $id, '_mm_ad_payments', $pays );
+
+        return true;
+    }
+
+    /**
+     * Remove a live (or paused) ad after approval: cancel the subscription, stop it now, and refund
+     * 'full' (latest payment), 'unused' (prorated rest of the period) or 'none'. Emails the advertiser.
+     */
+    public static function remove( $id, $refund, $reason = '' ) {
+        $reason = mb_substr( sanitize_textarea_field( (string) $reason ), 0, 400 );
+        $sub = Ads::meta( $id, 'sub' );
+        if ( $sub !== '' && ! Ads::meta( $id, 'cancelled' ) ) AdsPayPal::cancel( Ads::meta( $id, 'mode', 'live' ), $sub, 'Ad removed' );
+        update_post_meta( $id, '_mm_ad_cancelled', 1 );
+        $amount = 0;
+        $pays = self::openPayments( $id );
+        if ( $pays && in_array( $refund, array( 'full', 'unused' ), true ) ) {
+            $last = end( $pays );
+            $amount = $refund === 'full' ? (float) $last['amount'] : self::unusedAmount( $id );
+            if ( $amount > 0 && ! self::refundOne( $id, $last['sale'], $refund === 'full' ? null : $amount ) ) $amount = 0;
+        }
+        update_post_meta( $id, '_mm_ad_status', 'removed' );
+        update_post_meta( $id, '_mm_ad_end', time() );
+        update_post_meta( $id, '_mm_ad_reason', $reason );
+        Ads::flush();
+        if ( (int) Ads::meta( $id, 'adv', 0 ) ) self::mailAdvertiser( $id, 'removed', array( 'amount' => $amount ) );
+
+        return $amount;
     }
 
     /**
@@ -771,6 +842,8 @@ class AdsPortal {
         $t = Ads::totals( $id );
         $results = '<p>Results so far: <strong>' . number_format( $t['view'] ) . '</strong> views, <strong>' . number_format( $t['sent'] ) . '</strong> emails, <strong>' . number_format( $t['click'] ) . '</strong> clicks.</p>';
         $amount = isset( $x['amount'] ) ? '&#8369;' . number_format( (float) $x['amount'], 2 ) : '';
+        $why = (string) get_post_meta( $id, '_mm_ad_reason', true );
+        $whyHtml = $why !== '' ? '<p><strong>Reason:</strong> ' . esc_html( $why ) . '</p>' : '';
         $p = Ads::placements()[ Ads::meta( $id, 'slot' ) ] ?? array( 'label' => 'your placement' );
         $end = (int) Ads::meta( $id, 'end', 0 );
         $endTxt = $end ? wp_date( 'F j, g:i A', $end ) : '';
@@ -778,9 +851,10 @@ class AdsPortal {
         $m = array(
             'received'      => array( 'We got your ad: ' . $c['brand'], 'We&rsquo;re reviewing your ad', array( '<p>Thanks! Your payment went through and your ' . esc_html( $p['label'] ) . ' ad is in review. We check every ad against our <a href="' . esc_url( self::pageUrl( 'rules' ) ) . '">ad guidelines</a>, usually within a day.</p>', '<p>If it isn&rsquo;t approved, your payment is refunded in full.</p>' ) ),
             'approved'      => array( 'Your ad is live: ' . $c['brand'], 'Your ad is live', array( '<p>Your ' . esc_html( $p['label'] ) . ' ad is now showing' . ( $endTxt ? ', paid through ' . esc_html( $endTxt ) : '' ) . '. It renews automatically until you cancel.</p>', '<p>Views, clicks and results by day are in your advertiser account.</p>' ) ),
-            'rejected'      => array( 'Your ad wasn&rsquo;t approved', 'Your ad wasn&rsquo;t approved', array( '<p>We couldn&rsquo;t approve your ' . esc_html( $p['label'] ) . ' ad because it doesn&rsquo;t meet our <a href="' . esc_url( self::pageUrl( 'rules' ) ) . '">ad guidelines</a>. Your subscription is cancelled and your payment is being refunded to your PayPal account or card (it can take a few days to show).</p>', '<p>You can edit the card and book again from your account.</p>' ) ),
+            'rejected'      => array( 'Your ad wasn&rsquo;t approved', 'Your ad wasn&rsquo;t approved', array( '<p>We couldn&rsquo;t approve your ' . esc_html( $p['label'] ) . ' ad because it doesn&rsquo;t meet our <a href="' . esc_url( self::pageUrl( 'rules' ) ) . '">ad guidelines</a>. Your subscription is cancelled and your payment is being refunded to your PayPal account or card (it can take a few days to show).</p>', $whyHtml, '<p>To try again, open your account, tap <strong>Edit and resubmit</strong>, fix the card, then book it again.</p>' ) ),
+            'removed'       => array( 'Your ad has been removed', 'Your ad has been removed', array( '<p>We&rsquo;ve stopped your ' . esc_html( $p['label'] ) . ' ad and cancelled its subscription, so there will be no more charges.</p>', $whyHtml, '<p>' . ( isset( $x['amount'] ) && (float) $x['amount'] > 0 ? 'We&rsquo;re refunding <strong>' . $amount . '</strong> to your PayPal account or card (it can take a few days to show).' : 'This doesn&rsquo;t include a refund.' ) . ' Questions? Just reply to this email.</p>', $results ) ),
             'edit-approved' => array( 'Your ad edit is live', 'Your updated card is live', array( '<p>Your edited ' . esc_html( $p['label'] ) . ' card has replaced the previous one.</p>' ) ),
-            'edit-rejected' => array( 'Your ad edit wasn&rsquo;t approved', 'Your edit wasn&rsquo;t approved', array( '<p>Your current card keeps running. The edit didn&rsquo;t meet our <a href="' . esc_url( self::pageUrl( 'rules' ) ) . '">ad guidelines</a>; you can change it and save again.</p>' ) ),
+            'edit-rejected' => array( 'Your ad edit wasn&rsquo;t approved', 'Your edit wasn&rsquo;t approved', array( '<p>Your current card keeps running. The edit didn&rsquo;t meet our <a href="' . esc_url( self::pageUrl( 'rules' ) ) . '">ad guidelines</a>; you can change it and save again.</p>', $whyHtml ) ),
             'cancelled'     => array( 'Your ad subscription is cancelled', 'Subscription cancelled', array( '<p>There will be no more charges for your ' . esc_html( $p['label'] ) . ' ad.' . ( $end > time() ? ' It keeps running until ' . esc_html( $endTxt ) . '.' : '' ) . '</p>' ) ),
             'payfail'       => array( 'Payment failed for your ad', 'Your renewal payment failed', array( '<p>PayPal couldn&rsquo;t charge the renewal for your ' . esc_html( $p['label'] ) . ' ad.' . ( $end > time() ? ' It keeps running until ' . esc_html( $endTxt ) . ', then stops.' : '' ) . ' Update your payment method in PayPal, or book again from your account.</p>' ) ),
             'edit-received' => array( 'We got your ad edit', 'Your edit is in review', array( '<p>Thanks! We&rsquo;re reviewing the changes to your ' . esc_html( $p['label'] ) . ' card, usually within a day. Your current card keeps running until the edit is approved.</p>' ) ),

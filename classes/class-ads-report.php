@@ -387,7 +387,7 @@ class AdsReport {
     /* ------------------------------------------------------------------ Admin (Insights -> Sponsors) */
 
     public static function adminSummary( $from, $to ) {
-        $ids = get_posts( array( 'post_type' => Ads::CPT, 'post_status' => 'any', 'posts_per_page' => 300, 'fields' => 'ids', 'meta_query' => array( array( 'key' => '_mm_ad_status', 'value' => array( 'live', 'review', 'ended', 'paused', 'rejected' ), 'compare' => 'IN' ) ) ) );
+        $ids = get_posts( array( 'post_type' => Ads::CPT, 'post_status' => 'any', 'posts_per_page' => 300, 'fields' => 'ids', 'meta_query' => array( array( 'key' => '_mm_ad_status', 'value' => array( 'live', 'review', 'ended', 'paused', 'removed', 'rejected' ), 'compare' => 'IN' ) ) ) );
         $rows = array();
         $revenue = 0;
         $mrr = 0;

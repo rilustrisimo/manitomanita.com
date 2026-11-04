@@ -363,7 +363,7 @@
     /* ---------------------------------------------------------------- Ad cards */
 
     function initAds() {
-        $(document).on('click', '[data-mma-edit]', function () { var $ad = $(this).closest('[data-mma-ad]'); open(['checkout', 'ended', 'rejected'].indexOf($ad.attr('data-status')) > -1 ? 'book' : 'edit', $ad); });
+        $(document).on('click', '[data-mma-edit]', function () { var $ad = $(this).closest('[data-mma-ad]'); open(['checkout', 'ended'].indexOf($ad.attr('data-status')) > -1 ? 'book' : 'edit', $ad); });
         $(document).on('click', '[data-mma-book]', function () { open('book', $(this).closest('[data-mma-ad]')); });
         $(document).on('click', '[data-mma-cancel]', function () {
             var $b = $(this), $ad = $b.closest('[data-mma-ad]');
