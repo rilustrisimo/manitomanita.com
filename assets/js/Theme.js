@@ -1375,7 +1375,7 @@ var Theme = {
                     e.preventDefault();
                     var by = $.trim($(this).find('input').val()), b = $(this).find('button[type="submit"]').prop('disabled', true);
                     $.post(ajax, { action: 'mm_wl_reserve', id: wid, key: key, by: by }).done(function(r){
-                        if (r && r.success) { mine[key] = r.data.token; save(); li.attr('data-n', r.data.n); paint(li, by); Theme.toast('Reserved! Others will see it\u2019s taken'); Theme.track('wishlist_reserve', {}); }
+                        if (r && r.success) { mine[key] = r.data.token; save(); li.attr('data-n', r.data.n); paint(li, by); Theme.toast('Reserved! Others will see it\u2019s taken'); Theme.track('wishlist_reserve', {}); root.trigger('mm:wl-reserved', [li, r.data.token]); }
                         else { b.prop('disabled', false); Theme.toast(plain(r && r.data), 'error'); if (/already/.test(plain(r && r.data))) { li.attr('data-n', li.attr('data-qty')); paint(li); } }
                     }).fail(function(){ b.prop('disabled', false); Theme.toast('Network error. Please try again.', 'error'); });
                 });
@@ -1384,7 +1384,7 @@ var Theme = {
             list.on('click', '[data-mm-wl-undo]', function(){
                 var li = $(this).closest('li'), key = li.attr('data-key');
                 $.post(ajax, { action: 'mm_wl_unreserve', id: wid, key: key, token: mine[key] }).done(function(r){
-                    if (r && r.success) { delete mine[key]; save(); li.attr('data-n', r.data.n); paint(li); Theme.toast('Reservation removed'); }
+                    if (r && r.success) { delete mine[key]; save(); li.attr('data-n', r.data.n); paint(li); Theme.toast('Reservation removed'); root.trigger('mm:wl-unreserved', [li]); }
                     else Theme.toast(plain(r && r.data), 'error');
                 });
             });

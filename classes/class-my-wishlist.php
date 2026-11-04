@@ -440,6 +440,7 @@ class MyWishlist {
         $list[] = array( 'by' => mb_substr( sanitize_text_field( wp_unslash( (string) ( $_POST['by'] ?? '' ) ) ), 0, 40 ), 't' => time(), 'h' => wp_hash( $token ) );
         $res[ $key ] = $list;
         update_post_meta( $id, '_mm_wl_res', $res );
+        do_action( 'mm_wl_reserved', $id, $key, end( $list ) ); // RegistryExtras: owner's daily summary
         if ( class_exists( 'Insights' ) ) Insights::log( 'wishlist_reserve', 0, 0, 0, Registries::occasionOf( $id ) );
 
         wp_send_json_success( array( 'token' => $token, 'n' => count( $list ), 'qty' => $qty ) );
@@ -520,7 +521,8 @@ class MyWishlist {
             'title'     => 'Your wishlist is ready',
             'body'      => array(
                 '<p>Hi ' . esc_html( self::name( $id ) ) . '! Add the things you&rsquo;d love to receive, with links to Lazada, Shopee or any shop. Then share your link before a birthday, Christmas or any day.</p>',
-                '<p>Friends can tap <strong>I&rsquo;ll get this</strong> so nobody buys the same gift. You won&rsquo;t see what&rsquo;s reserved, so it stays a surprise.</p>',
+                '<p>Friends can tap <strong>I&rsquo;ll get this</strong> so nobody buys the same gift. ' . ( Registries::seeRes( $id ) ? 'You&rsquo;ll see who reserved what, and we&rsquo;ll email you a short daily summary when new gifts are reserved.' : 'You won&rsquo;t see what&rsquo;s reserved, so it stays a surprise.' ) . '</p>',
+                '<p>Tip: open your list and tap <strong>QR code &amp; invitation cards</strong> to print a QR for your invitations.</p>',
             ),
             'button'    => array( 'Open my wishlist', self::url( $id ) ),
             'note'      => 'Your link: ' . self::url( $id ),

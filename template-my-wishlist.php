@@ -140,8 +140,22 @@ if ( $wlId ) {
 						<a class="mm-wl-chip" target="_blank" rel="noopener" href="viber://forward?text=<?php echo rawurlencode( html_entity_decode( $title, ENT_QUOTES, 'UTF-8' ) . ': ' . $link ); ?>"><i class="fa-brands fa-viber"></i> Viber</a>
 						<a class="mm-wl-chip" target="_blank" rel="noopener" href="https://wa.me/?text=<?php echo rawurlencode( html_entity_decode( $title, ENT_QUOTES, 'UTF-8' ) . ': ' . $link ); ?>"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
 						<a class="mm-wl-chip" href="<?php echo esc_url( add_query_arg( 'preview', '1', $link ) ); ?>"><i class="fa-regular fa-eye"></i> See it as guests do</a>
+						<button type="button" class="mm-wl-chip" data-mm-wl-qr aria-expanded="false"><i class="fa-solid fa-qrcode"></i> QR code &amp; invitation cards</button>
+					</div>
+					<div class="mm-wl-qrbox" data-mm-wl-qrbox hidden>
+						<div class="mm-wl-qrbox__code" data-mm-wl-qrcode data-url="<?php echo esc_url( $link ); ?>"></div>
+						<div class="mm-wl-qrbox__txt">
+							<strong>Put it on your invitation</strong>
+							<span>Guests scan it with their phone camera and your list opens. No app needed.</span>
+							<div class="mm-wl-qrbox__acts">
+								<button type="button" class="mm-wl-btn mm-wl-btn--dark" data-mm-wl-qrdl data-name="<?php echo esc_attr( sanitize_title( wp_strip_all_tags( html_entity_decode( $title, ENT_QUOTES, 'UTF-8' ) ) ) ); ?>"><i class="fa-solid fa-download"></i> Download QR</button>
+								<a class="mm-wl-btn" href="<?php echo esc_url( add_query_arg( 'card', '1', $link ) ); ?>" target="_blank" rel="noopener"><i class="fa-solid fa-print"></i> Print invitation cards</a>
+							</div>
+						</div>
 					</div>
 				</div>
+
+				<label class="mm-wl-toggle mm-wl-alerts"><input type="checkbox" data-mm-wl-alerts data-id="<?php echo (int) $wlId; ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>"<?php checked( RegistryExtras::alertsOn( $wlId ) ); ?>> <span><strong>Email me when gifts are reserved</strong><small>One summary a day at most, only when something new is reserved.<?php echo $seeRes ? '' : ' It won&rsquo;t say which gifts, so it stays a surprise.'; ?></small></span></label>
 
 				<?php if ( $seeRes ) :
 					$got = array();
@@ -149,12 +163,19 @@ if ( $wlId ) {
 						$list = MyWishlist::resList( $res, substr( md5( strtolower( trim( (string) $w['wishlist_description'] ) ) ), 0, 12 ) );
 						if ( $list ) $got[] = array( $w, $list );
 					} ?>
-				<div class="mm-wl-got">
-					<p class="mm-wl-got__label"><i class="fa-solid fa-clipboard-check"></i> Who&rsquo;s getting what</p>
+				<?php $thx = RegistryExtras::thanked( $wlId ); $givers = 0; $thxN = 0; foreach ( $got as $g ) { foreach ( $g[1] as $r ) { $givers++; if ( ! empty( $thx[ $r['h'] ] ) ) $thxN++; } } $after = in_array( $phase, array( 'today', 'thanks', 'closed' ), true ); ?>
+				<div class="mm-wl-got" data-mm-wl-got data-id="<?php echo (int) $wlId; ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-for="<?php echo esc_attr( html_entity_decode( Registries::forName( $wlId ), ENT_QUOTES, 'UTF-8' ) ); ?>">
+					<p class="mm-wl-got__label"><i class="fa-solid fa-clipboard-check"></i> <?php echo $after ? 'Thank-you list' : 'Who&rsquo;s getting what'; ?><?php if ( $givers ) : ?> <em data-mm-wl-thxcount><?php echo (int) $thxN; ?> of <?php echo (int) $givers; ?> thanked</em><?php endif; ?></p>
 					<?php if ( $got ) : ?>
 					<ul>
-						<?php foreach ( $got as $g ) : $q = MyWishlist::qty( $g[0] ); $names = array_map( function ( $r ) { return $r['by'] !== '' ? $r['by'] : 'Someone'; }, $g[1] ); ?>
-						<li><strong><?php echo esc_html( wp_trim_words( $g[0]['wishlist_description'], 10 ) ); ?></strong><?php echo $q > 1 ? ' <em>' . count( $g[1] ) . ' of ' . $q . '</em>' : ''; ?><span><?php echo esc_html( implode( ', ', $names ) ); ?></span></li>
+						<?php foreach ( $got as $g ) : $q = MyWishlist::qty( $g[0] ); $itemTxt = wp_trim_words( $g[0]['wishlist_description'], 10 ); ?>
+						<li><strong><?php echo esc_html( $itemTxt ); ?></strong><?php echo $q > 1 ? ' <em>' . count( $g[1] ) . ' of ' . $q . '</em>' : ''; ?>
+							<span class="mm-wl-thx">
+								<?php foreach ( $g[1] as $r ) : $who = $r['by'] !== '' ? $r['by'] : 'Someone'; ?>
+								<span class="mm-wl-thx__giver"><label><input type="checkbox" data-mm-wl-thx="<?php echo esc_attr( $r['h'] ); ?>"<?php checked( ! empty( $thx[ $r['h'] ] ) ); ?>> <?php echo esc_html( $who ); ?></label><button type="button" class="mm-wl-link" data-mm-wl-thxmsg data-who="<?php echo esc_attr( $r['by'] ); ?>" data-item="<?php echo esc_attr( $itemTxt ); ?>" title="Copy a thank-you message">Copy thank-you</button></span>
+								<?php endforeach; ?>
+							</span>
+						</li>
 						<?php endforeach; ?>
 					</ul>
 					<?php else : ?>
@@ -272,7 +293,8 @@ if ( $wlId ) {
 				<?php endif; ?>
 				<div class="mm-match">
 					<?php if ( $items ) : ?>
-					<ol class="mm-wish mm-wl-list" data-mm-wl-list data-id="<?php echo (int) $wlId; ?>">
+					<?php $wlDays = Registries::days( $wlId ); ?>
+					<ol class="mm-wish mm-wl-list" data-mm-wl-list data-id="<?php echo (int) $wlId; ?>" data-days="<?php echo $wlDays === null ? '' : (int) $wlDays; ?>" data-remind="<?php echo esc_attr( $wlDays !== null && $wlDays > RegistryExtras::REMIND_DAYS ? wp_date( 'M j', Registries::date( $wlId ) - RegistryExtras::REMIND_DAYS * DAY_IN_SECONDS ) : '' ); ?>">
 						<?php foreach ( $items as $i => $w ) :
 							$key = substr( md5( strtolower( trim( (string) $w['wishlist_description'] ) ) ), 0, 12 );
 							$qty = MyWishlist::qty( $w );
