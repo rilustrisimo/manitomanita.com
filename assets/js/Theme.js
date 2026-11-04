@@ -2930,6 +2930,10 @@ var Theme = {
             setTimeout(function(){
                 Theme.infoSheet($, 'You\u2019re in!', 'Your email is confirmed and you\u2019re now part of the group. Find your name below and <b>add your wishlist</b> so your Secret Santa knows what to get you.', 'fa-solid fa-circle-check');
             }, 500);
+        } else if (/[?&]mm_confirmed=dupe/.test(q)) {
+            setTimeout(function(){
+                Theme.infoSheet($, 'You\u2019re already in this group', 'This email is already a member here, so we didn\u2019t add it twice. Find your name in the member list and use your password, or tap <b>Forgot password</b> if you need a new one.', 'fa-solid fa-circle-info');
+            }, 500);
         } else if (/[?&]mm_confirmed=late/.test(q)) {
             setTimeout(function(){
                 Theme.infoSheet($, 'The group was already shuffled', 'Your email is confirmed, but the group was shuffled before you confirmed, so you couldn\u2019t be added yet. Ask the organizer to <b>unshuffle</b> the group, then tap the link in your email again.', 'fa-solid fa-circle-info');

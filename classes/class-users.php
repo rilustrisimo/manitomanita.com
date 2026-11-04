@@ -131,6 +131,8 @@ class Users extends Theme {
         $uid = (int) $_POST['uid'];
 
         if(get_post_type($uid) != 'users' || !$this->isVerifiedMember($uid)) wp_send_json_error('Please enter your password again.');
+        // The button is disabled after the shuffle; the server checks too (leaving would break someone's match).
+        if(get_field('matched', (int) get_field('groups', $uid, false))) wp_send_json_error('You can&rsquo;t leave after the group is shuffled. Ask the organizer to unshuffle it first.');
 
         $result = wp_delete_post($uid);
 

@@ -328,6 +328,8 @@ class EmailCheck {
         if ( $gid && get_post_status( $uid ) === 'pending' ) {
             if ( get_field( 'matched', $gid ) ) {
                 $state = 'late';
+            } elseif ( class_exists( 'MemberRules' ) && ! MemberRules::onConfirm( $uid, $gid ) ) {
+                $state = 'dupe'; // this email was already a confirmed member: the extra copy was removed
             } else {
                 wp_update_post( array( 'ID' => $uid, 'post_status' => 'publish' ) );
                 self::sendWelcome( $uid );
