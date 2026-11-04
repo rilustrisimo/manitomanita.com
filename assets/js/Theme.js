@@ -1064,6 +1064,13 @@ var Theme = {
                     '<button type="button" data-mm-vote="down" aria-label="Not helpful"' + (m.vote === 'down' ? ' class="is-on"' : '') + '><i class="fa-regular fa-thumbs-down"></i></button></div>';
             }
             if (bot && m.handoff) html += '<button type="button" class="mm-support__person" data-mm-handoff><i class="fa-solid fa-envelope"></i> Talk to a person</button>';
+            if (m.ask && !state.emailed) {
+                html += '<form class="mm-support__ask" novalidate><p><b>Still need help?</b> Leave your email and Rouie can follow up.</p>' +
+                    (state.known ? '<button type="button" class="mm-support__usek" data-mm-usek><i class="fa-regular fa-envelope"></i> Use my group email (' + Theme.esc(state.known) + ')</button>' : '') +
+                    '<div class="mm-support__askrow"><input type="email" name="email" maxlength="120" placeholder="' + (state.known ? 'Or another email' : 'Your email') + '" autocomplete="email" aria-label="Your email"><button type="submit">Save</button></div>' +
+                    '<input type="text" name="website" class="mm-support__hp" tabindex="-1" autocomplete="off" aria-hidden="true">' +
+                    '<p class="mm-support__formmsg" role="status"></p><button type="button" class="mm-support__link" data-mm-ask-no>No thanks</button></form>';
+            }
             if (m.social) html += '<div class="mm-support__social-card"><p><b>Glad that helped!</b> Follow us for gift ideas and party themes.</p>' + socialHtml('mm-support__social') + '</div>';
             return html + '</div>';
         };
@@ -1080,6 +1087,12 @@ var Theme = {
             if (liked || answered >= 3) { state.social = true; state.msgs[state.msgs.length - 1].social = true; }
         };
 
+        // One "leave your email" card per chat, under the first answer (or a thumbs-down)
+        var maybeAsk = function(m){
+            if (state.asked || state.emailed || !m) return;
+            state.asked = true; m.ask = true;
+        };
+
         var ask = function(q, via){
             q = $.trim(q);
             if (!q || busy) return;
@@ -1092,8 +1105,10 @@ var Theme = {
             $.post(ajax, { action: 'mm_support_ask', q: q, page: page, cid: state.cid, key: state.key }).done(function(r){
                 if (r && r.success) {
                     state.cid = r.data.cid; state.key = r.data.key;
+                    state.known = r.data.known || '';
                     state.msgs.push({ r: 'b', t: r.data.answer, turn: r.data.turn, handoff: r.data.handoff });
                     maybeSocial();
+                    maybeAsk(state.msgs[state.msgs.length - 1]);
                     setChips(r.data.followups && r.data.followups.length ? r.data.followups : suggest);
                 } else {
                     state.msgs.push({ r: 'b', t: plain(r && r.data) || 'Something went wrong. Please try again.', handoff: true });
@@ -1146,7 +1161,25 @@ var Theme = {
                 m.vote = v;
                 $.post(ajax, { action: 'mm_support_vote', cid: state.cid, key: state.key, turn: m.turn, vote: v });
                 Theme.track('support_vote', { vote: v });
-                if (v === 'down') { m.handoff = true; } else { maybeSocial(); }
+                if (v === 'down') { m.handoff = true; maybeAsk(m); } else { maybeSocial(); }
+                save(); render();
+            });
+            var saveEmail = function(f, data){
+                var msg = f.find('.mm-support__formmsg'), btns = f.find('button').prop('disabled', true);
+                $.post(ajax, $.extend({ action: 'mm_support_email', cid: state.cid, key: state.key, website: f.find('[name="website"]').val() }, data))
+                    .done(function(r){
+                        if (r && r.success) {
+                            state.emailed = true;
+                            if (r.data && r.data.message) state.msgs.push({ r: 'b', t: plain(r.data.message) });
+                            save(); render();
+                            Theme.track('support_email', { page: page, via: data.use_known ? 'group' : 'typed' });
+                        } else { msg.addClass('is-error').text(plain(r && r.data)); btns.prop('disabled', false); }
+                    }).fail(function(){ msg.addClass('is-error').text('Network error. Please try again.'); btns.prop('disabled', false); });
+            };
+            panel.on('submit', '.mm-support__ask', function(e){ e.preventDefault(); var f = $(this); saveEmail(f, { email: f.find('[name="email"]').val() }); });
+            panel.on('click', '[data-mm-usek]', function(){ saveEmail($(this).closest('form'), { use_known: 1 }); });
+            panel.on('click', '[data-mm-ask-no]', function(){
+                state.msgs.forEach(function(m){ m.ask = false; });
                 save(); render();
             });
             panel.on('submit', '.mm-support__form', function(e){
@@ -1157,6 +1190,7 @@ var Theme = {
                         if (r && r.success) {
                             if (r.data && r.data.cid) { state.cid = r.data.cid; state.key = r.data.key; }
                             f.remove();
+                            state.emailed = true;
                             state.msgs.push({ r: 'b', t: plain(r.data && r.data.message) || 'Thanks! We\u2019ll reply by email.' });
                             save(); render();
                             Theme.track('support_handoff', { page: page });

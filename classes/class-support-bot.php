@@ -35,7 +35,7 @@ class SupportBot {
         self::$hooked = true;
 
         add_action( 'init', array( __CLASS__, 'register' ) );
-        foreach ( array( 'ask', 'vote', 'handoff' ) as $a ) {
+        foreach ( array( 'ask', 'vote', 'handoff', 'email' ) as $a ) {
             add_action( 'wp_ajax_mm_support_' . $a, array( __CLASS__, 'ajax' . ucfirst( $a ) ) );
             add_action( 'wp_ajax_nopriv_mm_support_' . $a, array( __CLASS__, 'ajax' . ucfirst( $a ) ) );
         }
@@ -174,8 +174,65 @@ KB;
         update_post_meta( $id, '_mm_sc_page', $page );
         update_post_meta( $id, '_mm_sc_ip', self::hashIp() );
         update_post_meta( $id, '_mm_sc_turns', array() );
+        $known = self::knownPerson();
+        if ( $known ) update_post_meta( $id, '_mm_sc_known', $known );
 
         return array( (int) $id, $key );
+    }
+
+    /** Email of the member / organizer signed in to a group on this browser (remembered device or this session). */
+    protected static function knownPerson() {
+        $ids = class_exists( 'Account' ) && method_exists( 'Account', 'rememberedIds' ) ? Account::rememberedIds() : array();
+        if ( ! empty( $_SESSION['mm_verified'] ) && is_array( $_SESSION['mm_verified'] ) ) {
+            $fresh = array_filter( $_SESSION['mm_verified'], function ( $t ) { return (int) $t > time() - 2 * HOUR_IN_SECONDS; } );
+            arsort( $fresh );
+            $ids = array_merge( array_map( 'intval', array_keys( $fresh ) ), $ids );
+        }
+        foreach ( array_unique( $ids ) as $id ) {
+            $type = get_post_type( $id );
+            if ( $type === 'users' ) {
+                $email = (string) get_field( 'email', $id );
+                $gid = (int) get_field( 'groups', $id, false );
+                $label = get_the_title( $id ) . ', member of ' . ( $gid ? (string) get_field( 'group_name', $gid ) : 'a group' );
+            } elseif ( $type === 'groups' ) {
+                $email = (string) get_field( 'your_email', $id );
+                $label = 'Organizer of ' . (string) get_field( 'group_name', $id );
+            } else continue;
+            if ( is_email( $email ) ) return array( 'id' => (int) $id, 'email' => strtolower( $email ), 'label' => $label );
+        }
+
+        return array();
+    }
+
+    /** Masked group email for the widget's "use my group email" button, unless an email is already saved. */
+    protected static function knownMasked( $cid ) {
+        if ( get_post_meta( $cid, '_mm_sc_email', true ) ) return '';
+        $k = (array) get_post_meta( $cid, '_mm_sc_known', true );
+
+        return ! empty( $k['email'] ) ? self::mask( $k['email'] ) : '';
+    }
+
+    /** j***@gmail.com */
+    protected static function mask( $email ) {
+        list( $u, $d ) = array_pad( explode( '@', (string) $email, 2 ), 2, '' );
+        return mb_substr( $u, 0, 1 ) . '***@' . $d;
+    }
+
+    /** Notifies Rouie that a visitor who needs help left an email. */
+    protected static function notify( $cid, $email, $name, $msg, $title ) {
+        $lines = '';
+        foreach ( array_slice( self::turns( $cid ), -12 ) as $t ) {
+            $lines .= '<p style="margin:0 0 8px;"><strong>' . ( $t['r'] === 'u' ? 'Visitor' : 'Bot' ) . ':</strong> ' . esc_html( html_entity_decode( $t['t'], ENT_QUOTES, 'UTF-8' ) ) . '</p>';
+        }
+
+        Emails::send( Emails::REPLY_TO, 'Support: ' . ( $name !== '' ? $name : $email ) . ' needs help', array(
+            'preheader' => mb_substr( $msg !== '' ? $msg : $title, 0, 120 ),
+            'eyebrow'   => 'Support chat',
+            'title'     => $title,
+            'body'      => array( '<p><strong>Reply to:</strong> ' . esc_html( $email ) . '</p>', $msg !== '' ? '<p><strong>Message:</strong> ' . esc_html( $msg ) . '</p>' : '', $lines ),
+            'button'    => array( 'Open in WP Admin', admin_url( 'post.php?post=' . (int) $cid . '&action=edit' ) ),
+            'footer'    => 'Sent from the Ask Manito chat on manitomanita.com.',
+        ), array( 'Reply-To: ' . ( $name !== '' ? '"' . str_replace( '"', '', $name ) . '" ' : '' ) . '<' . $email . '>' ) );
     }
 
     public static function turns( $id ) {
@@ -236,14 +293,14 @@ KB;
         $norm = strtolower( trim( $q ) );
         if ( isset( $quick[ $norm ] ) ) {
             $idx = self::addTurn( $cid, 'b', $quick[ $norm ][0], 'quick' );
-            wp_send_json_success( array( 'cid' => $cid, 'key' => $key, 'turn' => $idx, 'answer' => $quick[ $norm ][0], 'followups' => $quick[ $norm ][1], 'handoff' => false ) );
+            wp_send_json_success( array( 'cid' => $cid, 'key' => $key, 'turn' => $idx, 'answer' => $quick[ $norm ][0], 'followups' => $quick[ $norm ][1], 'handoff' => false, 'known' => self::knownMasked( $cid ) ) );
         }
 
         $reply = self::ai( $cid, $page );
         $idx = self::addTurn( $cid, 'b', $reply['answer'], $reply['via'] );
         if ( $reply['handoff'] && get_post_meta( $cid, '_mm_sc_status', true ) === 'new' ) update_post_meta( $cid, '_mm_sc_flag', 'needs-person' );
 
-        wp_send_json_success( array( 'cid' => $cid, 'key' => $key, 'turn' => $idx, 'answer' => $reply['answer'], 'followups' => $reply['followups'], 'handoff' => $reply['handoff'] ) );
+        wp_send_json_success( array( 'cid' => $cid, 'key' => $key, 'turn' => $idx, 'answer' => $reply['answer'], 'followups' => $reply['followups'], 'handoff' => $reply['handoff'], 'known' => self::knownMasked( $cid ) ) );
     }
 
     /** Gemini answer for the conversation so far. Falls back to a friendly "leave your question" reply. */
@@ -335,7 +392,29 @@ KB;
 
         $turns[ $i ]['vote'] = ( $_POST['vote'] ?? '' ) === 'up' ? 1 : -1;
         update_post_meta( $cid, '_mm_sc_turns', $turns );
+        if ( $turns[ $i ]['vote'] < 0 && get_post_meta( $cid, '_mm_sc_status', true ) === 'new' ) update_post_meta( $cid, '_mm_sc_flag', 'needs-person' );
         wp_send_json_success();
+    }
+
+    /** "Get a reply by email": saves the visitor's email (typed, or the group email signed in on this browser). */
+    public static function ajaxEmail() {
+        $cid = (int) ( $_POST['cid'] ?? 0 );
+        if ( get_post_type( $cid ) !== self::CPT || ! hash_equals( (string) get_post_meta( $cid, '_mm_sc_key', true ), wp_hash( (string) ( $_POST['key'] ?? '' ) ) ) ) wp_send_json_error( 'Something went wrong. Please try again.' );
+        if ( ! empty( $_POST['website'] ) ) wp_send_json_success(); // honeypot
+
+        $known = (array) get_post_meta( $cid, '_mm_sc_known', true );
+        $email = ! empty( $_POST['use_known'] ) ? (string) ( $known['email'] ?? '' ) : strtolower( sanitize_email( wp_unslash( (string) ( $_POST['email'] ?? '' ) ) ) );
+        if ( ! is_email( $email ) || ( class_exists( 'EmailCheck' ) && EmailCheck::isDisposable( $email ) ) ) wp_send_json_error( 'Please enter a valid email.' );
+        if ( ! self::rate( 'scemail' . ( $_SERVER['REMOTE_ADDR'] ?? '' ), 5, HOUR_IN_SECONDS ) ) wp_send_json_error( 'Please wait a bit and try again.' );
+
+        $had = (string) get_post_meta( $cid, '_mm_sc_email', true );
+        update_post_meta( $cid, '_mm_sc_email', $email );
+        if ( $had === '' && get_post_meta( $cid, '_mm_sc_flag', true ) === 'needs-person' ) {
+            update_post_meta( $cid, '_mm_sc_status', 'pending' );
+            self::notify( $cid, $email, '', '', 'A visitor the bot couldn&rsquo;t help left their email' );
+        }
+
+        wp_send_json_success( array( 'message' => 'Thanks! If the answer didn&rsquo;t solve it, Rouie will email ' . self::mask( $email ) . '.' ) );
     }
 
     public static function ajaxHandoff() {
@@ -357,19 +436,7 @@ KB;
             if ( $name !== '' ) update_post_meta( $cid, '_mm_sc_name', $name );
         }
 
-        $lines = '';
-        foreach ( array_slice( self::turns( $cid ), -12 ) as $t ) {
-            $lines .= '<p style="margin:0 0 8px;"><strong>' . ( $t['r'] === 'u' ? 'Visitor' : 'Bot' ) . ':</strong> ' . esc_html( html_entity_decode( $t['t'], ENT_QUOTES, 'UTF-8' ) ) . '</p>';
-        }
-
-        Emails::send( Emails::REPLY_TO, 'Support: ' . ( $name !== '' ? $name : $email ) . ' needs help', array(
-            'preheader' => mb_substr( $msg, 0, 120 ),
-            'eyebrow'   => 'Support chat',
-            'title'     => ( $name !== '' ? $name : 'A visitor' ) . ' asked for a person',
-            'body'      => array( '<p><strong>Reply to:</strong> ' . esc_html( $email ) . '</p>', '<p><strong>Message:</strong> ' . esc_html( $msg ) . '</p>', $lines ),
-            'button'    => array( 'Open in WP Admin', admin_url( 'post.php?post=' . (int) $cid . '&action=edit' ) ),
-            'footer'    => 'Sent from the Ask Manito chat on manitomanita.com.',
-        ), array( 'Reply-To: ' . ( $name !== '' ? '"' . str_replace( '"', '', $name ) . '" ' : '' ) . '<' . $email . '>' ) );
+        self::notify( $cid, $email, $name, $msg, ( $name !== '' ? $name : 'A visitor' ) . ' asked for a person' );
 
         wp_send_json_success( array( 'cid' => $cid, 'key' => $key, 'message' => 'Thanks! Rouie will reply to ' . $email . ', usually within a day.' ) );
     }
@@ -413,7 +480,13 @@ KB;
             echo count( $t ) . ( $down ? ' &middot; <span style="color:#b32d2e;">' . $down . ' &#128078;</span>' : '' );
         }
         if ( $col === 'mm_page' ) echo esc_html( (string) get_post_meta( $id, '_mm_sc_page', true ) );
-        if ( $col === 'mm_email' ) { $e = (string) get_post_meta( $id, '_mm_sc_email', true ); echo $e ? '<a href="mailto:' . esc_attr( $e ) . '">' . esc_html( $e ) . '</a>' : '&mdash;'; }
+        if ( $col === 'mm_email' ) {
+            $e = (string) get_post_meta( $id, '_mm_sc_email', true );
+            $k = (array) get_post_meta( $id, '_mm_sc_known', true );
+            if ( $e ) echo '<a href="mailto:' . esc_attr( $e ) . '">' . esc_html( $e ) . '</a>';
+            elseif ( ! empty( $k['email'] ) ) echo '<a href="mailto:' . esc_attr( $k['email'] ) . '">' . esc_html( $k['email'] ) . '</a><br><small style="opacity:.7;">signed in to a group</small>';
+            else echo '&mdash;';
+        }
         if ( $col === 'mm_updated' ) echo esc_html( get_post_modified_time( 'M j, g:i A', false, $id ) );
     }
 
@@ -482,6 +555,10 @@ KB;
         echo '</div>';
         $e = (string) get_post_meta( $post->ID, '_mm_sc_email', true );
         if ( $e ) echo '<p style="margin-top:16px;"><strong>Reply to:</strong> <a href="mailto:' . esc_attr( $e ) . '">' . esc_html( ( get_post_meta( $post->ID, '_mm_sc_name', true ) ?: '' ) . ' ' . $e ) . '</a></p>';
+        $k = (array) get_post_meta( $post->ID, '_mm_sc_known', true );
+        if ( ! empty( $k['email'] ) && $k['email'] !== $e ) {
+            echo '<p style="margin-top:8px;"><strong>Signed in on this browser as:</strong> ' . esc_html( $k['label'] ) . ' &middot; <a href="mailto:' . esc_attr( $k['email'] ) . '">' . esc_html( $k['email'] ) . '</a> <a href="' . esc_url( get_edit_post_link( (int) $k['id'] ) ) . '">(open)</a><br><small style="opacity:.7;">From their group sign-in, not typed in the chat.</small></p>';
+        }
     }
 
     public static function boxStatus( $post ) {

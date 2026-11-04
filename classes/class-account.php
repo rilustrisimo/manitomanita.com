@@ -212,6 +212,16 @@ class Account {
         self::writeCookie( $map );
     }
 
+    /** Members / groups remembered on this browser, most recent first. */
+    public static function rememberedIds() {
+        $out = array();
+        foreach ( array_reverse( array_keys( self::cookieMap() ) ) as $id ) {
+            if ( self::remembered( $id ) !== null ) $out[] = (int) $id;
+        }
+
+        return $out;
+    }
+
     /** Role ('' or 'co') if this browser is remembered for the member/group, else null. */
     public static function remembered( $id ) {
         $id = (int) $id;
