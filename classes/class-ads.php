@@ -203,6 +203,13 @@ class Ads {
         return ( $v === '' || $v === null ) ? $default : $v;
     }
 
+    /** Recorded payments (rows only; an unset meta is '' and must not become a blank row). */
+    public static function payments( $id ) {
+        $p = get_post_meta( (int) $id, '_mm_ad_payments', true );
+
+        return is_array( $p ) ? array_values( array_filter( $p, 'is_array' ) ) : array();
+    }
+
     /** Creative: brand, logo (url), headline, text, button, links [[label, url] x3], promo, b [headline, text, button]. */
     public static function creative( $id ) {
         $c = get_post_meta( (int) $id, '_mm_ad_creative', true );
@@ -674,6 +681,14 @@ class Ads {
         }
     }
 
+    /** The sponsor card's rules from mm-dashboard.css, so previews in WP Admin look like the site. */
+    protected static function cardCss() {
+        $css = (string) @file_get_contents( get_template_directory() . '/assets/csslib/mm-dashboard.css' );
+        preg_match_all( '/[^{}]*\.mm-spon[^{}]*\{[^{}]*\}/', $css, $m );
+
+        return wp_strip_all_tags( implode( "\n", $m[0] ) );
+    }
+
     /** The control panel: who, what, money, results, and the actions that fit the status. */
     public static function manageBox( $post ) {
         $id = (int) $post->ID;
@@ -685,7 +700,8 @@ class Ads {
         $imp = $t['view'] + $t['open'];
         $end = (int) self::meta( $id, 'end', 0 );
         $start = (int) self::meta( $id, 'start', 0 );
-        $pays = (array) get_post_meta( $id, '_mm_ad_payments', true );
+        if ( class_exists( 'AdsPortal' ) ) AdsPortal::syncPayments( $id );
+        $pays = self::payments( $id );
         $chip = array( 'live' => array( '#1f8a5b', '#e6f4ed' ), 'review' => array( '#8a6a10', '#fbf3dc' ), 'rejected' => array( '#b32d2e', '#fbeaea' ), 'removed' => array( '#b32d2e', '#fbeaea' ) )[ $st ] ?? array( '#50575e', '#f0f0f1' );
         $reason = (string) get_post_meta( $id, '_mm_ad_reason', true );
         $pending = is_array( get_post_meta( $id, '_mm_ad_pending', true ) );
@@ -706,13 +722,19 @@ class Ads {
             .mmam-act textarea{width:100%;min-height:60px}.mmam-opts label{display:block;margin:4px 0}
             .mmam .button-danger{background:#b32d2e;border-color:#b32d2e;color:#fff}.mmam .button-danger:hover{background:#8a2424;border-color:#8a2424;color:#fff}
             .mmam table{width:100%}.mmam-note{color:#646970;margin:0}
+            .mmam-act > label{display:grid;gap:6px;max-width:640px}
+            .mmam-ad{display:grid;grid-template-columns:minmax(280px,420px) 1fr;gap:16px;align-items:start}
+            .mmam-ad h4{margin:0 0 8px}.mmam-prev{display:grid;gap:10px}.mmam-prev small{color:#646970}
+            .mmam-kv{width:100%;border-collapse:collapse}.mmam-kv td{padding:6px 8px;border-top:1px solid #eef0f2;vertical-align:top}
+            .mmam-kv td:first-child{width:150px;color:#646970}.mmam-kv a{word-break:break-all}
+            @media (max-width:900px){.mmam-ad{grid-template-columns:1fr}}
         </style><div class="mmam">';
 
         echo '<div class="mmam-top"><span class="mmam-chip" style="color:' . $chip[0] . ';background:' . $chip[1] . '">' . esc_html( self::statuses()[ $st ] ?? $st ) . '</span>';
         if ( $pending ) echo '<span class="mmam-chip" style="color:#8a6a10;background:#fbf3dc">Edit waiting for review</span>';
         if ( self::meta( $id, 'mode' ) === 'sandbox' ) echo '<span class="mmam-chip" style="color:#8a6a10;background:#fbf3dc">Sandbox test</span>';
         if ( get_post_meta( $id, '_mm_ad_refund_failed', true ) ) echo '<span class="mmam-chip" style="color:#b32d2e;background:#fbeaea">Refund failed: refund in PayPal</span>';
-        if ( class_exists( 'AdsReport' ) && in_array( $st, array( 'live', 'paused', 'ended', 'removed' ), true ) ) echo '<a class="button" href="' . esc_url( AdsReport::url( $id ) ) . '" target="_blank" rel="noopener">Open full results &#8599;</a>';
+        if ( class_exists( 'AdsReport' ) && $st !== 'checkout' ) echo '<a class="button" href="' . esc_url( AdsReport::url( $id ) ) . '" target="_blank" rel="noopener">Open full results &#8599;</a>';
         echo '</div>';
         if ( $reason !== '' && in_array( $st, array( 'rejected', 'removed' ), true ) ) echo '<p class="mmam-note"><b>Reason given:</b> ' . esc_html( $reason ) . '</p>';
 
@@ -724,6 +746,62 @@ class Ads {
         echo '<div class="mmam-cell"><span>Results so far</span><b>' . number_format( $t['view'] ) . ' views &middot; ' . number_format( $t['sent'] ) . ' emails &middot; ' . number_format( $t['click'] ) . ' clicks</b><br>CTR ' . ( $imp ? round( $t['click'] / $imp * 100, 2 ) . '%' : '&ndash;' ) . '</div>';
         echo '<div class="mmam-cell"><span>Paid in total</span><b>&#8369;' . number_format( (float) self::meta( $id, 'paid', 0 ), 2 ) . '</b></div>';
         echo '</div>';
+
+        // The ad itself: preview(s) and every detail the reviewer needs, plus the PayPal side.
+        $c = self::creative( $id );
+        $slot = self::meta( $id, 'slot' );
+        $pend = get_post_meta( $id, '_mm_ad_pending', true );
+        echo '<style>' . self::cardCss() . '</style>';
+        echo '<div class="mmam-ad"><div class="mmam-prev"><h4>' . ( is_array( $pend ) ? 'Live version' : 'Preview' ) . '</h4>';
+        echo $c['headline'] !== '' ? self::cardHtml( array( 'id' => $id, 'v' => 'a', 'c' => $c ), $slot, 0, true ) : '<p class="mmam-note">No card yet.</p>';
+        if ( ! empty( $c['b']['headline'] ) ) echo '<small>Version B</small>' . self::cardHtml( array( 'id' => $id, 'v' => 'b', 'c' => $c ), $slot, 0, true );
+        if ( is_array( $pend ) && ! empty( $pend['headline'] ) ) echo '<h4 style="margin-top:8px;color:#8a6a10">Edit waiting for review</h4>' . self::cardHtml( array( 'id' => $id, 'v' => 'a', 'c' => $pend ), $slot, 0, true );
+        echo '</div><div>';
+
+        $kv = function ( $rows ) {
+            echo '<table class="mmam-kv"><tbody>';
+            foreach ( $rows as $k => $v ) if ( $v !== '' && $v !== null ) echo '<tr><td>' . $k . '</td><td>' . $v . '</td></tr>';
+            echo '</tbody></table>';
+        };
+        $show = is_array( $pend ) ? $pend : $c;
+        $links = '';
+        foreach ( (array) ( $show['links'] ?? array() ) as $i => $l ) {
+            $links .= '<div><b>' . esc_html( $l[0] !== '' ? $l[0] : ( $i ? 'Link ' . ( $i + 1 ) : 'Main button' ) ) . ':</b> <a href="' . esc_url( $l[1] ) . '" target="_blank" rel="noopener nofollow">' . esc_html( $l[1] ) . '</a></div>';
+        }
+        echo '<h4>Ad details' . ( is_array( $pend ) ? ' (the edit)' : '' ) . '</h4>';
+        $kv( array(
+            'Brand'      => esc_html( $show['brand'] ?? '' ),
+            'Headline'   => esc_html( $show['headline'] ?? '' ),
+            'Text'       => esc_html( $show['text'] ?? '' ),
+            'Button'     => esc_html( $show['button'] ?? '' ),
+            'Links'      => $links !== '' ? $links . '<small class="mmam-note">Clicks add UTM tags (utm_source=manitomanita).</small>' : '<span style="color:#b32d2e">No link</span>',
+            'Promo code' => esc_html( $show['promo'] ?? '' ),
+            'Logo'       => ! empty( $show['logo'] ) ? '<a href="' . esc_url( $show['logo'] ) . '" target="_blank" rel="noopener">' . esc_html( wp_basename( $show['logo'] ) ) . '</a>' : '',
+            'Target'     => esc_html( (string) self::meta( $id, 'target' ) ),
+            'Booked'     => esc_html( get_the_date( 'M j, Y g:i A', $id ) ),
+        ) );
+
+        $sub = (string) self::meta( $id, 'sub' );
+        if ( $sub !== '' && class_exists( 'AdsPayPal' ) ) {
+            $mode = self::meta( $id, 'mode', 'live' );
+            $ps = AdsPayPal::subscriptionCached( $mode, $sub );
+            $host = $mode === 'sandbox' ? 'https://www.sandbox.paypal.com' : 'https://www.paypal.com';
+            $who = trim( ( $ps['subscriber']['name']['given_name'] ?? '' ) . ' ' . ( $ps['subscriber']['name']['surname'] ?? '' ) );
+            $next = strtotime( (string) ( $ps['billing_info']['next_billing_time'] ?? '' ) );
+            $lastPay = $ps['billing_info']['last_payment'] ?? array();
+            echo '<h4 style="margin-top:14px">PayPal</h4>';
+            $kv( array(
+                'Subscription' => '<a href="' . esc_url( $host . '/billing/subscriptions/' . rawurlencode( $sub ) ) . '" target="_blank" rel="noopener">' . esc_html( $sub ) . '</a>' . ( $mode === 'sandbox' ? ' <small>(sandbox)</small>' : '' ),
+                'Status'       => $ps ? esc_html( ucfirst( strtolower( (string) ( $ps['status'] ?? '' ) ) ) ) : '<span class="mmam-note">Couldn&rsquo;t reach PayPal just now</span>',
+                'Payer'        => esc_html( implode( ' / ', array_filter( array( $who, (string) ( $ps['subscriber']['email_address'] ?? '' ) ) ) ) ),
+                'Payer ID'     => esc_html( (string) ( $ps['subscriber']['payer_id'] ?? '' ) ),
+                'Plan'         => esc_html( (string) ( $ps['plan_id'] ?? self::meta( $id, 'plan' ) ) ),
+                'Last payment' => ! empty( $lastPay['amount']['value'] ) ? '&#8369;' . number_format( (float) $lastPay['amount']['value'], 2 ) . ' &middot; ' . esc_html( wp_date( 'M j, Y g:i A', strtotime( (string) $lastPay['time'] ) ) ) : '',
+                'Next charge'  => $next ? esc_html( wp_date( 'M j, Y g:i A', $next ) ) : '',
+                'Failed'       => ! empty( $ps['billing_info']['failed_payments_count'] ) ? (int) $ps['billing_info']['failed_payments_count'] . ' payment(s)' : '',
+            ) );
+        }
+        echo '</div></div>';
 
         $form = function ( $title, $inner, $note = '' ) use ( $act, $nonce, $id ) {
             echo '<form class="mmam-act" method="post" action="' . esc_url( $act ) . '"><input type="hidden" name="action" value="mm_ad_manage"><input type="hidden" name="id" value="' . $id . '"><input type="hidden" name="_wpnonce" value="' . esc_attr( $nonce ) . '"><h4>' . $title . '</h4>' . ( $note ? '<p class="mmam-note">' . $note . '</p>' : '' ) . $inner . '</form>';

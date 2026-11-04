@@ -110,7 +110,7 @@ class AdsReport {
         $a = strtotime( $from . ' 00:00:00 ' . wp_timezone_string() );
         $b = strtotime( $to . ' 23:59:59 ' . wp_timezone_string() );
         $sum = 0;
-        foreach ( (array) get_post_meta( (int) $id, '_mm_ad_payments', true ) as $p ) {
+        foreach ( Ads::payments( $id ) as $p ) {
             if ( empty( $p['t'] ) || ! empty( $p['refunded'] ) ) continue;
             if ( $p['t'] >= $a && $p['t'] <= $b ) $sum += (float) $p['amount'];
         }

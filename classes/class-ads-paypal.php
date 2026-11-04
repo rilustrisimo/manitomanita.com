@@ -177,6 +177,25 @@ class AdsPayPal {
         return time() + ( $cadence === 'monthly' ? 30 : 7 ) * DAY_IN_SECONDS;
     }
 
+    /** Completed / refunded payments of a subscription since $since (unix). */
+    public static function transactions( $mode, $id, $since ) {
+        $q = '?start_time=' . rawurlencode( gmdate( 'Y-m-d\TH:i:s\Z', max( 0, (int) $since ) ) ) . '&end_time=' . rawurlencode( gmdate( 'Y-m-d\TH:i:s\Z', time() + HOUR_IN_SECONDS ) );
+        list( $code, $b ) = self::request( $mode, 'GET', 'v1/billing/subscriptions/' . rawurlencode( $id ) . '/transactions' . $q );
+
+        return $code === 200 ? (array) ( $b['transactions'] ?? array() ) : array();
+    }
+
+    /** Subscription details for the admin panel, cached 5 minutes. */
+    public static function subscriptionCached( $mode, $id ) {
+        $key = 'mm_ads_pp_sub_' . md5( $mode . $id );
+        $s = get_transient( $key );
+        if ( is_array( $s ) ) return $s;
+        $s = self::subscription( $mode, $id );
+        set_transient( $key, $s, 5 * MINUTE_IN_SECONDS );
+
+        return $s;
+    }
+
     public static function cancel( $mode, $id, $reason ) {
         list( $code ) = self::request( $mode, 'POST', 'v1/billing/subscriptions/' . rawurlencode( $id ) . '/cancel', array( 'reason' => mb_substr( $reason, 0, 120 ) ) );
         return $code === 204 || $code === 422; // 422: already cancelled
