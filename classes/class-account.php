@@ -116,7 +116,7 @@ class Account {
         $isGroup = get_post_type( $id ) === 'groups';
         $email = (string) get_field( $isGroup ? 'your_email' : 'email', $id );
         $name = (string) get_field( $isGroup ? 'your_name' : 'screen_name', $id );
-        Emails::send( $email, 'Your Manito Manita password was changed', array(
+        Emails::send( $email, 'Your Manito Manita password was changed', array( 'essential' => true,
             'preheader' => 'Your password for ' . get_field( 'group_name', $gid ) . ' was just changed.',
             'eyebrow'   => 'Password changed',
             'title'     => 'Your password was changed',
@@ -167,7 +167,7 @@ class Account {
             foreach ( $groups as $g ) {
                 $rows .= '<p style="margin:0 0 10px;padding:12px 14px;border:1px solid #e6e6e6;border-radius:10px;"><a href="' . esc_url( $g['link'] ) . '" style="color:#1b1b1b;font-weight:700;font-size:16px;text-decoration:none;">' . esc_html( $g['name'] ) . ' &rarr;</a><br><span style="color:#6d6d6d;font-size:13px;">' . ( $g['role'] === 'organizer' ? 'You organize this group' : 'You&rsquo;re a member' ) . ( $g['date'] ? ' &middot; exchange ' . esc_html( $g['date'] ) : '' ) . '</span></p>';
             }
-            Emails::send( $email, 'Your Manito Manita group links', array(
+            Emails::send( $email, 'Your Manito Manita group links', array( 'essential' => true,
                 'preheader' => 'Here are the links to your ' . count( $groups ) . ' ' . ( count( $groups ) === 1 ? 'group' : 'groups' ) . '.',
                 'eyebrow'   => 'Your groups',
                 'title'     => 'Here are your group links',

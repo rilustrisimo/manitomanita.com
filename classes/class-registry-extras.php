@@ -198,7 +198,7 @@ class RegistryExtras {
         }
         $body[] = '<p><strong>' . $covered . ' of ' . count( $items ) . '</strong> items are now fully covered.</p>';
 
-        Emails::send( (string) get_post_meta( $id, '_mm_wl_email', true ), $n . ' new ' . ( $n === 1 ? 'reservation' : 'reservations' ) . ' on ' . html_entity_decode( wp_strip_all_tags( $title ), ENT_QUOTES, 'UTF-8' ), array(
+        Emails::send( (string) get_post_meta( $id, '_mm_wl_email', true ), $n . ' new ' . ( $n === 1 ? 'reservation' : 'reservations' ) . ' on ' . html_entity_decode( wp_strip_all_tags( $title ), ENT_QUOTES, 'UTF-8' ), array( 'kind' => 'registry',
             'preheader' => $see ? 'See who reserved what.' : 'Your list is filling up.',
             'eyebrow'   => 'My Wishlist',
             'title'     => $n . ' new ' . ( $n === 1 ? 'reservation' : 'reservations' ),
@@ -225,7 +225,7 @@ class RegistryExtras {
             $e = self::entry( $id, $r['h'] );
             if ( ! $e || ! is_email( $r['e'] ) ) continue; // undone since
             $it = self::item( $id, $e['key'] );
-            Emails::send( $r['e'], 'Reminder: ' . $title . ' is ' . $when, array(
+            Emails::send( $r['e'], 'Reminder: ' . $title . ' is ' . $when, array( 'kind' => 'registry',
                 'preheader' => 'The gift you reserved: ' . ( $it ? wp_trim_words( $it['text'], 10 ) : 'see the list' ),
                 'eyebrow'   => 'Gift reminder',
                 'title'     => 'The day is ' . $when,

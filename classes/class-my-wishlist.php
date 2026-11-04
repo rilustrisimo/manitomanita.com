@@ -366,7 +366,7 @@ class MyWishlist {
             $sig = hash_hmac( 'sha256', $id . '|' . $exp . '|' . get_post_meta( $id, '_mm_wl_hash', true ), wp_salt( 'auth' ) );
             $link = add_query_arg( array( 'wl_login' => $id . '.' . $exp . '.' . substr( $sig, 0, 32 ) ), self::url( $id ) );
 
-            Emails::send( $email, 'Your My Wishlist login link', array(
+            Emails::send( $email, 'Your My Wishlist login link', array( 'essential' => true,
                 'preheader' => 'Tap to open and edit your wishlist. The link works for one hour.',
                 'eyebrow'   => 'My Wishlist',
                 'title'     => 'Log in to your wishlist',

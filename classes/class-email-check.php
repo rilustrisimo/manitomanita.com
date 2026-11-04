@@ -140,7 +140,7 @@ class EmailCheck {
         set_transient( 'mm_otp_' . self::key( $email ), array( 'h' => self::hashCode( $email, $code ), 'tries' => 0 ), self::CODE_TTL );
 
         $what = array( 'wishlist' => 'wishlist', 'advertise' => 'advertiser account' )[ (string) ( $_POST['purpose'] ?? '' ) ] ?? 'group';
-        $sent = Emails::send( $email, $code . ' is your Manito Manita code', array(
+        $sent = Emails::send( $email, $code . ' is your Manito Manita code', array( 'essential' => true,
             'preheader' => 'Enter this code to verify your email and ' . ( $what === 'advertiser account' ? 'sign in to your ' : 'create your ' ) . $what . '.',
             'eyebrow'   => 'Verify your email',
             'title'     => 'Your verification code',
@@ -263,7 +263,7 @@ class EmailCheck {
         $group = (string) get_field( 'group_name', $gid );
         $name = trim( (string) get_field( 'screen_name', $uid ) );
 
-        return Emails::send( (string) get_field( 'email', $uid ), 'Confirm your email to join ' . $group, array(
+        return Emails::send( (string) get_field( 'email', $uid ), 'Confirm your email to join ' . $group, array( 'essential' => true,
             'preheader' => 'One tap and you&rsquo;re in. You&rsquo;ll be added to ' . $group . ' once you confirm.',
             'eyebrow'   => 'Almost there',
             'title'     => 'Confirm your email to join ' . $group,

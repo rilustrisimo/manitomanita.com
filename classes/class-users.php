@@ -700,7 +700,7 @@ class Users extends Theme {
         $name = trim((string) (($posttype == "groups")?get_field('your_name', $uid):get_field('screen_name', $uid)));
         $groupName = (string) get_field('group_name', $gid);
 
-        $sent = Emails::send((string) $email, 'Reset your Manito Manita password', array(
+        $sent = Emails::send((string) $email, 'Reset your Manito Manita password', array( 'essential' => true,
             'preheader' => 'Tap the button to set a new password for '.$groupName.'.',
             'eyebrow'   => 'Password reset',
             'title'     => 'Reset your password',

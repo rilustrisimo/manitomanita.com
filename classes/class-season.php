@@ -32,7 +32,11 @@ class Season {
         if ( self::$hooked ) return;
         self::$hooked = true;
 
-        add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
+        add_action( 'admin_menu', array( __CLASS__, 'menu' ), 20 ); // after Manito Emails exists
+        add_action( 'admin_init', function () {
+            global $pagenow;
+            if ( $pagenow === 'tools.php' && ( $_GET['page'] ?? '' ) === self::PAGE ) { wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE ) ); exit; }
+        } );
         add_action( 'admin_post_mm_season', array( __CLASS__, 'handle' ) );
         add_action( self::HOOK, array( __CLASS__, 'runBatch' ) );
         add_filter( 'cron_schedules', array( __CLASS__, 'schedules' ) );
@@ -185,6 +189,7 @@ class Season {
         $first = $name !== '' ? strtok( $name, ' ' ) : 'there';
 
         return array( 'Ready for this year&rsquo;s exchange, ' . $first . '?', array(
+            'kind'        => 'season',
             'preheader'   => 'Start this year&rsquo;s group from ' . $group . ' and invite everyone back in a few taps.',
             'eyebrow'     => 'Christmas is coming',
             'title'       => 'Ready for this year&rsquo;s exchange?',
@@ -237,7 +242,8 @@ class Season {
     /* ------------------------------------------------------------------ Admin screen */
 
     public static function menu() {
-        add_management_page( 'Season email', 'Season email', 'manage_options', self::PAGE, array( __CLASS__, 'screen' ) );
+        // Lives under Manito Emails now (old Tools link redirects there).
+        add_submenu_page( class_exists( 'EmailCenterAdmin' ) ? EmailCenterAdmin::PAGE : 'tools.php', 'Season email', 'Season email', 'manage_options', self::PAGE, array( __CLASS__, 'screen' ) );
     }
 
     public static function handle() {
@@ -270,7 +276,7 @@ class Season {
             $msg = 'stopped';
         }
 
-        wp_safe_redirect( add_query_arg( array( 'page' => self::PAGE, 'msg' => $msg, 'older' => $older ? 1 : 0 ), admin_url( 'tools.php' ) ) );
+        wp_safe_redirect( add_query_arg( array( 'page' => self::PAGE, 'msg' => $msg, 'older' => $older ? 1 : 0 ), admin_url( 'admin.php' ) ) );
         exit;
     }
 
@@ -312,7 +318,7 @@ class Season {
             foreach ( self::$skipped as $why => $n ) $parts[] = number_format( $n ) . ' ' . esc_html( $why );
             echo implode( ' &middot; ', $parts ) . '. Each person gets at most one email, even with several groups or address variations (dots or +tags in Gmail).</p>';
         }
-        echo '<p><a href="' . esc_url( add_query_arg( array( 'page' => self::PAGE, 'older' => $older ? 0 : 1 ), admin_url( 'tools.php' ) ) ) . '">' . ( $older ? 'Only last season' : 'Include all earlier seasons too' ) . '</a></p>';
+        echo '<p><a href="' . esc_url( add_query_arg( array( 'page' => self::PAGE, 'older' => $older ? 0 : 1 ), admin_url( 'admin.php' ) ) ) . '">' . ( $older ? 'Only last season' : 'Include all earlier seasons too' ) . '</a></p>';
 
         if ( $aud ) {
             echo '<table class="widefat striped" style="max-width:720px;"><thead><tr><th>Organizer</th><th>Group</th><th>Exchange</th></tr></thead><tbody>';

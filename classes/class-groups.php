@@ -1775,7 +1775,7 @@ class Groups extends Theme {
                 $pairName = $pair ? trim((string) get_field('screen_name', $pair)) : '';
                 $done = get_post_meta($uid, '_mm_gift_status', true);
 
-                Emails::send((string) get_field('email', $uid), '3 days to go: '.$name.' gift exchange', array(
+                Emails::send((string) get_field('email', $uid), '3 days to go: '.$name.' gift exchange', array( 'kind' => 'reminder',
                     'preheader'   => 'The exchange is on '.$when.'. '.($done ? 'You&rsquo;re all set!' : 'Still need a gift? Here are some ideas.'),
                     'eyebrow'     => '3 days to go',
                     'title'       => 'The '.$name.' exchange is on '.$when,

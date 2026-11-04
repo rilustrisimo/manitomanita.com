@@ -12,6 +12,10 @@
  *     'button'    => array( 'Confirm', 'https://...' ),
  *     'note'      => 'Small print under the button',
  *     'footer'    => 'Why you got this email',
+ *     'essential' => true,          // login codes, confirm links, resets: sent even to suppressed inboxes
+ *     'kind'      => 'reminder',    // stats bucket (EmailDeliver daily counters)
+ *     'promo_unsub' => 'https://...', // promo email: "Unsubscribe from offers and news" + List-Unsubscribe
+ *     'pixel'     => 'https://...', // open tracking image (promo campaigns)
  * ) );
  *
  * @author    eyorsogood.com, Rouie Ilustrisimo
@@ -38,6 +42,8 @@ class Emails {
     const FONT      = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
     const OPTOUT_META = '_mm_optout'; // member opted out of reminder-type emails
+
+    public static $sentCount = 0; // emails sent in this request (EmailCenter measures cron jobs with it)
 
     protected static $altBody = '';
     protected static $hooked  = false;
@@ -134,9 +140,12 @@ class Emails {
         foreach ( Theme::socials() as $s ) $follow[] = '<a href="' . esc_url( $s[1] ) . '" style="color:#8a8a8a;">' . esc_html( $s[0] ) . '</a>';
         $html .= '<br>Follow us: ' . implode( ' &middot; ', $follow );
         if ( get_option( 'mm_ads_pages' ) ) $html .= '<br>Have a shop or brand? <a href="' . esc_url( home_url( '/advertise/?utm_source=manitomanita&utm_medium=email&utm_campaign=advertise-footer' ) ) . '" style="color:#8a8a8a;">Advertise with us</a>';
-        if ( ! empty( $o['unsubscribe'] ) ) {
+        if ( ! empty( $o['promo_unsub'] ) ) {
+            $html .= '<br><a href="' . esc_url( $o['promo_unsub'] ) . '" style="color:#8a8a8a;">Unsubscribe from offers and news</a>';
+        } elseif ( ! empty( $o['unsubscribe'] ) ) {
             $html .= '<br><a href="' . esc_url( self::unsubUrl( $o['unsubscribe'] ) ) . '" style="color:#8a8a8a;">Unsubscribe from reminders</a>';
         }
+        if ( ! empty( $o['pixel'] ) ) $html .= '<img src="' . esc_url( $o['pixel'] ) . '" width="1" height="1" alt="" style="display:block;border:0;width:1px;height:1px;">';
         $html .= '</td></tr>';
 
         $html .= '</table></td></tr></table></body></html>';
@@ -174,15 +183,26 @@ class Emails {
         if ( ! empty( $o['note'] ) ) $lines[] = html_entity_decode( wp_strip_all_tags( $o['note'] ), ENT_QUOTES, 'UTF-8' );
         $lines[] = "--\nManito Manita, free online gift exchange: " . home_url( '/' );
         foreach ( Theme::socials() as $s ) $lines[] = $s[0] . ': ' . $s[1];
-        if ( ! empty( $o['unsubscribe'] ) ) $lines[] = 'Unsubscribe from reminders: ' . self::unsubUrl( $o['unsubscribe'] );
+        if ( ! empty( $o['promo_unsub'] ) ) $lines[] = 'Unsubscribe from offers and news: ' . $o['promo_unsub'];
+        elseif ( ! empty( $o['unsubscribe'] ) ) $lines[] = 'Unsubscribe from reminders: ' . self::unsubUrl( $o['unsubscribe'] );
 
         return implode( "\n\n", array_filter( $lines ) );
     }
 
     public static function send( $to, $subject, array $o, array $headers = array() ) {
         if ( ! is_email( $to ) ) return false;
+        $kind = (string) ( $o['kind'] ?? ( ! empty( $o['essential'] ) ? 'essential' : 'other' ) );
 
-        if ( ! empty( $o['unsubscribe'] ) ) {
+        // Hard bounces and spam complaints are never emailed again (promo opt-outs: promos only).
+        if ( empty( $o['essential'] ) && class_exists( 'EmailDeliver' ) && EmailDeliver::blocked( $to, ! empty( $o['promo_unsub'] ) ) ) {
+            EmailDeliver::count( 'suppressed', $kind );
+            return false;
+        }
+
+        if ( ! empty( $o['promo_unsub'] ) ) {
+            $headers[] = 'List-Unsubscribe: <' . $o['promo_unsub'] . '>, <mailto:' . self::REPLY_TO . '?subject=unsubscribe>';
+            $headers[] = 'List-Unsubscribe-Post: List-Unsubscribe=One-Click';
+        } elseif ( ! empty( $o['unsubscribe'] ) ) {
             $headers[] = 'List-Unsubscribe: <' . self::unsubUrl( $o['unsubscribe'] ) . '>, <mailto:' . self::REPLY_TO . '?subject=unsubscribe>';
             $headers[] = 'List-Unsubscribe-Post: List-Unsubscribe=One-Click';
         }
@@ -198,6 +218,8 @@ class Emails {
 
         remove_action( 'phpmailer_init', array( __CLASS__, 'addAltBody' ) );
         self::$altBody = '';
+        if ( $sent ) self::$sentCount++;
+        if ( class_exists( 'EmailDeliver' ) ) EmailDeliver::count( $sent ? 'sent' : 'failed', $kind );
 
         return $sent;
     }

@@ -53,6 +53,10 @@ if [ "$MODE" = "live" ] || [ "$MODE" = "all" ]; then
   code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$SITE/wp-json/mm/v1/paypal-webhook" -d '{}'); [ "$code" = "400" ] && ok "PayPal webhook rejects an empty event" || bad "PayPal webhook gave $code"
   code=$(curl -s -o "$TMP" -w '%{http_code}' "$SITE/wp-json/mm/v1/ad-slot?s=guide&t=none"); [ "$code" = "200" ] && ok "ad slot endpoint" || bad "ad slot gave $code"
   code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/?mm_sp=999999999&s=guide"); case "$code" in 30*) ok "sponsor click redirect is safe";; *) bad "sponsor click gave $code";; esac
+  code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$SITE/wp-json/mm/v1/ses-events" -d '{"Type":"Notification","Message":"{}","SigningCertURL":"https://evil.example/x.pem","Signature":"x"}'); [ "$code" = "403" ] && ok "SES feedback refuses a forged message" || bad "SES feedback gave $code"
+  code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/?mm_promo_unsub=eEB4LmNvbQ&s=bad"); [ "$code" = "400" ] && ok "promo unsubscribe refuses a bad link" || bad "promo unsubscribe gave $code"
+  ctype=$(curl -s -o /dev/null -w '%{content_type}' "$SITE/wp-json/mm/v1/em-open?q=1&s=bad"); case "$ctype" in image/gif*) ok "email open pixel";; *) bad "open pixel gave $ctype";; esac
+  code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/?mm_em=1&u=aHR0cHM6Ly9ldmlsLmV4YW1wbGU&s=bad"); case "$code" in 30*) loc=$(curl -s -o /dev/null -w '%{redirect_url}' "$SITE/?mm_em=1&u=aHR0cHM6Ly9ldmlsLmV4YW1wbGU&s=bad"); case "$loc" in "$SITE"*) ok "email click link is not an open redirect";; *) bad "email click redirected to $loc";; esac;; *) bad "email click gave $code";; esac
   rm -f "$TMP"
 fi
 

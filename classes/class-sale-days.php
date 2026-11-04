@@ -103,7 +103,7 @@ class SaleDays {
             $name = (string) get_field( 'group_name', $gid );
             $budget = class_exists( 'Affiliate' ) ? Affiliate::budget( $gid ) : 0;
             $off = add_query_arg( array( 'mm_sale_off' => $gid, 's' => self::sig( 'off' . $gid ) ), home_url( '/' ) );
-            Emails::send( $to, 'Tonight: a short ' . $s['label'] . ' gift email to your members', array(
+            Emails::send( $to, 'Tonight: a short ' . $s['label'] . ' gift email to your members', array( 'kind' => 'sale',
                 'preheader' => 'One email with gift ideas within your budget. You can turn it off for ' . $name . '.',
                 'eyebrow'   => $s['label'] . ' sale',
                 'title'     => 'Heads-up for ' . esc_html( $name ),
@@ -177,7 +177,7 @@ class SaleDays {
             );
         }
 
-        return Emails::send( $to, html_entity_decode( $subject, ENT_QUOTES, 'UTF-8' ), $o + array(
+        return Emails::send( $to, html_entity_decode( $subject, ENT_QUOTES, 'UTF-8' ), $o + array( 'kind' => 'sale',
             'eyebrow'     => $s['label'] . ' sale tonight',
             'card'        => Emails::groupCard( $gid ),
             'unsubscribe' => $uid,
