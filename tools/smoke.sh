@@ -50,6 +50,8 @@ if [ "$MODE" = "live" ] || [ "$MODE" = "all" ]; then
   echo "$r" | grep -q '"success":false' && ok "registry reminder refuses bad input" || bad "registry reminder: $r"
   r=$(curl -s -X POST "$SITE/wp-admin/admin-ajax.php" -d "action=user_leave_group&uid=1")
   echo "$r" | grep -q '"success":false' && ok "leave group needs the member password" || bad "leave group: $r"
+  r=$(curl -s -X POST "$SITE/wp-admin/admin-ajax.php" -d "action=mm_comment_remove&cid=1&gid=1&nonce=x")
+  echo "$r" | grep -q '"success":false' && ok "comment removal needs a PRO moderator" || bad "comment removal: $r"
   code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$SITE/wp-json/mm/v1/paypal-webhook" -d '{}'); [ "$code" = "400" ] && ok "PayPal webhook rejects an empty event" || bad "PayPal webhook gave $code"
   code=$(curl -s -o "$TMP" -w '%{http_code}' "$SITE/wp-json/mm/v1/ad-slot?s=guide&t=none"); [ "$code" = "200" ] && ok "ad slot endpoint" || bad "ad slot gave $code"
   code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/?mm_sp=999999999&s=guide"); case "$code" in 30*) ok "sponsor click redirect is safe";; *) bad "sponsor click gave $code";; esac
