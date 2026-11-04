@@ -16,6 +16,8 @@
  *   org_active    any | yes | no                (organizers: made a group this season)
  *   only_email    one address (tests)
  *   cap_days      frequency cap (default 3)
+ *   old_company   1 = include company/school addresses from before this season (off: they bounce the most)
+ *   engaged       months: only inboxes that opened or clicked a promo in that time (0 = everyone)
  *
  * Always left out (reason counted): unconfirmed members, reminder opt-outs, promo opt-outs, bounces,
  * complaints, undeliverable addresses (Season::badEmail), recent promo (cap), already in this campaign,
@@ -34,7 +36,7 @@ class EmailAudience {
     /** Defaults merged into saved filters. */
     public static function defaults() {
         return array( 'source' => array( 'members' ), 'season' => 'this', 'created_from' => '', 'created_to' => '', 'exchange' => 'upcoming', 'days' => 60, 'exchange_from' => '', 'exchange_to' => '',
-            'shuffled' => 'any', 'pro' => 'any', 'budget_min' => '', 'budget_max' => '', 'min_size' => '', 'gift' => 'not_bought', 'joined_from' => '', 'joined_to' => '', 'org_active' => 'any', 'only_email' => '', 'cap_days' => self::CAP_DAYS );
+            'shuffled' => 'any', 'pro' => 'any', 'budget_min' => '', 'budget_max' => '', 'min_size' => '', 'gift' => 'not_bought', 'joined_from' => '', 'joined_to' => '', 'org_active' => 'any', 'only_email' => '', 'cap_days' => self::CAP_DAYS, 'old_company' => 0, 'engaged' => 0 );
     }
 
     public static function clean( $f ) {
@@ -46,6 +48,8 @@ class EmailAudience {
             if ( $k === 'source' ) { $x = array_values( array_intersect( (array) $x, array( 'members', 'organizers' ) ) ); if ( ! $x ) $x = array( 'members' ); }
             elseif ( in_array( $k, array( 'created_from', 'created_to', 'exchange_from', 'exchange_to', 'joined_from', 'joined_to' ), true ) ) $x = preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $x ) ? (string) $x : '';
             elseif ( in_array( $k, array( 'days', 'budget_min', 'budget_max', 'min_size', 'cap_days' ), true ) ) $x = $x === '' ? '' : max( 0, (int) $x );
+            elseif ( $k === 'old_company' ) $x = empty( $x ) ? 0 : 1;
+            elseif ( $k === 'engaged' ) $x = max( 0, min( 24, (int) $x ) );
             elseif ( $k === 'only_email' ) $x = strtolower( sanitize_email( (string) $x ) );
             else $x = sanitize_key( (string) $x );
             $out[ $k ] = $x;
@@ -68,6 +72,8 @@ class EmailAudience {
         if ( $f['budget_min'] !== '' || $f['budget_max'] !== '' ) $bits[] = 'budget ₱' . ( $f['budget_min'] !== '' ? $f['budget_min'] : '0' ) . '–' . ( $f['budget_max'] !== '' ? $f['budget_max'] : 'any' );
         if ( in_array( 'members', $f['source'], true ) && $f['gift'] === 'not_bought' ) $bits[] = 'gift not bought yet';
         if ( in_array( 'organizers', $f['source'], true ) && $f['org_active'] !== 'any' ) $bits[] = $f['org_active'] === 'yes' ? 'organizer made a group this season' : 'organizer hasn&rsquo;t made a group this season';
+        if ( $f['engaged'] ) $bits[] = 'opened or clicked a promo in the last ' . (int) $f['engaged'] . ' months';
+        if ( ! $f['old_company'] && $f['season'] !== 'this' ) $bits[] = 'company emails only if active this season';
         if ( $f['only_email'] !== '' ) $bits[] = 'only ' . $f['only_email'];
 
         return ucfirst( $who ) . ' of ' . implode( ', ', $bits );
@@ -144,7 +150,7 @@ class EmailAudience {
                 if ( $f['org_active'] === 'yes' && empty( $orgActive[ $key ] ) ) continue;
                 if ( $f['org_active'] === 'no' && ! empty( $orgActive[ $key ] ) ) continue;
                 if ( $g['optout'] ) { $skip( 'opted out of reminders' ); continue; }
-                $add( array( 'email' => strtolower( trim( $g['email'] ) ), 'ref_type' => 'organizer', 'ref_id' => $gid, 'gid' => $gid, 'shuffled' => $g['matched'] ) );
+                $add( array( 'email' => strtolower( trim( $g['email'] ) ), 'ref_type' => 'organizer', 'ref_id' => $gid, 'gid' => $gid, 'shuffled' => $g['matched'], 'recent' => ! empty( $orgActive[ $key ] ) ) );
             }
         }
 
@@ -171,7 +177,7 @@ class EmailAudience {
                 $joined = str_replace( '-', '', substr( $r->post_date, 0, 10 ) );
                 if ( $f['joined_from'] !== '' && $joined < str_replace( '-', '', $f['joined_from'] ) ) continue;
                 if ( $f['joined_to'] !== '' && $joined > str_replace( '-', '', $f['joined_to'] ) ) continue;
-                $add( array( 'email' => $email, 'ref_type' => 'member', 'ref_id' => (int) $r->ID, 'gid' => $gid, 'shuffled' => $groups[ $gid ]['matched'] ) );
+                $add( array( 'email' => $email, 'ref_type' => 'member', 'ref_id' => (int) $r->ID, 'gid' => $gid, 'shuffled' => $groups[ $gid ]['matched'], 'recent' => $joined >= $start ) );
             }
         }
 
@@ -181,6 +187,11 @@ class EmailAudience {
         if ( $cap > 0 ) {
             foreach ( (array) $wpdb->get_col( $wpdb->prepare( 'SELECT DISTINCT inbox FROM ' . EmailCenter::queueTable() . " WHERE status = 'sent' AND sent_at > %s", wp_date( 'Y-m-d H:i:s', time() - $cap * DAY_IN_SECONDS ) ) ) as $h ) $recent[ $h ] = true;
         }
+        $engaged = null;
+        if ( $f['engaged'] ) {
+            $cut = wp_date( 'Y-m-d H:i:s', time() - (int) $f['engaged'] * 30 * DAY_IN_SECONDS );
+            $engaged = array_flip( (array) $wpdb->get_col( $wpdb->prepare( 'SELECT DISTINCT inbox FROM ' . EmailCenter::queueTable() . ' WHERE opened_at > %s OR clicked_at > %s', $cut, $cut ) ) );
+        }
         $queued = array();
         if ( $campaign ) foreach ( (array) $wpdb->get_col( $wpdb->prepare( 'SELECT inbox FROM ' . EmailCenter::queueTable() . ' WHERE campaign_id = %d', (int) $campaign ) ) as $h ) $queued[ $h ] = true;
 
@@ -189,10 +200,12 @@ class EmailAudience {
             if ( $f['only_email'] !== '' && Season::inboxKey( $f['only_email'] ) !== $key ) continue;
             $h = EmailDeliver::hash( $c['email'] );
             if ( isset( $queued[ $h ] ) ) { $skip( 'already in this campaign' ); continue; }
+            if ( $engaged !== null && ! isset( $engaged[ $h ] ) ) { $skip( 'no promo opened or clicked lately' ); continue; }
+            if ( ! $f['old_company'] && empty( $c['recent'] ) && EmailCenter::tierOf( $c['email'] ) === 2 ) { $skip( 'older company or school email' ); continue; }
             $bad = Season::badEmail( $c['email'] );
             if ( $bad !== '' ) { $skip( 'undeliverable: ' . $bad ); continue; }
             $sup = EmailDeliver::reason( $c['email'] );
-            if ( $sup !== '' ) { $skip( array( 'promo_unsub' => 'unsubscribed from promos', 'bounce' => 'bounced before', 'complaint' => 'marked as spam before', 'manual' => 'blocked' )[ $sup ] ?? 'blocked' ); continue; }
+            if ( $sup !== '' && $sup !== 'soft' ) { $skip( array( 'promo_unsub' => 'unsubscribed from promos', 'bounce' => 'bounced before', 'complaint' => 'marked as spam before', 'manual' => 'blocked' )[ $sup ] ?? 'blocked' ); continue; }
             if ( isset( $recent[ $h ] ) ) { $skip( 'got a promo in the last ' . $cap . ' days' ); continue; }
             $out[ $h ] = $c;
         }
@@ -209,7 +222,9 @@ class EmailAudience {
         $b = self::build( $f, $campaign );
         $samples = array();
         foreach ( array_slice( $b['recipients'], 0, 8 ) as $r ) $samples[] = array( 'email' => EmailDeliver::mask( $r['email'] ), 'type' => $r['ref_type'], 'group' => html_entity_decode( (string) get_field( 'group_name', $r['gid'] ), ENT_QUOTES, 'UTF-8' ), 'ref' => $r['ref_type'] . ':' . $r['ref_id'] );
-        $c = array( 'count' => count( $b['recipients'] ), 'skipped' => $b['skipped'], 'samples' => $samples, 'summary' => self::summary( $f ) );
+        $f = self::clean( $f );
+        $warn = $f['season'] === 'all' ? 'Older lists bounce more. Consider "This season" or "Last season", or add the "opened or clicked lately" filter.' : ( $f['old_company'] ? 'Older company and school addresses are included; expect more bounces. The test batch and auto-stop will catch a bad list.' : '' );
+        $c = array( 'count' => count( $b['recipients'] ), 'skipped' => $b['skipped'], 'samples' => $samples, 'summary' => self::summary( $f ), 'warning' => $warn );
         set_transient( $key, $c, 60 );
 
         return $c;

@@ -85,10 +85,10 @@ class EmailDeliver {
         return self::$cache[ $h ];
     }
 
-    /** True when this email must not be sent ($promo: promo opt-outs count too). */
+    /** True when this email must not be sent ($promo: promo opt-outs count too). Soft bounces alone don't block. */
     public static function blocked( $email, $promo = false ) {
         $r = self::reason( $email );
-        if ( $r === '' ) return false;
+        if ( $r === '' || $r === 'soft' ) return false;
 
         return $r !== 'promo_unsub' || $promo;
     }
@@ -99,13 +99,32 @@ class EmailDeliver {
         $h = self::hash( $email );
         $now = current_time( 'mysql' );
         $cur = self::reason( $email );
-        if ( $cur !== '' && $cur !== 'promo_unsub' && $reason === 'promo_unsub' ) $reason = $cur; // keep the stronger reason
+        if ( $cur !== '' && ! in_array( $cur, array( 'promo_unsub', 'soft' ), true ) && $reason === 'promo_unsub' ) $reason = $cur; // keep the stronger reason
         $wpdb->query( $wpdb->prepare(
             'INSERT INTO ' . self::suppressTable() . ' (inbox, reason, source, masked, t, n) VALUES (%s, %s, %s, %s, %s, 1) ON DUPLICATE KEY UPDATE reason = VALUES(reason), source = VALUES(source), t = VALUES(t), n = n + 1',
             $h, substr( $reason, 0, 20 ), substr( (string) $source, 0, 60 ), self::mask( $email ), $now
         ) );
         self::$cache[ $h ] = $reason;
         do_action( 'mm_email_suppressed', $email, $reason, $h );
+    }
+
+    /**
+     * Temporary bounce (mailbox full, server busy): counted per inbox; the 3rd within 30 days makes it a hard
+     * bounce. Soft rows never block on their own; stronger reasons (unsubscribe, bounce) are left alone.
+     */
+    public static function softBounce( $email, $why = '' ) {
+        global $wpdb;
+        $h = self::hash( $email );
+        $row = $wpdb->get_row( $wpdb->prepare( 'SELECT reason, t, n FROM ' . self::suppressTable() . ' WHERE inbox = %s', $h ) );
+        if ( $row && $row->reason !== 'soft' ) return;
+        $fresh = $row && strtotime( $row->t ) > time() - 30 * DAY_IN_SECONDS;
+        $n = $fresh ? (int) $row->n + 1 : 1;
+        if ( $n >= 3 ) { self::suppress( $email, 'bounce', 'ses: 3 soft bounces in 30 days' ); return; }
+        $wpdb->query( $wpdb->prepare(
+            'INSERT INTO ' . self::suppressTable() . ' (inbox, reason, source, masked, t, n) VALUES (%s, %s, %s, %s, %s, %d) ON DUPLICATE KEY UPDATE n = VALUES(n), t = CASE WHEN VALUES(n) = 1 THEN VALUES(t) ELSE t END, source = VALUES(source)',
+            $h, 'soft', substr( 'ses soft: ' . $why, 0, 60 ), self::mask( $email ), current_time( 'mysql' ), $n
+        ) );
+        self::$cache[ $h ] = 'soft';
     }
 
     public static function unsuppress( $hash ) {
@@ -224,6 +243,7 @@ class EmailDeliver {
                 if ( $email === '' ) continue;
                 self::count( $hard ? 'bounce' : 'soft_bounce', 'any' );
                 if ( $hard ) self::suppress( $email, 'bounce', 'ses: ' . (string) ( $n['bounce']['bounceSubType'] ?? '' ) );
+                else self::softBounce( $email, (string) ( $n['bounce']['bounceSubType'] ?? '' ) );
             }
         } elseif ( $type === 'Complaint' ) {
             foreach ( (array) ( $n['complaint']['complainedRecipients'] ?? array() ) as $r ) {

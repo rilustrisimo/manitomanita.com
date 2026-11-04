@@ -160,7 +160,14 @@ class EmailCenterAdmin {
                 if ( $st === 'sending' ) EmailCenter::setStatus( $id, 'paused', 'paused by you' );
                 $back( array( 'tab' => 'campaigns' ) );
             case 'resume':
-                if ( $st === 'paused' ) EmailCenter::setStatus( $id, 'sending', 'resumed' );
+                if ( $st === 'paused' ) {
+                    // Count only new bounces from here on, so an auto-pause doesn't fire again on the old ones.
+                    list( $s, $b, $c ) = EmailCenter::rates( $id, array( 'raw' => 1 ) );
+                    $d['ack'] = array( 's' => $s, 'b' => $b, 'c' => $c );
+                    unset( $d['auto_paused'] );
+                    EmailCenter::save( $id, $d );
+                    EmailCenter::setStatus( $id, 'sending', 'resumed' );
+                }
                 $back( array( 'tab' => 'campaigns' ) );
             case 'cancel':
                 if ( in_array( $st, array( 'scheduled', 'sending', 'paused' ), true ) ) {
@@ -265,6 +272,7 @@ class EmailCenterAdmin {
         $d = EmailCenter::get( $id );
         $label = array( 'draft' => 'Draft', 'scheduled' => 'Scheduled', 'sending' => 'Sending', 'paused' => 'Paused', 'done' => 'Done', 'cancelled' => 'Cancelled' )[ $st ] ?? $st;
         if ( $st === 'sending' && ( (int) wp_date( 'G' ) < (int) $d['window'][0] || (int) wp_date( 'G' ) >= (int) $d['window'][1] ) ) $label = 'Waiting for send window';
+        if ( $st === 'paused' && ! empty( $d['auto_paused'] ) ) $label = 'Paused: ' . $d['auto_paused'];
 
         return '<span class="mmec-chip is-' . esc_attr( $st ) . '">' . esc_html( $label ) . '</span>';
     }
@@ -278,8 +286,11 @@ class EmailCenterAdmin {
         $left = $c['queued'];
         $runsLeft = $d['rate'] ? ceil( $left / $d['rate'] ) : 0;
 
+        $stage = EmailCenter::status( $id ) === 'sending' && $left ? EmailCenter::stage( $id ) : array( '', '', '' );
+
         return array(
             'chip'  => self::chip( $id ),
+            'stage' => trim( $stage[0] . ( $stage[2] ? ' · ' . $stage[2] : '' ) ),
             'pct'   => $total ? round( $done / $total * 100 ) : 0,
             'line'  => $total ? number_format( $c['sent'] ) . ' sent of ' . number_format( $total ) . ( $c['failed'] ? ' · ' . number_format( $c['failed'] ) . ' failed' : '' ) . ( $c['skipped'] ? ' · ' . number_format( $c['skipped'] ) . ' skipped' : '' ) . ( $c['bounced'] ? ' · ' . number_format( $c['bounced'] ) . ' bounced' : '' ) . ( $left ? ' · about ' . ( $runsLeft * 2 ) . ' min left' : '' ) : '',
             'stats' => $c['sent'] ? number_format( $c['opened'] ) . ' opens (' . round( $c['opened'] / $c['sent'] * 100 ) . '%) · ' . number_format( $c['clicked'] ) . ' clicks (' . round( $c['clicked'] / $c['sent'] * 100, 1 ) . '%)' : '',
@@ -369,7 +380,7 @@ class EmailCenterAdmin {
             $when = $d['send_at'] ? wp_date( 'M j, g:i A', $d['send_at'] ) : '–';
             echo '<tr data-mmec-row="' . (int) $id . '"' . ( $p['live'] ? ' data-mmec-live' : '' ) . '><td><a href="' . esc_url( self::url( array( 'tab' => 'edit', 'id' => $id ) ) ) . '"><strong>' . esc_html( get_the_title( $id ) ) . '</strong></a><br><small class="mmi-muted">' . esc_html( html_entity_decode( EmailAudience::summary( $d['audience'] ), ENT_QUOTES, 'UTF-8' ) ) . '</small></td>';
             echo '<td data-mmec-chip>' . $p['chip'] . '</td><td>' . esc_html( $when ) . '<br><small class="mmi-muted">' . (int) $d['window'][0] . ':00–' . (int) $d['window'][1] . ':00</small></td>';
-            echo '<td class="mmec-prog"><div class="mmec-bar"><i style="width:' . (int) $p['pct'] . '%" data-mmec-bar></i></div><small data-mmec-line>' . esc_html( $p['line'] ) . '</small></td><td><small data-mmec-stats>' . esc_html( $p['stats'] ) . '</small></td><td class="mmec-acts">';
+            echo '<td class="mmec-prog"><div class="mmec-bar"><i style="width:' . (int) $p['pct'] . '%" data-mmec-bar></i></div><small data-mmec-line>' . esc_html( $p['line'] ) . '</small><br><small class="mmi-muted" data-mmec-stage>' . esc_html( $p['stage'] ) . '</small></td><td><small data-mmec-stats>' . esc_html( $p['stats'] ) . '</small></td><td class="mmec-acts">';
             if ( $st === 'sending' ) echo self::form( 'pause', 'Pause', 'button', array( 'id' => $id ) );
             if ( $st === 'paused' ) echo self::form( 'resume', 'Resume', 'button button-primary', array( 'id' => $id ) );
             if ( in_array( $st, array( 'scheduled', 'sending', 'paused' ), true ) ) echo self::form( 'cancel', 'Cancel', 'button-link mmec-danger', array( 'id' => $id ), 'Cancel the rest of this campaign? Emails already sent stay sent.' );
@@ -404,7 +415,7 @@ class EmailCenterAdmin {
         echo '<div class="mmec-head"><input type="text" name="name" class="mmec-name" value="' . esc_attr( get_the_title( $id ) ) . '" aria-label="Campaign name"> ' . self::chip( $id ) . ' <span class="mmec-saved" data-mmec-saved></span></div>';
         if ( $locked ) {
             $p = self::progress( $id );
-            echo '<div class="mmi-panel mmec-running" data-mmec-row="' . (int) $id . '"' . ( $p['live'] ? ' data-mmec-live' : '' ) . '><div class="mmec-bar mmec-bar--big"><i style="width:' . (int) $p['pct'] . '%" data-mmec-bar></i></div><p data-mmec-line>' . esc_html( $p['line'] ) . '</p><p data-mmec-stats>' . esc_html( $p['stats'] ) . '</p>';
+            echo '<div class="mmi-panel mmec-running" data-mmec-row="' . (int) $id . '"' . ( $p['live'] ? ' data-mmec-live' : '' ) . '><div class="mmec-bar mmec-bar--big"><i style="width:' . (int) $p['pct'] . '%" data-mmec-bar></i></div><p data-mmec-line>' . esc_html( $p['line'] ) . '</p><p class="mmi-muted" data-mmec-stage>' . esc_html( $p['stage'] ) . '</p><p data-mmec-stats>' . esc_html( $p['stats'] ) . '</p>';
             $r = EmailCenter::reasons( $id );
             if ( $r ) { echo '<p class="mmi-muted">Not sent: '; $parts = array(); foreach ( $r as $k => $n ) $parts[] = number_format( $n ) . ' ' . esc_html( $k ); echo implode( ' · ', $parts ) . '</p>'; }
             echo '<p class="mmi-muted">This campaign has started, so its content and audience are locked. Duplicate it to make changes.</p></div>';
@@ -429,7 +440,9 @@ class EmailCenterAdmin {
         echo '<label data-mmec-if="members">Joined from<input type="date" name="audience[joined_from]" value="' . esc_attr( $a['joined_from'] ) . '" data-mmec-aud></label><label data-mmec-if="members">Joined to<input type="date" name="audience[joined_to]" value="' . esc_attr( $a['joined_to'] ) . '" data-mmec-aud></label>';
         echo '<label data-mmec-if="organizers">Organizer this season' . self::sel( 'audience[org_active]', $a['org_active'], array( 'any' => 'Any', 'yes' => 'Made a group this season', 'no' => 'Hasn’t made one yet' ) ) . '</label>';
         echo '<label>Max 1 promo per person every (days)<input type="number" min="0" max="30" name="audience[cap_days]" value="' . esc_attr( $a['cap_days'] ) . '" data-mmec-aud></label>';
+        echo '<label>Only people who opened or clicked a promo in the last (months)<input type="number" min="0" max="24" name="audience[engaged]" value="' . esc_attr( $a['engaged'] ? $a['engaged'] : '' ) . '" placeholder="everyone" data-mmec-aud></label>';
         echo '<label>Only this email (for trials)<input type="email" name="audience[only_email]" value="' . esc_attr( $a['only_email'] ) . '" placeholder="optional" data-mmec-aud></label>';
+        echo '<fieldset class="mmec-risk"><legend>Bounce protection</legend><label><input type="checkbox" name="audience[old_company]" value="1" data-mmec-aud' . checked( ! empty( $a['old_company'] ), true, false ) . '> Include older company and school addresses</label><small>Off by default: work emails of people who joined before this season are the most likely to have closed. Gmail, Yahoo, Outlook and iCloud addresses are always included.</small></fieldset>';
         echo '</div><div class="mmec-count" data-mmec-count>' . ( $locked ? '<strong>' . number_format( (int) $d['total'] ) . '</strong> recipients, frozen when sending started.' : '<span class="spinner is-active"></span> Counting…' ) . '</div></section>';
 
         // Step 2: content
@@ -468,6 +481,7 @@ class EmailCenterAdmin {
         echo '<label>until<select name="sched[to]">'; for ( $h = 1; $h <= 24; $h++ ) echo '<option value="' . $h . '"' . selected( (int) $d['window'][1], $h, false ) . '>' . ( $h === 24 ? 'midnight' : esc_html( wp_date( 'g A', strtotime( 'today ' . $h . ':00' ) ) ) ) . '</option>'; echo '</select></label>';
         echo '<label>Emails per 2 minutes<input type="number" min="10" max="500" name="sched[rate]" value="' . (int) $d['rate'] . '"></label></div>';
         echo '<p class="mmi-muted">Outside the window, sending waits and resumes automatically. About ' . number_format( (int) $d['rate'] * 30 ) . ' emails an hour. Each person gets it once; unsubscribes, bounces and the frequency cap are checked again right before each email.</p>';
+        echo '<p class="mmi-muted"><strong>Bounce protection:</strong> Gmail, Yahoo, Outlook and iCloud addresses go first, company and school emails last. Each group starts with a small test batch and waits 30 minutes for bounce reports. The campaign pauses itself if hard bounces pass ' . EmailCenter::BOUNCE_STOP . '% or spam complaints pass ' . EmailCenter::SPAM_STOP . '%, and all campaigns pause if the site&rsquo;s bounce rate today passes ' . EmailCenter::SITE_STOP . '%. A company domain with ' . EmailCenter::DOMAIN_STOP . ' bounces is skipped for the rest of the campaign. You get an email when it pauses.</p>';
         echo '<p class="mmec-sched-acts">';
         if ( ! $locked ) {
             echo '<button type="submit" name="op" value="schedule" class="button button-primary" data-mmec-schedule onclick="return confirm(\'Schedule this campaign? It sends to everyone in the audience at the chosen time.\');">Schedule</button> ';
@@ -551,7 +565,7 @@ class EmailCenterAdmin {
         $rows = $wpdb->get_results( 'SELECT * FROM ' . EmailDeliver::suppressTable() . $where . ' ORDER BY t DESC LIMIT 100' );
         $byReason = $wpdb->get_results( 'SELECT reason, COUNT(*) n FROM ' . EmailDeliver::suppressTable() . ' GROUP BY reason' );
         echo '<div class="mmi-panel"><h3>Suppression list</h3><p class="mmi-muted">';
-        $parts = array(); foreach ( $byReason as $r ) $parts[] = number_format( $r->n ) . ' ' . esc_html( array( 'promo_unsub' => 'unsubscribed from promos', 'bounce' => 'hard bounces', 'complaint' => 'spam complaints', 'manual' => 'blocked' )[ $r->reason ] ?? $r->reason );
+        $parts = array(); foreach ( $byReason as $r ) $parts[] = number_format( $r->n ) . ' ' . esc_html( array( 'promo_unsub' => 'unsubscribed from promos', 'bounce' => 'hard bounces', 'complaint' => 'spam complaints', 'manual' => 'blocked', 'soft' => 'with recent soft bounces (still emailed; the 3rd in 30 days blocks)' )[ $r->reason ] ?? $r->reason );
         echo $parts ? implode( ' · ', $parts ) : 'Empty so far.';
         echo '</p><form method="get"><input type="hidden" name="page" value="' . esc_attr( self::PAGE ) . '"><input type="hidden" name="tab" value="deliverability"><input type="search" name="s" value="' . esc_attr( $s ) . '" placeholder="Full email address"> <button class="button">Search</button></form>';
         if ( $rows ) {

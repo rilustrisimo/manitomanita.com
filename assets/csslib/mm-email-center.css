@@ -356,3 +356,21 @@
     .mmec-ai { position: static; }
     .mmec-steps { grid-template-columns: 1fr 1fr; }
 }
+
+.mmec-risk {
+    grid-column: 1 / -1;
+    padding: 10px 12px;
+    border: 1px dashed var(--mi-line);
+    border-radius: 10px;
+}
+
+.mmec-risk small {
+    display: block;
+    color: var(--mi-text);
+    font-weight: 400;
+}
+
+.mmec-countwarn {
+    margin: 8px 0 0;
+    color: #8a5a00;
+}

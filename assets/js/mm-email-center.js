@@ -27,6 +27,7 @@
                     row.find('[data-mmec-chip]').html(p.chip);
                     row.find('[data-mmec-bar]').css('width', p.pct + '%');
                     row.find('[data-mmec-line]').text(p.line);
+                    row.find('[data-mmec-stage]').text(p.stage || '');
                     row.find('[data-mmec-stats]').text(p.stats);
                 });
             });
@@ -85,6 +86,7 @@
                 var d = r.data, h = '<strong>' + Number(d.count).toLocaleString() + '</strong> people will get this email<br><span>' + esc(plain(d.summary)) + '</span>';
                 var sk = Object.keys(d.skipped || {});
                 if (sk.length) h += '<ul>' + sk.map(function (k) { return '<li>' + Number(d.skipped[k]).toLocaleString() + ' left out: ' + esc(k) + '</li>'; }).join('') + '</ul>';
+                if (d.warning) h += '<p class="mmec-countwarn">' + esc(d.warning) + '</p>';
                 if (d.samples && d.samples.length) h += '<p class="mmi-muted">For example: ' + d.samples.map(function (s) { return esc(s.email) + ' (' + esc(s.type) + (s.group ? ', ' + esc(s.group) : '') + ')'; }).join(' · ') + '</p>';
                 box.html(h);
             }).fail(function () { box.text('Network error.'); });

@@ -19,7 +19,12 @@ defined( 'ABSPATH' ) || die();
 class EmailCenter {
     const CPT        = 'mm_campaign';
     const HOOK       = 'mm_email_runner';
-    const DB_VERSION = 1;
+    const DB_VERSION = 2;
+    const CANARY_WAIT = 1800;  // seconds to wait for bounce reports after each test batch
+    const BOUNCE_STOP = 3.0;   // % hard bounces that pauses a campaign
+    const SPAM_STOP   = 0.1;   // % complaints that pauses a campaign
+    const SITE_STOP   = 4.0;   // % site-wide bounces (24h) that pauses all campaigns
+    const DOMAIN_STOP = 2;     // bounces from one company domain that skip the rest of it
     const CEILING    = 30000; // emails per day across campaigns (SES quota is 50k); option mm_email_ceiling overrides
 
     public static function init() {
@@ -58,6 +63,9 @@ class EmailCenter {
             ref_type varchar(12) NOT NULL DEFAULT '',
             ref_id bigint(20) unsigned NOT NULL DEFAULT 0,
             gid bigint(20) unsigned NOT NULL DEFAULT 0,
+            tier tinyint(3) unsigned NOT NULL DEFAULT 1,
+            domain varchar(100) NOT NULL DEFAULT '',
+            canary tinyint(1) NOT NULL DEFAULT 0,
             status varchar(12) NOT NULL DEFAULT 'queued',
             reason varchar(60) NOT NULL DEFAULT '',
             sent_at datetime DEFAULT NULL,
@@ -66,6 +74,7 @@ class EmailCenter {
             PRIMARY KEY  (id),
             UNIQUE KEY camp_inbox (campaign_id,inbox),
             KEY camp_status (campaign_id,status),
+            KEY camp_tier (campaign_id,tier,canary,status),
             KEY inbox_sent (inbox,sent_at)
         ) " . $wpdb->get_charset_collate() . ';' );
         update_option( 'mm_email_center_db', self::DB_VERSION, false );
@@ -263,23 +272,115 @@ class EmailCenter {
         return $h >= (int) $d['window'][0] && $h < (int) $d['window'][1];
     }
 
-    /** Snapshot the audience into the queue (when sending starts). */
+    /** Big webmail providers: mailboxes of confirmed users rarely disappear (tier 1, sent first). */
+    public static function webmail() {
+        return array( 'gmail.com', 'googlemail.com', 'yahoo.com', 'yahoo.com.ph', 'ymail.com', 'rocketmail.com', 'outlook.com', 'outlook.ph', 'hotmail.com', 'live.com', 'msn.com',
+            'icloud.com', 'me.com', 'mac.com', 'aol.com', 'proton.me', 'protonmail.com', 'gmx.com', 'zoho.com', 'yandex.com', 'mail.com' );
+    }
+
+    public static function tierOf( $email ) {
+        $domain = strtolower( substr( strrchr( (string) $email, '@' ), 1 ) );
+
+        return in_array( $domain, self::webmail(), true ) ? 1 : 2;
+    }
+
+    /**
+     * Snapshot the audience into the queue (when sending starts): tier 1 (webmail) then tier 2 (company,
+     * school); each tier starts with a random test batch (canary) of 5% (20-200), checked for bounces first
+     * (tiers under 100 webmail / 40 company addresses are sent without one).
+     */
     public static function snapshot( $id ) {
         global $wpdb;
         $d = self::get( $id );
         $b = EmailAudience::build( $d['audience'], $id );
+        $byTier = array( 1 => array(), 2 => array() );
+        foreach ( $b['recipients'] as $h => $r ) $byTier[ self::tierOf( $r['email'] ) ][ $h ] = $r;
+
         $vals = array();
-        foreach ( $b['recipients'] as $h => $r ) {
-            $vals[] = $wpdb->prepare( '(%d, %s, %s, %s, %d, %d)', $id, $r['email'], $h, $r['ref_type'], $r['ref_id'], $r['gid'] );
-            if ( count( $vals ) >= 500 ) { $wpdb->query( 'INSERT IGNORE INTO ' . self::queueTable() . ' (campaign_id, email, inbox, ref_type, ref_id, gid) VALUES ' . implode( ',', $vals ) ); $vals = array(); }
+        $flush = function () use ( &$vals, $wpdb ) {
+            if ( $vals ) $wpdb->query( 'INSERT IGNORE INTO ' . self::queueTable() . ' (campaign_id, email, inbox, ref_type, ref_id, gid, tier, domain, canary) VALUES ' . implode( ',', $vals ) );
+            $vals = array();
+        };
+        foreach ( $byTier as $tier => $rows ) {
+            $n = count( $rows );
+            // Company/school emails bounce the most, so they get a test batch from 40 addresses (webmail from 100).
+            $canary = $n >= ( $tier === 1 ? 100 : 40 ) ? min( 200, max( 20, (int) ceil( $n * 0.05 ) ) ) : 0;
+            $pick = $canary ? array_flip( (array) array_rand( $rows, $canary ) ) : array();
+            foreach ( $rows as $h => $r ) {
+                $vals[] = $wpdb->prepare( '(%d, %s, %s, %s, %d, %d, %d, %s, %d)', $id, $r['email'], $h, $r['ref_type'], $r['ref_id'], $r['gid'], $tier, strtolower( substr( strrchr( $r['email'], '@' ), 1 ) ), isset( $pick[ $h ] ) ? 1 : 0 );
+                if ( count( $vals ) >= 500 ) $flush();
+            }
         }
-        if ( $vals ) $wpdb->query( 'INSERT IGNORE INTO ' . self::queueTable() . ' (campaign_id, email, inbox, ref_type, ref_id, gid) VALUES ' . implode( ',', $vals ) );
+        $flush();
         $d['total'] = count( $b['recipients'] );
+        $d['tiers'] = array( 1 => count( $byTier[1] ), 2 => count( $byTier[2] ) );
         $d['started'] = time();
         $d['skipped_at_start'] = $b['skipped'];
         self::save( $id, $d );
 
         return $d['total'];
+    }
+
+    /** Hard bounces and complaints of a campaign since the last resume: array( sent, bounced, spam ). */
+    public static function rates( $id, array $d ) {
+        global $wpdb;
+        $r = $wpdb->get_row( $wpdb->prepare( 'SELECT SUM(status IN (\'sent\',\'bounced\')) s, SUM(status = \'bounced\' AND reason = \'bounced\') b, SUM(status = \'bounced\' AND reason = \'marked as spam\') c FROM ' . self::queueTable() . ' WHERE campaign_id = %d', $id ) );
+        $ack = (array) ( $d['ack'] ?? array() );
+
+        if ( ! empty( $d['raw'] ) ) return array( (int) ( $r->s ?? 0 ), (int) ( $r->b ?? 0 ), (int) ( $r->c ?? 0 ) );
+
+        return array( max( 0, (int) ( $r->s ?? 0 ) - (int) ( $ack['s'] ?? 0 ) ), max( 0, (int) ( $r->b ?? 0 ) - (int) ( $ack['b'] ?? 0 ) ), max( 0, (int) ( $r->c ?? 0 ) - (int) ( $ack['c'] ?? 0 ) ) );
+    }
+
+    /** '' when the campaign may keep sending, else why it must pause. */
+    public static function breaker( $id, array $d ) {
+        list( $s, $b, $c ) = self::rates( $id, $d );
+        if ( $s >= 20 && $b >= 3 && $b / $s * 100 > self::BOUNCE_STOP ) return 'bounce rate ' . round( $b / $s * 100, 1 ) . '% (' . $b . ' of ' . $s . ')';
+        if ( $s >= 20 && $c >= 2 && $c / $s * 100 > self::SPAM_STOP ) return 'spam complaints ' . round( $c / $s * 100, 2 ) . '% (' . $c . ' of ' . $s . ')';
+
+        return '';
+    }
+
+    /** Site-wide: bounce rate of the last 24 hours (all email) when it is too high, else ''. */
+    public static function siteBreaker() {
+        $t = EmailDeliver::totals( 1 );
+        $sent = (int) ( $t['sent'] ?? 0 );
+        $b = (int) ( $t['bounce'] ?? 0 );
+
+        return ( $sent >= 200 && $b / $sent * 100 > self::SITE_STOP ) ? 'site-wide bounce rate ' . round( $b / $sent * 100, 1 ) . '% today' : '';
+    }
+
+    public static function autoPause( $id, $why ) {
+        $d = self::get( $id );
+        $d['auto_paused'] = $why;
+        self::save( $id, $d );
+        self::setStatus( $id, 'paused', 'auto-paused: ' . $why );
+        do_action( 'mm_alert', 'campaign', 'Campaign "' . get_the_title( $id ) . '" paused itself: ' . $why, array( 'campaign' => $id, 'review' => admin_url( 'admin.php?page=mm-emails&tab=edit&id=' . $id ) ) );
+    }
+
+    /**
+     * What a campaign sends next: array( stage label, rows SQL where, wait reason ). Order: tier 1 test batch,
+     * wait for bounce reports, rest of tier 1, tier 2 test batch, wait, rest of tier 2.
+     */
+    public static function stage( $id ) {
+        global $wpdb;
+        $q = self::queueTable();
+        foreach ( array( 1, 2 ) as $t ) {
+            $name = $t === 1 ? 'Webmail' : 'Company & school emails';
+            if ( $wpdb->get_var( $wpdb->prepare( "SELECT 1 FROM $q WHERE campaign_id = %d AND tier = %d AND canary = 1 AND status = 'queued' LIMIT 1", $id, $t ) ) ) {
+                return array( $name . ' · test batch', $wpdb->prepare( 'tier = %d AND canary = 1', $t ), '' );
+            }
+            $rest = $wpdb->get_var( $wpdb->prepare( "SELECT 1 FROM $q WHERE campaign_id = %d AND tier = %d AND canary = 0 AND status = 'queued' LIMIT 1", $id, $t ) );
+            if ( ! $rest ) continue;
+            $last = $wpdb->get_var( $wpdb->prepare( "SELECT MAX(sent_at) FROM $q WHERE campaign_id = %d AND tier = %d AND canary = 1", $id, $t ) );
+            if ( $last && strtotime( $last ) > time() - self::CANARY_WAIT ) {
+                return array( $name . ' · checking test batch', '', 'waiting for bounce reports until ' . wp_date( 'g:i A', strtotime( $last ) + self::CANARY_WAIT ) );
+            }
+
+            return array( $name, $wpdb->prepare( 'tier = %d', $t ), '' );
+        }
+
+        return array( 'Finishing', '', '' );
     }
 
     public static function run() {
@@ -293,25 +394,33 @@ class EmailCenter {
         $ids = get_posts( array( 'post_type' => self::CPT, 'post_status' => 'publish', 'posts_per_page' => 20, 'fields' => 'ids', 'orderby' => 'date', 'order' => 'ASC',
             'meta_query' => array( array( 'key' => '_mm_cmp_status', 'value' => array( 'scheduled', 'sending' ), 'compare' => 'IN' ) ) ) );
 
+        $site = $ids ? self::siteBreaker() : '';
         foreach ( $ids as $id ) {
             $d = self::get( $id );
             if ( (int) $d['send_at'] > time() ) continue;
+            if ( $site !== '' ) { if ( self::status( $id ) === 'sending' ) self::autoPause( $id, $site ); continue; } // protect the whole domain
             if ( self::status( $id ) === 'scheduled' ) {
                 $n = self::snapshot( $id );
                 self::setStatus( $id, 'sending', $n . ' recipients' );
                 $d = self::get( $id );
             }
             if ( ! self::inWindow( $d ) ) continue; // waits for its send window
+            $why = self::breaker( $id, $d );
+            if ( $why !== '' ) { self::autoPause( $id, $why ); continue; }
             $today = EmailDeliver::totals( 1 );
             if ( ( $today['sent'] ?? 0 ) >= $ceiling ) break;
 
-            $rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . self::queueTable() . " WHERE campaign_id = %d AND status = 'queued' ORDER BY id LIMIT %d", $id, max( 1, min( 500, (int) $d['rate'] ) ) ) );
-            if ( ! $rows ) {
-                $d['finished'] = time();
-                self::save( $id, $d );
-                self::setStatus( $id, 'done' );
+            list( , $where, $wait ) = self::stage( $id );
+            if ( $wait !== '' ) continue; // test batch results not in yet
+            if ( $where === '' ) {
+                if ( ! $wpdb->get_var( $wpdb->prepare( 'SELECT 1 FROM ' . self::queueTable() . " WHERE campaign_id = %d AND status IN ('queued','sending') LIMIT 1", $id ) ) ) {
+                    $d['finished'] = time();
+                    self::save( $id, $d );
+                    self::setStatus( $id, 'done' );
+                }
                 continue;
             }
+            $rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . self::queueTable() . " WHERE campaign_id = %d AND status = 'queued' AND $where ORDER BY id LIMIT %d", $id, max( 1, min( 500, (int) $d['rate'] ) ) ) );
             $cap = (int) $d['audience']['cap_days'];
             foreach ( $rows as $r ) {
                 // Claim the row first: overlapping runs never send twice.
@@ -331,11 +440,23 @@ class EmailCenter {
         delete_transient( $lock );
     }
 
-    /** A bounce/complaint for an address we emailed: mark its rows. */
+    /**
+     * A bounce/complaint for an address we emailed: mark its rows. Two bounces from one company domain in a
+     * campaign skip the rest of that domain (a closed company shouldn't cost dozens of bounces).
+     */
     public static function onSuppressed( $email, $reason, $hash ) {
         global $wpdb;
         if ( $reason === 'promo_unsub' ) return;
-        $wpdb->query( $wpdb->prepare( 'UPDATE ' . self::queueTable() . " SET status = 'bounced', reason = %s WHERE inbox = %s AND status = 'sent' AND sent_at > %s", $reason === 'complaint' ? 'marked as spam' : 'bounced', $hash, wp_date( 'Y-m-d H:i:s', time() - 7 * DAY_IN_SECONDS ) ) );
+        $q = self::queueTable();
+        $since = wp_date( 'Y-m-d H:i:s', time() - 7 * DAY_IN_SECONDS );
+        $rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, campaign_id, domain, tier FROM $q WHERE inbox = %s AND status = 'sent' AND sent_at > %s", $hash, $since ) );
+        $wpdb->query( $wpdb->prepare( "UPDATE $q SET status = 'bounced', reason = %s WHERE inbox = %s AND status = 'sent' AND sent_at > %s", $reason === 'complaint' ? 'marked as spam' : 'bounced', $hash, $since ) );
+        if ( $reason === 'complaint' ) return;
+        foreach ( $rows as $r ) {
+            if ( (int) $r->tier !== 2 || $r->domain === '' ) continue;
+            $n = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $q WHERE campaign_id = %d AND domain = %s AND status = 'bounced' AND reason = 'bounced'", $r->campaign_id, $r->domain ) );
+            if ( $n >= self::DOMAIN_STOP ) $wpdb->query( $wpdb->prepare( "UPDATE $q SET status = 'skipped', reason = %s WHERE campaign_id = %d AND domain = %s AND status = 'queued'", 'domain ' . $r->domain . ' bounced', $r->campaign_id, $r->domain ) );
+        }
     }
 
     /** Daily: forget addresses in queue rows older than 90 days (counts stay). */
