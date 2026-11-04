@@ -1,7 +1,8 @@
 <?php
 /**
  * CommentModeration Class. PRO groups: the organizer (or co-organizer, same moderator session) can remove
- * comments on members' cards. Members can't remove comments in any group.
+ * comments on members' cards. Members can't remove comments in any group. In free groups the organizer
+ * sees a locked "Remove · PRO" button that opens the PRO offer (data-mm-upsell, Theme.proPurchaseButton).
  *
  * Users::... renders a Remove button on each comment only when CommentModeration::can( $gid ) is true;
  * this class prints the small script for it (only on those pages) and handles the AJAX call
@@ -30,9 +31,16 @@ class CommentModeration {
         return $gid && get_post_type( $gid ) === 'groups' && get_field( 'pro', $gid ) && Groups::isModerator( $gid );
     }
 
-    /** The Remove button for one comment (empty when not allowed). */
+    /** The Remove button for one comment: working for PRO moderators, locked (PRO offer) for free-group moderators. */
     public static function button( $commentId, $gid ) {
-        if ( ! self::can( $gid ) ) return '';
+        $gid = (int) $gid;
+        if ( ! self::can( $gid ) ) {
+            if ( ! $gid || get_post_type( $gid ) !== 'groups' || get_field( 'pro', $gid ) || ! Groups::isModerator( $gid ) ) return '';
+            self::$used = true;
+
+            return '<button type="button" class="mm-dcomment__rm is-locked" data-mm-upsell="fix" title="Removing comments is a PRO feature"><i class="fa-solid fa-lock" aria-hidden="true"></i> Remove &middot; PRO</button>';
+        }
+        self::$used = true;
         self::$used = true;
 
         return '<button type="button" class="mm-dcomment__rm" data-mm-crm="' . (int) $commentId . '" data-gid="' . (int) $gid . '" data-nonce="' . esc_attr( wp_create_nonce( 'mm_crm_' . (int) $gid ) ) . '" aria-label="Remove this comment"><i class="fa-regular fa-trash-can" aria-hidden="true"></i> Remove</button>';
@@ -60,6 +68,7 @@ class CommentModeration {
         ?>
 <script>
 jQuery(function($){
+    $(document).on('click', '.mm-dcomment__rm.is-locked', function(){ if (window.Theme && Theme.track) Theme.track('select_promotion', { creative_slot: 'comment-remove', promotion_name: 'pro_upgrade' }); });
     $(document).on('click', '[data-mm-crm]', function(e){
         e.preventDefault();
         var b = $(this), cid = b.attr('data-mm-crm');
@@ -81,7 +90,7 @@ jQuery(function($){
     });
 });
 </script>
-<style>.mm-dcomment__rm{margin-left:8px;padding:2px 8px;border:1px solid #e6c7c7;border-radius:999px;background:#fff;color:#b32d2e;font-size:12px;font-weight:600;cursor:pointer}.mm-dcomment__rm:hover{background:#fbeaea}.mm-dcomment__rm:disabled{opacity:.5}</style>
+<style>.mm-dcomment__rm{margin-left:8px;padding:2px 8px;border:1px solid #e6c7c7;border-radius:999px;background:#fff;color:#b32d2e;font-size:12px;font-weight:600;cursor:pointer}.mm-dcomment__rm:hover{background:#fbeaea}.mm-dcomment__rm:disabled{opacity:.5}.mm-dcomment__rm.is-locked{border-color:#e3e5e8;color:#6d6d6d}.mm-dcomment__rm.is-locked:hover{background:#f5f8f8;color:#1b1b1b}</style>
         <?php
     }
 }
