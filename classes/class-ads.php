@@ -804,21 +804,22 @@ class Ads {
         echo '</div></div>';
 
         $form = function ( $title, $inner, $note = '' ) use ( $act, $nonce, $id ) {
-            echo '<form class="mmam-act" method="post" action="' . esc_url( $act ) . '"><input type="hidden" name="action" value="mm_ad_manage"><input type="hidden" name="id" value="' . $id . '"><input type="hidden" name="_wpnonce" value="' . esc_attr( $nonce ) . '"><h4>' . $title . '</h4>' . ( $note ? '<p class="mmam-note">' . $note . '</p>' : '' ) . $inner . '</form>';
+            // Not a <form>: meta boxes sit inside the post form, and a nested form is ignored by browsers.
+            echo '<div class="mmam-act" data-mmam><h4>' . $title . '</h4>' . ( $note ? '<p class="mmam-note">' . $note . '</p>' : '' ) . $inner . '</div>';
         };
-        $reasonField = '<label>Reason for the advertiser (included in their email)<textarea name="reason" placeholder="e.g. The link goes to a different product than the ad describes."></textarea></label>';
+        $reasonField = '<label>Reason for the advertiser (included in their email)<textarea name="mmam_reason" placeholder="e.g. The link goes to a different product than the ad describes."></textarea></label>';
 
         if ( $st === 'review' || $pending ) {
-            $form( $pending ? 'Review the edit' : 'Review this ad', $reasonField . '<div class="mmam-row"><button class="button button-primary" name="do" value="approve">' . ( $pending ? 'Approve the edit' : 'Approve and go live' ) . '</button><button class="button button-danger" name="do" value="reject">' . ( $pending ? 'Reject the edit' : 'Reject and refund' . ( $open ? ' &#8369;' . number_format( array_sum( array_column( $open, 'amount' ) ), 2 ) : '' ) ) . '</button></div>', $pending ? 'The current card keeps running until you approve the edit.' : 'Check the card, link and promo code against the ad guidelines. Rejecting cancels the subscription and refunds every payment in full.' );
+            $form( $pending ? 'Review the edit' : 'Review this ad', $reasonField . '<div class="mmam-row"><button type="button" class="button button-primary" data-mmam-do="approve">' . ( $pending ? 'Approve the edit' : 'Approve and go live' ) . '</button><button type="button" class="button button-danger" data-mmam-do="reject" data-confirm="' . esc_attr( $pending ? 'Reject this edit?' : 'Reject this ad, cancel the subscription and refund in full?' ) . '">' . ( $pending ? 'Reject the edit' : 'Reject and refund' . ( $open ? ' &#8369;' . number_format( array_sum( array_column( $open, 'amount' ) ), 2 ) : '' ) ) . '</button></div>', $pending ? 'The current card keeps running until you approve the edit.' : 'Check the card, link and promo code against the ad guidelines. Rejecting cancels the subscription and refunds every payment in full.' );
         }
         if ( in_array( $st, array( 'live', 'paused' ), true ) ) {
-            $btn = $st === 'live' ? '<button class="button" name="do" value="pause">Pause (stop showing, keep the subscription)</button>' : '<button class="button button-primary" name="do" value="approve">Resume</button>';
+            $btn = $st === 'live' ? '<button type="button" class="button" data-mmam-do="pause">Pause (stop showing, keep the subscription)</button>' : '<button type="button" class="button button-primary" data-mmam-do="approve">Resume</button>';
             $form( $st === 'live' ? 'Pause' : 'Resume', '<div class="mmam-row">' . $btn . '</div>', $st === 'live' ? 'Pausing hides the ad but doesn&rsquo;t refund or cancel. The advertiser is emailed.' : 'Resuming shows the ad again until its paid-through date.' );
             $opts = '<div class="mmam-opts">'
-                . '<label><input type="radio" name="refund" value="unused" checked> Refund the unused days' . ( $last ? ': <b>&#8369;' . number_format( $unused, 2 ) . '</b> of the last &#8369;' . number_format( (float) $last['amount'], 2 ) . ' payment' : '' ) . '</label>'
-                . '<label><input type="radio" name="refund" value="full"> Refund the last payment in full' . ( $last ? ': <b>&#8369;' . number_format( (float) $last['amount'], 2 ) . '</b>' : '' ) . '</label>'
-                . '<label><input type="radio" name="refund" value="none"> No refund</label></div>';
-            $form( 'Remove this ad', $opts . $reasonField . '<div class="mmam-row"><button class="button button-danger" name="do" value="remove" onclick="return this.form.querySelector(\'[name=sure]\').checked || (alert(\'Tick the confirmation box first.\'), false);">Remove ad now</button><label><input type="checkbox" name="sure" value="1"> I understand the ad stops now and the subscription is cancelled</label></div>', 'Use this when an approved ad breaks the guidelines or the advertiser asks to stop. The advertiser is emailed the reason and any refund.' );
+                . '<label><input type="radio" name="mmam_refund" value="unused" checked> Refund the unused days' . ( $last ? ': <b>&#8369;' . number_format( $unused, 2 ) . '</b> of the last &#8369;' . number_format( (float) $last['amount'], 2 ) . ' payment' : '' ) . '</label>'
+                . '<label><input type="radio" name="mmam_refund" value="full"> Refund the last payment in full' . ( $last ? ': <b>&#8369;' . number_format( (float) $last['amount'], 2 ) . '</b>' : '' ) . '</label>'
+                . '<label><input type="radio" name="mmam_refund" value="none"> No refund</label></div>';
+            $form( 'Remove this ad', $opts . $reasonField . '<div class="mmam-row"><button type="button" class="button button-danger" data-mmam-do="remove" data-need-sure="1">Remove ad now</button><label><input type="checkbox" name="mmam_sure" value="1"> I understand the ad stops now and the subscription is cancelled</label></div>', 'Use this when an approved ad breaks the guidelines or the advertiser asks to stop. The advertiser is emailed the reason and any refund.' );
         }
 
         echo '<div><h4 style="margin:4px 0 8px">Payments</h4>';
@@ -831,12 +832,40 @@ class Ads {
                 $done = ! empty( $p['refunded'] );
                 echo '<tr><td>' . esc_html( wp_date( 'M j, Y g:i A', (int) $p['t'] ) ) . '</td><td>&#8369;' . number_format( (float) $p['amount'], 2 ) . '</td><td><a href="' . esc_url( $pp . rawurlencode( (string) $p['sale'] ) ) . '" target="_blank" rel="noopener">' . esc_html( (string) $p['sale'] ) . '</a></td>'
                     . '<td>' . ( $done ? 'Refunded' . ( isset( $p['refund_amount'] ) && (float) $p['refund_amount'] < (float) $p['amount'] ? ' &#8369;' . number_format( (float) $p['refund_amount'], 2 ) : '' ) : 'Paid' ) . '</td><td>';
-                if ( ! $done && ! empty( $p['sale'] ) ) echo '<form method="post" action="' . esc_url( $act ) . '" style="margin:0"><input type="hidden" name="action" value="mm_ad_manage"><input type="hidden" name="id" value="' . $id . '"><input type="hidden" name="_wpnonce" value="' . esc_attr( $nonce ) . '"><input type="hidden" name="sale" value="' . esc_attr( $p['sale'] ) . '"><button class="button button-small" name="do" value="refund" onclick="return confirm(\'Refund this payment in full?\')">Refund</button></form>';
+                if ( ! $done && ! empty( $p['sale'] ) ) echo '<button type="button" class="button button-small" data-mmam-do="refund" data-sale="' . esc_attr( $p['sale'] ) . '" data-confirm="Refund this payment in full?">Refund</button>';
                 echo '</td></tr>';
             }
             echo '</tbody></table>';
         }
         echo '</div></div>';
+
+        // Each action button posts its own form to admin-post.php, built on click.
+        $js = <<<'JS'
+<script>
+(function(){
+    if (window.mmamBound) return; window.mmamBound = true;
+    document.addEventListener('click', function(e){
+        var b = e.target.closest('[data-mmam-do]'); if (!b) return;
+        e.preventDefault();
+        var box = b.closest('[data-mmam]') || document;
+        if (b.hasAttribute('data-need-sure')) { var s = box.querySelector('[name="mmam_sure"]'); if (!s || !s.checked) { alert('Tick the confirmation box first.'); return; } }
+        if (b.getAttribute('data-confirm') && !confirm(b.getAttribute('data-confirm'))) return;
+        var f = document.createElement('form'); f.method = 'post'; f.action = '%ACT%';
+        var add = function(n, v){ var i = document.createElement('input'); i.type = 'hidden'; i.name = n; i.value = v; f.appendChild(i); };
+        add('action', 'mm_ad_manage'); add('id', '%ID%'); add('_wpnonce', '%NONCE%'); add('do', b.getAttribute('data-mmam-do'));
+        if (b.getAttribute('data-sale')) add('sale', b.getAttribute('data-sale'));
+        Array.prototype.forEach.call(box.querySelectorAll('[name^="mmam_"]'), function(el){
+            if ((el.type === 'radio' || el.type === 'checkbox') && !el.checked) return;
+            add(el.name.slice(5), el.value);
+        });
+        b.disabled = true;
+        window.onbeforeunload = null; if (window.jQuery) jQuery(window).off('beforeunload');
+        document.body.appendChild(f); f.submit();
+    });
+})();
+</script>
+JS;
+        echo str_replace( array( '%ACT%', '%ID%', '%NONCE%' ), array( esc_url( $act ), (int) $id, esc_attr( $nonce ) ), $js );
     }
 
     /** Actions from the Status & actions panel. */

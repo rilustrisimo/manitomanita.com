@@ -306,8 +306,9 @@
         var d = $.Deferred(), s = document.createElement('script');
         s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(clientId) + '&vault=true&intent=subscription&currency=PHP&locale=en_PH&disable-funding=paylater,venmo';
         s.setAttribute('data-namespace', ns);
-        s.onload = function () { window[ns] && window[ns].Buttons ? d.resolve(window[ns]) : d.reject(); };
-        s.onerror = function () { d.reject(); };
+        var failed = function () { sdkLoading = null; sdk.client = null; s.parentNode && s.parentNode.removeChild(s); d.reject(); }; // the next try loads it again
+        s.onload = function () { window[ns] && window[ns].Buttons ? d.resolve(window[ns]) : failed(); };
+        s.onerror = failed;
         document.head.appendChild(s);
         sdkLoading = d.promise();
         return sdkLoading;
@@ -347,11 +348,15 @@
                     createSubscription: function (data, actions) { return actions.subscription.create({ plan_id: d.plan, custom_id: d.custom }); },
                     onApprove: function (data) {
                         $pay.html(loader('Confirming your payment\u2026'));
+                        var stuck = function (msg) {
+                            // Paid at PayPal but not confirmed here yet: PayPal also tells us directly, so a refresh usually shows it.
+                            $pay.html('<div class="mma-done mma-done--warn"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><div><b>We couldn\u2019t confirm the payment yet</b><span>' + esc(msg || 'Please refresh this page in a minute.') + ' Don\u2019t pay again. Subscription ID: ' + esc(data.subscriptionID) + '</span><button type="button" class="mma-btn" onclick="location.reload()">Refresh</button></div></div>');
+                        };
                         post('mm_ads_activate', { ad: ad, sub: data.subscriptionID }).done(function (a) {
-                            if (!a.success) return fail($box)(a);
+                            if (!a.success) return stuck($('<div>').html(a.data || '').text());
                             $pay.html('<div class="mma-done"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><div><b>Payment received</b><span>' + a.data.message + '</span></div></div>');
                             setTimeout(function () { location.reload(); }, 3500);
-                        }).fail(fail($box));
+                        }).fail(function () { stuck('Your connection dropped.'); });
                     },
                     onCancel: function () { say($box, 'Payment cancelled. You can try again whenever you\u2019re ready.'); },
                     onError: function () { say($box, 'PayPal couldn\u2019t complete the payment. Please try again.', true); }

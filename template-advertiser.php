@@ -31,9 +31,20 @@ if ( $rwho !== '' ) :
 <div class="mm-home mm-landing mm-adv mm-adv--account mm-adv--report" data-mm-ads>
 	<section class="mmh-hero mml-hero">
 		<div class="mmh-wrap">
+			<?php if ( $rwho !== 'share' ) : ?>
+			<nav class="mma-crumbs" aria-label="Back">
+				<?php if ( $rwho === 'admin' ) : ?>
+					<a class="mma-crumb" href="<?php echo esc_url( admin_url( 'post.php?post=' . (int) $rid . '&action=edit' ) ); ?>"><i class="fa-solid fa-arrow-left"></i> Back to this ad in WP Admin</a>
+					<a class="mma-crumb mma-crumb--ghost" href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . Ads::CPT ) ); ?>">All ads</a>
+				<?php else : ?>
+					<a class="mma-crumb" href="<?php echo esc_url( AdsPortal::pageUrl( 'account' ) . '#ad-' . (int) $rid ); ?>"><i class="fa-solid fa-arrow-left"></i> Back to your ads</a>
+					<a class="mma-crumb mma-crumb--ghost" href="<?php echo esc_url( AdsPortal::pageUrl( 'account' ) ); ?>">Dashboard</a>
+				<?php endif; ?>
+			</nav>
+			<?php endif; ?>
 			<p class="mmh-eyebrow">Ad results<?php echo $rwho === 'share' ? ' &middot; shared report' : ''; ?></p>
 			<h1 class="mmh-hero__title"><?php echo esc_html( $rc['brand'] ); ?> <span>&middot; <?php echo esc_html( $rpl ); ?></span></h1>
-			<p class="mmh-hero__lead"><?php echo esc_html( $rc['headline'] ); ?><?php if ( $rwho !== 'share' ) : ?> &middot; <a href="<?php echo esc_url( AdsPortal::pageUrl( 'account' ) ); ?>">Back to your ads</a><?php endif; ?></p>
+			<p class="mmh-hero__lead"><?php echo esc_html( $rc['headline'] ); ?></p>
 		</div>
 	</section>
 	<section class="mmh-section">
@@ -60,6 +71,7 @@ if ( $rwho !== '' ) :
 				</div>
 			</div>
 			<div class="mma-sharebox" data-mma-sharebox hidden></div>
+			<p class="mma-msg" data-mma-msg role="status" aria-live="polite"></p>
 			<div data-mma-rbody><div class="mma-loader" role="status"><span class="mma-spin" aria-hidden="true"></span><span>Loading your results&hellip;</span></div></div>
 		</div>
 	</section>
@@ -134,7 +146,7 @@ foreach ( get_posts( array( 'post_type' => 'page', 'posts_per_page' => 50, 'meta
 					$pending = is_array( get_post_meta( $id, '_mm_ad_pending', true ) );
 					$c = Ads::creative( $id );
 					?>
-				<article class="mma-card mma-ad" data-mma-ad="<?php echo (int) $id; ?>" data-status="<?php echo esc_attr( $st ); ?>" data-cadences="<?php echo esc_attr( implode( ',', AdsPortal::cadences( Ads::meta( $id, 'slot' ) ) ) ); ?>" data-c="<?php echo esc_attr( wp_json_encode( $c ) ); ?>" data-slot="<?php echo esc_attr( Ads::meta( $id, 'slot' ) ); ?>">
+				<article class="mma-card mma-ad" id="ad-<?php echo (int) $id; ?>" data-mma-ad="<?php echo (int) $id; ?>" data-status="<?php echo esc_attr( $st ); ?>" data-cadences="<?php echo esc_attr( implode( ',', AdsPortal::cadences( Ads::meta( $id, 'slot' ) ) ) ); ?>" data-c="<?php echo esc_attr( wp_json_encode( $c ) ); ?>" data-slot="<?php echo esc_attr( Ads::meta( $id, 'slot' ) ); ?>">
 					<header>
 						<div><h3><?php echo esc_html( $pl['label'] ); ?><?php echo Ads::meta( $id, 'target' ) ? ' <small>&middot; ' . esc_html( $guides[ Ads::meta( $id, 'target' ) ] ?? Ads::meta( $id, 'target' ) ) . '</small>' : ''; ?></h3>
 						<p class="mma-meta">

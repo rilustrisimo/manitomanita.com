@@ -2151,7 +2151,7 @@
 }
 
 @media print {
-    header, footer, .mm-footer, .mma-rbar__tools, .mma-sharebox, .mma-ractions, [data-mm-support-fab], .mm-support, #chaty-widget-0 {
+    header, footer, .mm-footer, .mma-crumbs, .mma-rbar__tools, .mma-sharebox, .mma-ractions, [data-mm-support-fab], .mm-support, #chaty-widget-0 {
         display: none !important;
     }
 
@@ -2219,4 +2219,52 @@
 .mma-reject a {
     color: var(--mm-accent-dark);
     text-decoration: underline;
+}
+
+/* Report page: back to the ad / dashboard */
+.mm-adv .mma-crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 18px;
+}
+
+.mm-adv .mma-crumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 16px;
+    border: 1px solid rgba(255, 255, 255, .28);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.mm-adv .mma-crumb:hover,
+.mm-adv .mma-crumb:focus-visible {
+    border-color: #3ec7c2;
+    color: #fff;
+}
+
+.mm-adv .mma-crumb--ghost {
+    background: none;
+    font-weight: 600;
+}
+
+.mm-adv .mma-ad {
+    scroll-margin-top: 90px;
+}
+
+/* Checkout: paid at PayPal but not confirmed here yet */
+.mma-done--warn i {
+    color: #c27c0e;
+}
+
+.mma-done--warn .mma-btn {
+    align-self: flex-start;
+    margin-top: 10px;
 }

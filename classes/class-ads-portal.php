@@ -366,7 +366,7 @@ class AdsPortal {
         }
 
         $status = Ads::meta( $id, 'status' );
-        if ( $status === 'live' ) {
+        if ( $status === 'live' || $status === 'paused' ) {
             update_post_meta( $id, '_mm_ad_pending', $c );
             self::notifyAdmin( $id, 'edit' );
             self::mailAdvertiser( $id, 'edit-received' );
@@ -464,6 +464,19 @@ class AdsPortal {
         $other = get_posts( array( 'post_type' => Ads::CPT, 'post_status' => 'any', 'fields' => 'ids', 'posts_per_page' => 1, 'post__not_in' => array( $id ), 'meta_query' => array( array( 'key' => '_mm_ad_sub', 'value' => $sub ) ) ) );
         if ( $other ) return 'That payment is already linked to another ad.';
 
+        // Re-booking (after it ended, or after a fix): settle the previous subscription first.
+        $old = (string) Ads::meta( $id, 'sub' );
+        if ( $old !== '' && $old !== $sub ) {
+            if ( get_post_meta( $id, '_mm_ad_refund_due', true ) ) self::syncPayments( $id, true ); // refunds a late payment of the rejected booking
+            $pays = Ads::payments( $id );
+            foreach ( $pays as &$p ) if ( empty( $p['sub'] ) ) $p['sub'] = $old;
+            unset( $p );
+            update_post_meta( $id, '_mm_ad_payments', $pays );
+        }
+        delete_post_meta( $id, '_mm_ad_refund_due' );
+        update_post_meta( $id, '_mm_ad_payfail', 0 );
+        delete_post_meta( $id, '_mm_ad_switch' );
+
         update_post_meta( $id, '_mm_ad_sub', $sub );
         update_post_meta( $id, '_mm_ad_status', 'review' );
         update_post_meta( $id, '_mm_ad_cancelled', 0 );
@@ -551,7 +564,7 @@ class AdsPortal {
         if ( is_array( $pending ) && $pending ) {
             update_post_meta( $id, '_mm_ad_creative', $pending );
             delete_post_meta( $id, '_mm_ad_pending' );
-            if ( Ads::meta( $id, 'status' ) === 'live' ) {
+            if ( in_array( Ads::meta( $id, 'status' ), array( 'live', 'paused' ), true ) ) { // a paused ad stays paused
                 Ads::flush();
                 self::mailAdvertiser( $id, 'edit-approved' );
                 return;
@@ -575,7 +588,7 @@ class AdsPortal {
     /** Reject: a pending edit is dropped; a new booking is cancelled and its first payment refunded. */
     public static function reject( $id, $reason = '' ) {
         $reason = mb_substr( sanitize_textarea_field( (string) $reason ), 0, 400 );
-        if ( Ads::meta( $id, 'status' ) === 'live' && get_post_meta( $id, '_mm_ad_pending', true ) ) {
+        if ( in_array( Ads::meta( $id, 'status' ), array( 'live', 'paused' ), true ) && get_post_meta( $id, '_mm_ad_pending', true ) ) {
             delete_post_meta( $id, '_mm_ad_pending' );
             update_post_meta( $id, '_mm_ad_reason', $reason );
             self::mailAdvertiser( $id, 'edit-rejected' );
@@ -591,6 +604,7 @@ class AdsPortal {
             $tried = false;
             foreach ( Ads::payments( $id ) as $p ) {
                 if ( empty( $p['sale'] ) || ! empty( $p['refunded'] ) ) continue;
+                if ( ! empty( $p['sub'] ) && $p['sub'] !== $sub ) continue; // an earlier booking that ran
                 $tried = true;
                 self::refundOne( $id, $p['sale'] );
             }
@@ -626,7 +640,7 @@ class AdsPortal {
             $sale = (string) ( $x['id'] ?? '' );
             if ( $sale === '' || strtoupper( (string) ( $x['status'] ?? '' ) ) !== 'COMPLETED' || in_array( $sale, $have, true ) ) continue;
             $amount = (float) ( $x['amount_with_breakdown']['gross_amount']['value'] ?? 0 );
-            $pays[] = array( 't' => strtotime( (string) ( $x['time'] ?? '' ) ) ?: time(), 'amount' => $amount, 'sale' => $sale, 'synced' => 1 );
+            $pays[] = array( 't' => strtotime( (string) ( $x['time'] ?? '' ) ) ?: time(), 'amount' => $amount, 'sale' => $sale, 'sub' => $sub, 'synced' => 1 );
             $have[] = $sale;
             $new[] = $sale;
             update_post_meta( $id, '_mm_ad_paid', (float) Ads::meta( $id, 'paid', 0 ) + $amount );
@@ -755,7 +769,7 @@ class AdsPortal {
                 foreach ( $pays as $p ) if ( ( $p['sale'] ?? '' ) === $sale ) $known = $p;
                 if ( $known && ! empty( $known['refunded'] ) ) break; // already synced and refunded
                 if ( ! $known ) {
-                    $pays[] = array( 't' => time(), 'amount' => $amount, 'sale' => $sale );
+                    $pays[] = array( 't' => time(), 'amount' => $amount, 'sale' => $sale, 'sub' => (string) ( $r['billing_agreement_id'] ?? '' ) );
                     update_post_meta( $id, '_mm_ad_payments', $pays );
                     update_post_meta( $id, '_mm_ad_paid', (float) Ads::meta( $id, 'paid', 0 ) + $amount );
                     if ( class_exists( 'Insights' ) && $mode === 'live' ) Insights::log( 'ad_payment', 0, 0, $amount, (string) $id );
