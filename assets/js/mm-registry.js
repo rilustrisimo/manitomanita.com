@@ -115,9 +115,35 @@
         });
     }
 
+    /* ---------- Owner: tabs (Gifts / Share / Guests / Details) and the list switcher ---------- */
+    function initTabs(root) {
+        var nav = root.find('[data-mm-wl-tabs]');
+        root.find('[data-mm-wl-switch]').on('change', function () { if (this.value) window.location.href = this.value; });
+        if (!nav.length) return;
+        var names = ['gifts', 'share', 'guests', 'details'];
+        var show = function (t, scroll) {
+            if (names.indexOf(t) < 0) t = 'gifts';
+            nav.find('[data-mm-wl-tab2]').each(function () {
+                var on = $(this).attr('data-mm-wl-tab2') === t;
+                $(this).toggleClass('is-on', on).attr('aria-selected', on ? 'true' : 'false');
+            });
+            root.find('[data-mm-wl-panel]').each(function () {
+                $(this).toggleClass('mm-wl-off', (' ' + $(this).attr('data-mm-wl-panel') + ' ').indexOf(' ' + t + ' ') < 0);
+            });
+            try { history.replaceState(null, '', '#' + t); } catch (e) {}
+            if (scroll) { var top = nav.offset().top - 80; if ($(window).scrollTop() > top) $('html, body').animate({ scrollTop: top }, 200); }
+        };
+        nav.attr('role', 'tablist').find('[data-mm-wl-tab2]').attr('role', 'tab');
+        nav.on('click', '[data-mm-wl-tab2]', function () { show($(this).attr('data-mm-wl-tab2'), true); });
+        root.on('click', '[data-mm-wl-go]', function () { show($(this).attr('data-mm-wl-go'), true); });
+        root.addClass('has-tabs');
+        show((window.location.hash || '').replace('#', ''), false);
+    }
+
     $(function () {
         var root = $('.mm-wl');
         if (!root.length) return;
+        initTabs(root);
         initQr(root);
         initAlerts(root);
         initThanks(root);

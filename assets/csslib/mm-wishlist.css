@@ -1144,3 +1144,197 @@
     margin-top: 4px;
     color: var(--wl-text);
 }
+
+/* Balance fixes (mobile) */
+.mm-wl input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    line-height: 46px; /* iOS: keeps the height when the date is empty */
+}
+
+.mm-wl input[type="date"]::-webkit-date-and-time-value {
+    margin: 0;
+    text-align: left; /* iOS Safari centers the value by default */
+}
+
+.mm-wl input[type="date"]::-webkit-datetime-edit {
+    padding: 0;
+}
+
+.mm-wl .mm-wl-share__apps {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.mm-wl .mm-wl-share__apps .mm-wl-chip {
+    justify-content: center;
+    min-width: 0;
+    text-align: center;
+}
+
+.mm-wl .mm-wl-share__apps .mm-wl-chip[hidden] {
+    display: none;
+}
+
+.mm-wl .mm-wl-share__apps [data-mm-wl-qr],
+.mm-wl .mm-wl-share__apps .mm-wl-chip--wide {
+    grid-column: 1 / -1;
+}
+
+@media (min-width: 640px) {
+    .mm-wl .mm-wl-share__apps {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .mm-wl .mm-wl-share__apps [data-mm-wl-qr],
+    .mm-wl .mm-wl-share__apps .mm-wl-chip--wide {
+        grid-column: span 2;
+    }
+}
+
+.mm-wl .mm-wl-got li .mm-wl-thx {
+    display: grid;
+    gap: 6px;
+}
+
+.mm-wl .mm-wl-got li .mm-wl-thx__giver {
+    justify-content: space-between;
+    border-radius: 12px;
+    padding: 6px 12px;
+}
+
+/* Owner: list switcher + tabs */
+.mm-wl .mm-wl-switch {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 14px;
+}
+
+.mm-wl .mm-wl-switch .mm-wl-switch__pick {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    font-weight: 600;
+    text-overflow: ellipsis;
+}
+
+.mm-wl .mm-wl-switch .mm-wl-switch__new {
+    flex: 0 0 auto;
+    min-height: 48px;
+    white-space: nowrap;
+}
+
+.mm-wl .mm-wl-switch .mm-wl-switch__new:only-child {
+    flex: 1 1 auto;
+    justify-content: center;
+    border-style: dashed;
+}
+
+.mm-wl .mm-wl-tabs2 {
+    position: sticky;
+    top: 72px; /* below the sticky site header */
+    z-index: 5;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin: 0 0 18px;
+    padding: 4px;
+    border-radius: 16px;
+    background: #f0f3f3;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .06);
+}
+
+.mm-wl:not(.has-tabs) .mm-wl-tabs2 {
+    display: none;
+}
+
+.mm-wl .mm-wl-tabs2 button {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+    padding: 9px 2px 8px;
+    border: 0;
+    border-radius: 12px;
+    background: none;
+    color: var(--wl-text);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.mm-wl .mm-wl-tabs2 button i {
+    font-size: 16px;
+}
+
+.mm-wl .mm-wl-tabs2 button.is-on {
+    background: #fff;
+    color: var(--wl-dark);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+}
+
+.mm-wl .mm-wl-tabs2 button.is-on i {
+    color: var(--wl-occ, var(--wl-accent-dark));
+}
+
+.mm-wl .mm-wl-tabs2 em {
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--wl-dark);
+    color: #fff;
+    font-size: 10px;
+    font-style: normal;
+    line-height: 18px;
+}
+
+.mm-wl .mm-wl-off {
+    display: none !important;
+}
+
+.mm-wl .mm-wl-next {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin: 6px 0 22px;
+    padding: 14px;
+    border: 1px dashed var(--wl-line);
+    border-radius: 14px;
+    background: #fff;
+    color: var(--wl-accent-dark);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.mm-wl:not(.has-tabs) .mm-wl-next {
+    display: none;
+}
+
+.mm-wl .mm-wl-joined {
+    display: flex;
+    gap: 10px;
+    margin: 0 0 14px !important;
+    padding: 12px 14px;
+    border: 1px solid #bfe3cf;
+    border-radius: 12px;
+    background: #eef8f2;
+    color: var(--wl-dark);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.mm-wl .mm-wl-joined i {
+    margin-top: 3px;
+    color: #1f8a5b;
+}

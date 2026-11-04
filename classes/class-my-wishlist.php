@@ -320,7 +320,15 @@ class MyWishlist {
         $err = EmailCheck::verifyCode( $email, preg_replace( '/\D/', '', (string) ( $_POST['code'] ?? '' ) ) );
         if ( $err ) wp_send_json_error( $err );
 
-        if ( self::byEmail( $email ) ) wp_send_json_error( 'You already have a list with this email. Tap &ldquo;I have one&rdquo; to log in, then &ldquo;Create another list&rdquo;.' );
+        // The code proves the email is theirs: add the list to their account (current password kept) and sign in to all of it.
+        $existing = self::listsByEmail( $email );
+        if ( $existing ) {
+            if ( count( $existing ) >= 20 ) wp_send_json_error( 'You have the most lists we allow (20). Log in with &ldquo;I have one&rdquo; and delete an old one first.' );
+            $id = self::newList( $name, $email, (string) get_post_meta( $existing[0], '_mm_wl_hash', true ) );
+            if ( ! $id ) wp_send_json_error( 'Something went wrong. Please try again.' );
+            foreach ( array_merge( $existing, array( $id ) ) as $l ) self::signIn( $l );
+            wp_send_json_success( array( 'url' => add_query_arg( 'joined', '1', self::url( $id ) ) ) );
+        }
 
         $id = self::newList( $name, $email, wp_hash_password( $pass ) );
         if ( ! $id ) wp_send_json_error( 'Something went wrong. Please try again.' );

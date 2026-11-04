@@ -144,7 +144,11 @@ class EmailCheck {
             'preheader' => 'Enter this code to verify your email and ' . ( $what === 'advertiser account' ? 'sign in to your ' : 'create your ' ) . $what . '.',
             'eyebrow'   => 'Verify your email',
             'title'     => 'Your verification code',
-            'body'      => array( '<p>Enter this code ' . array( 'group' => 'on the Create Group form', 'wishlist' => 'to create your wishlist', 'advertiser account' => 'to sign in to your advertiser account' )[ $what ] . ' to verify your email:</p>' ),
+            'body'      => array_filter( array(
+                '<p>Enter this code ' . array( 'group' => 'on the Create Group form', 'wishlist' => 'to create your wishlist', 'advertiser account' => 'to sign in to your advertiser account' )[ $what ] . ' to verify your email:</p>',
+                // Told privately here (not on screen), so the form can't be used to check whose email has lists.
+                $what === 'wishlist' && class_exists( 'MyWishlist' ) && MyWishlist::listsByEmail( $email ) ? '<p><strong>You already have lists with this email.</strong> If you continue, we&rsquo;ll add the new list to your account and keep your current password. To open your existing lists instead, tap &ldquo;I have one&rdquo; on the My Wishlist page.</p>' : '',
+            ) ),
             'code'      => $code,
             'note'      => 'The code expires in 10 minutes. If you didn&rsquo;t ' . ( $what === 'advertiser account' ? 'try to sign in' : 'try to create a ' . $what ) . ', you can ignore this email.',
             'footer'    => 'You&rsquo;re getting this because this address was entered on manitomanita.com.',
