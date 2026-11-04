@@ -386,9 +386,9 @@ class AdsPortal {
         wp_send_json_success( array( 'ad' => $id, 'message' => 'Saved.' ) );
     }
 
-    /** Can this placement be booked now (registries open with step 3; Christmas placements Sep 1 - Dec 20)? */
+    /** Can this placement be booked now (registries once Registries::adsOpen(); Christmas placements Sep 1 - Dec 20)? */
     public static function sellable( $placement ) {
-        if ( strpos( $placement, 'registry' ) === 0 && ! class_exists( 'Registries' ) ) return false;
+        if ( strpos( $placement, 'registry' ) === 0 && ! ( class_exists( 'Registries' ) && Registries::adsOpen() ) ) return false;
 
         return true;
     }
@@ -589,7 +589,7 @@ class AdsPortal {
             AdsPayPal::cancel( $mode, $sub, 'Ad not approved' );
             update_post_meta( $id, '_mm_ad_cancelled', 1 );
             $tried = false;
-            foreach ( (array) get_post_meta( $id, '_mm_ad_payments', true ) as $p ) {
+            foreach ( Ads::payments( $id ) as $p ) {
                 if ( empty( $p['sale'] ) || ! empty( $p['refunded'] ) ) continue;
                 $tried = true;
                 self::refundOne( $id, $p['sale'] );
@@ -602,7 +602,46 @@ class AdsPortal {
 
     /** Payments not yet refunded, newest last. */
     public static function openPayments( $id ) {
-        return array_values( array_filter( (array) get_post_meta( (int) $id, '_mm_ad_payments', true ), function ( $p ) { return ! empty( $p['sale'] ) && empty( $p['refunded'] ); } ) );
+        return array_values( array_filter( Ads::payments( $id ), function ( $p ) { return ! empty( $p['sale'] ) && empty( $p['refunded'] ); } ) );
+    }
+
+    /**
+     * Pulls the subscription's completed payments from PayPal and records any the webhook hasn't
+     * (sandbox webhooks are often not set up; live ones can arrive late). At most every 5 minutes per ad.
+     */
+    public static function syncPayments( $id, $force = false ) {
+        $id = (int) $id;
+        $sub = (string) Ads::meta( $id, 'sub' );
+        if ( $sub === '' || ! class_exists( 'AdsPayPal' ) ) return;
+        $key = 'mm_ad_txsync_' . $id;
+        if ( ! $force && get_transient( $key ) ) return;
+        set_transient( $key, 1, 5 * MINUTE_IN_SECONDS );
+
+        $mode = Ads::meta( $id, 'mode', 'live' );
+        $pays = Ads::payments( $id );
+        $have = array();
+        foreach ( $pays as $p ) $have[] = (string) ( $p['sale'] ?? '' );
+        $new = array();
+        foreach ( AdsPayPal::transactions( $mode, $sub, (int) get_post_time( 'U', true, $id ) - DAY_IN_SECONDS ) as $x ) {
+            $sale = (string) ( $x['id'] ?? '' );
+            if ( $sale === '' || strtoupper( (string) ( $x['status'] ?? '' ) ) !== 'COMPLETED' || in_array( $sale, $have, true ) ) continue;
+            $amount = (float) ( $x['amount_with_breakdown']['gross_amount']['value'] ?? 0 );
+            $pays[] = array( 't' => strtotime( (string) ( $x['time'] ?? '' ) ) ?: time(), 'amount' => $amount, 'sale' => $sale, 'synced' => 1 );
+            $have[] = $sale;
+            $new[] = $sale;
+            update_post_meta( $id, '_mm_ad_paid', (float) Ads::meta( $id, 'paid', 0 ) + $amount );
+            if ( class_exists( 'Insights' ) && $mode === 'live' ) Insights::log( 'ad_payment', 0, 0, $amount, (string) $id );
+        }
+        if ( ! $new ) return;
+        usort( $pays, function ( $a, $b ) { return (int) $a['t'] - (int) $b['t']; } );
+        update_post_meta( $id, '_mm_ad_payments', $pays );
+
+        // A rejected ad whose payment hadn't arrived yet: refund it now.
+        if ( Ads::meta( $id, 'status' ) === 'rejected' || get_post_meta( $id, '_mm_ad_refund_due', true ) ) {
+            $ok = true;
+            foreach ( $new as $sale ) $ok = self::refundOne( $id, $sale ) && $ok;
+            if ( $ok ) delete_post_meta( $id, '_mm_ad_refund_due' );
+        }
     }
 
     /** Unused share of the current paid period (PHP) for the latest payment. */
@@ -619,7 +658,7 @@ class AdsPortal {
     /** Refund one payment (full, or $amount). Records it; reports failures. Returns bool. */
     public static function refundOne( $id, $sale, $amount = null ) {
         $mode = Ads::meta( $id, 'mode', 'live' );
-        $pays = (array) get_post_meta( $id, '_mm_ad_payments', true );
+        $pays = Ads::payments( $id );
         $row = null;
         foreach ( $pays as $p ) if ( ( $p['sale'] ?? '' ) === $sale ) $row = $p;
         if ( ! $row || ! empty( $row['refunded'] ) ) return false;
@@ -665,7 +704,7 @@ class AdsPortal {
      * PayPal refused a refund: flag the ad and email the admin everything needed to refund it by hand.
      */
     public static function refundFailed( $id, $sale, $amount, $mode ) {
-        $fails = (array) get_post_meta( $id, '_mm_ad_refund_failed', true );
+        $fails = array_filter( (array) get_post_meta( $id, '_mm_ad_refund_failed', true ) );
         if ( in_array( $sale, $fails, true ) ) return; // already reported
         $fails[] = $sale;
         update_post_meta( $id, '_mm_ad_refund_failed', $fails );
@@ -710,15 +749,20 @@ class AdsPortal {
                 $id = self::adBySub( (string) ( $r['billing_agreement_id'] ?? '' ) );
                 if ( ! $id ) break;
                 $amount = (float) ( $r['amount']['total'] ?? 0 );
-                $pays = (array) get_post_meta( $id, '_mm_ad_payments', true );
-                $pays[] = array( 't' => time(), 'amount' => $amount, 'sale' => (string) ( $r['id'] ?? '' ) );
-                update_post_meta( $id, '_mm_ad_payments', $pays );
-                update_post_meta( $id, '_mm_ad_paid', (float) Ads::meta( $id, 'paid', 0 ) + $amount );
-                if ( class_exists( 'Insights' ) && $mode === 'live' ) Insights::log( 'ad_payment', 0, 0, $amount, (string) $id );
+                $sale = (string) ( $r['id'] ?? '' );
+                $pays = Ads::payments( $id );
+                $known = null;
+                foreach ( $pays as $p ) if ( ( $p['sale'] ?? '' ) === $sale ) $known = $p;
+                if ( $known && ! empty( $known['refunded'] ) ) break; // already synced and refunded
+                if ( ! $known ) {
+                    $pays[] = array( 't' => time(), 'amount' => $amount, 'sale' => $sale );
+                    update_post_meta( $id, '_mm_ad_payments', $pays );
+                    update_post_meta( $id, '_mm_ad_paid', (float) Ads::meta( $id, 'paid', 0 ) + $amount );
+                    if ( class_exists( 'Insights' ) && $mode === 'live' ) Insights::log( 'ad_payment', 0, 0, $amount, (string) $id );
+                }
 
                 if ( Ads::meta( $id, 'status' ) === 'rejected' || get_post_meta( $id, '_mm_ad_refund_due', true ) ) {
-                    if ( AdsPayPal::refundSale( $mode, (string) $r['id'] ) ) delete_post_meta( $id, '_mm_ad_refund_due' );
-                    else self::refundFailed( $id, (string) $r['id'], $amount, $mode );
+                    if ( self::refundOne( $id, $sale ) ) delete_post_meta( $id, '_mm_ad_refund_due' );
                 } elseif ( Ads::meta( $id, 'status' ) === 'live' ) {
                     $s = AdsPayPal::subscription( $mode, Ads::meta( $id, 'sub' ) );
                     if ( $s ) update_post_meta( $id, '_mm_ad_end', max( (int) Ads::meta( $id, 'end', 0 ), AdsPayPal::periodEnd( $s, Ads::meta( $id, 'cadence', 'weekly' ) ) ) );
@@ -751,9 +795,9 @@ class AdsPortal {
                 $id = self::adBySub( (string) ( $r['billing_agreement_id'] ?? '' ) );
                 if ( $id && $sale ) {
                     self::mailAdvertiser( $id, 'refunded', array( 'amount' => (float) ( $r['amount']['total'] ?? 0 ) ) );
-                    $fails = array_values( array_diff( (array) get_post_meta( $id, '_mm_ad_refund_failed', true ), array( $sale ) ) );
+                    $fails = array_values( array_diff( array_filter( (array) get_post_meta( $id, '_mm_ad_refund_failed', true ) ), array( $sale ) ) );
                     if ( $fails ) update_post_meta( $id, '_mm_ad_refund_failed', $fails ); else delete_post_meta( $id, '_mm_ad_refund_failed' );
-                    $pays = (array) get_post_meta( $id, '_mm_ad_payments', true );
+                    $pays = Ads::payments( $id );
                     foreach ( $pays as &$p ) if ( ( $p['sale'] ?? '' ) === $sale ) $p['refunded'] = 1;
                     unset( $p );
                     update_post_meta( $id, '_mm_ad_payments', $pays );

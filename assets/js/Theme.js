@@ -1256,6 +1256,40 @@ var Theme = {
             });
         });
 
+        // Owner: "Create another list" (same email and password)
+        var another = root.find('[data-mm-wl-another]');
+        root.find('[data-mm-wl-another-open]').on('click', function(){ another.prop('hidden', false).find('select').trigger('focus'); });
+        another.find('[data-mm-wl-another-cancel]').on('click', function(){ another.prop('hidden', true); });
+        another.on('submit', function(e){
+            e.preventDefault();
+            var m = another.find('[data-mm-wl-msg]'), btn = another.find('[type="submit"]').prop('disabled', true), occ = another.find('[name="occasion"]').val();
+            m.removeClass('is-error').text('Creating your list\u2026');
+            $.post(ajax, { action: 'mm_wl_create', from: another.find('[name="from"]').val(), nonce: another.find('[name="nonce"]').val(), occasion: occ, 'for': $.trim(another.find('[name="for"]').val()), date: another.find('[name="date"]').val() }).done(function(r){
+                if (r && r.success) { Theme.track('wishlist_create', { occasion: occ, another: 1 }); window.location.href = r.data.url; }
+                else { m.addClass('is-error').text(plain(r && r.data)); btn.prop('disabled', false); }
+            }).fail(function(){ m.addClass('is-error').text('Network error. Please try again.'); btn.prop('disabled', false); });
+        });
+
+        // Editor: a new occasion sets its usual "see who reserved" choice until the owner picks one
+        var seeres = editor.find('[name="seeres"]'), seeTouched = false;
+        seeres.on('change', function(){ seeTouched = true; });
+        editor.find('[data-mm-wl-occ]').on('change', function(){
+            if (!seeTouched) seeres.prop('checked', $(this).find(':selected').attr('data-seeres') === '1');
+        });
+
+        // Owner: cash gift note + QR image
+        var cash = root.find('[data-mm-wl-cash]');
+        cash.on('submit', function(e){
+            e.preventDefault();
+            var m = cash.find('[data-mm-wl-msg]'), btn = cash.find('[type="submit"]').prop('disabled', true), fd = new FormData(this);
+            fd.append('action', 'mm_wl_cash');
+            m.removeClass('is-error').text('Saving\u2026');
+            $.ajax({ url: ajax, type: 'POST', data: fd, processData: false, contentType: false, dataType: 'JSON' }).done(function(r){
+                if (r && r.success) { m.text(plain(r.data && r.data.message)); setTimeout(function(){ window.location.reload(); }, 700); }
+                else { m.addClass('is-error').text(plain(r && r.data && (r.data.message || r.data))); btn.prop('disabled', false); }
+            }).fail(function(){ m.addClass('is-error').text('Network error. Please try again.'); btn.prop('disabled', false); });
+        });
+
         // Landing: tabs, create (with the email code), log in, login link
         root.find('[data-mm-wl-tab]').on('click', function(){
             var t = $(this).attr('data-mm-wl-tab');
@@ -1279,7 +1313,7 @@ var Theme = {
             });
             create.on('submit', function(e){
                 e.preventDefault();
-                var d = { action: 'mm_wl_create', name: $.trim(create.find('[name="name"]').val()), email: $.trim(email.val()), password: create.find('[name="password"]').val(), code: $.trim(create.find('[name="code"]').val()) };
+                var d = { action: 'mm_wl_create', name: $.trim(create.find('[name="name"]').val()), email: $.trim(email.val()), password: create.find('[name="password"]').val(), code: $.trim(create.find('[name="code"]').val()), occasion: create.find('[name="occasion"]').val(), date: create.find('[name="date"]').val() };
                 if (!d.name) { cmsg.addClass('is-error').text('Please enter your name.'); return; }
                 if (!valid(d.email)) { cmsg.addClass('is-error').text('Please enter a valid email.'); return; }
                 if (!d.code) { cmsg.addClass('is-error').text('Tap \u201cSend verification code\u201d and enter the code we email you.'); return; }
@@ -1287,7 +1321,7 @@ var Theme = {
                 var btn = create.find('[type="submit"]').prop('disabled', true);
                 cmsg.removeClass('is-error').text('Creating your wishlist\u2026');
                 $.post(ajax, d).done(function(r){
-                    if (r && r.success) { Theme.track('wishlist_create', {}); window.location.href = r.data.url; }
+                    if (r && r.success) { Theme.track('wishlist_create', { occasion: d.occasion }); window.location.href = r.data.url; }
                     else { cmsg.addClass('is-error').text(plain(r && r.data)); btn.prop('disabled', false); }
                 }).fail(function(){ cmsg.addClass('is-error').text('Network error. Please try again.'); btn.prop('disabled', false); });
             });
@@ -1307,21 +1341,24 @@ var Theme = {
             $.post(ajax, { action: 'mm_wl_magic', email: em }).done(function(r){ m.removeClass('is-error').text(plain(r && r.data)); });
         });
 
-        // Friends: "I'll get this" (a token in this browser lets the same person undo it)
+        // Guests: "I'll get this", per unit when an item needs several (a token in this browser lets the same person undo it)
         var list = root.find('[data-mm-wl-list]');
         if (list.length) {
             var wid = list.attr('data-id'), store = 'mm_wl_res_' + wid, mine = {};
             try { mine = JSON.parse(localStorage.getItem(store) || '{}') || {}; } catch (e) {}
             var save = function(){ try { localStorage.setItem(store, JSON.stringify(mine)); } catch (e) {} };
 
-            var paint = function(li, taken, by, own){
-                var box = li.find('[data-mm-wl-res]');
-                li.toggleClass('is-taken', taken);
-                box.html(taken
-                    ? '<span class="mm-wl-res__taken"><i class="fa-solid fa-circle-check"></i> ' + (own ? 'You\u2019re getting this' : 'Reserved' + (by ? ' by ' + Theme.esc(by) : '')) + '</span>' + (own ? ' <button type="button" class="mm-wl-link" data-mm-wl-undo>Undo</button>' : '')
-                    : '<button type="button" class="mm-wl-btn" data-mm-wl-reserve><i class="fa-solid fa-hand"></i> I\u2019ll get this</button>');
+            var paint = function(li, by){
+                var box = li.find('[data-mm-wl-res]'), qty = parseInt(li.attr('data-qty'), 10) || 1, n = parseInt(li.attr('data-n'), 10) || 0,
+                    own = !!mine[li.attr('data-key')], full = n >= qty, html;
+                li.toggleClass('is-taken', full || (own && qty === 1));
+                if (own) html = '<span class="mm-wl-res__taken"><i class="fa-solid fa-circle-check"></i> You\u2019re getting ' + (qty > 1 ? 'one' : 'this') + '</span> <button type="button" class="mm-wl-link" data-mm-wl-undo>Undo</button>';
+                else if (full) html = '<span class="mm-wl-res__taken"><i class="fa-solid fa-circle-check"></i> ' + (qty > 1 ? 'All ' + qty + ' reserved' : 'Reserved' + (by ? ' by ' + Theme.esc(by) : '')) + '</span>';
+                else html = '<button type="button" class="mm-wl-btn" data-mm-wl-reserve><i class="fa-solid fa-hand"></i> I\u2019ll get this</button>';
+                if (qty > 1 && n && !full) html += '<span class="mm-wl-res__count">' + n + ' of ' + qty + ' reserved</span>';
+                box.html(html);
             };
-            list.children('li').each(function(){ var k = $(this).attr('data-key'); if (mine[k]) paint($(this), true, '', true); });
+            list.children('li').each(function(){ if (mine[$(this).attr('data-key')]) paint($(this)); });
 
             list.on('click', '[data-mm-wl-reserve]', function(){
                 var li = $(this).closest('li'), key = li.attr('data-key');
@@ -1331,16 +1368,16 @@ var Theme = {
                     e.preventDefault();
                     var by = $.trim($(this).find('input').val()), b = $(this).find('button[type="submit"]').prop('disabled', true);
                     $.post(ajax, { action: 'mm_wl_reserve', id: wid, key: key, by: by }).done(function(r){
-                        if (r && r.success) { mine[key] = r.data.token; save(); paint(li, true, by, true); Theme.toast('Reserved! Others will see it\u2019s taken'); Theme.track('wishlist_reserve', {}); }
-                        else { b.prop('disabled', false); Theme.toast(plain(r && r.data), 'error'); if (/already/.test(plain(r && r.data))) paint(li, true, '', false); }
+                        if (r && r.success) { mine[key] = r.data.token; save(); li.attr('data-n', r.data.n); paint(li, by); Theme.toast('Reserved! Others will see it\u2019s taken'); Theme.track('wishlist_reserve', {}); }
+                        else { b.prop('disabled', false); Theme.toast(plain(r && r.data), 'error'); if (/already/.test(plain(r && r.data))) { li.attr('data-n', li.attr('data-qty')); paint(li); } }
                     }).fail(function(){ b.prop('disabled', false); Theme.toast('Network error. Please try again.', 'error'); });
                 });
             });
-            list.on('click', '[data-mm-wl-cancel]', function(){ paint($(this).closest('li'), false); });
+            list.on('click', '[data-mm-wl-cancel]', function(){ paint($(this).closest('li')); });
             list.on('click', '[data-mm-wl-undo]', function(){
                 var li = $(this).closest('li'), key = li.attr('data-key');
                 $.post(ajax, { action: 'mm_wl_unreserve', id: wid, key: key, token: mine[key] }).done(function(r){
-                    if (r && r.success) { delete mine[key]; save(); paint(li, false); Theme.toast('Reservation removed'); }
+                    if (r && r.success) { delete mine[key]; save(); li.attr('data-n', r.data.n); paint(li); Theme.toast('Reservation removed'); }
                     else Theme.toast(plain(r && r.data), 'error');
                 });
             });
@@ -3410,7 +3447,9 @@ var Theme = {
 
             var data = { action: $form.find('[name="action"]').val() || 'save_wishlist', uid: $form.find('[name="uid"]').val(), nonce: $form.find('[name="nonce"]').val(), address: $form.find('[name="address"]').val(), items: [] },
                 firstError = null;
-            $.each(['id', 'name', 'note', 'password'], function(i, k){ var f = $form.find('[name="' + k + '"]'); if (f.length) data[k] = f.val(); });
+            $.each(['id', 'name', 'note', 'password', 'occasion', 'for', 'date'], function(i, k){ var f = $form.find('[name="' + k + '"]'); if (f.length) data[k] = f.val(); });
+            var seeres = $form.find('[name="seeres"]');
+            if (seeres.length) data.seeres = seeres.is(':checked') ? 1 : 0;
 
             $list.children('[data-mm-item]').each(function(){
                 var $it = $(this), text = $.trim($it.find('[data-mm-text]').val()), links = [];
@@ -3432,7 +3471,11 @@ var Theme = {
                     firstError = firstError || $it.find('[data-mm-text]');
                 }
 
-                if (text !== '' || links.length > 0) data.items.push({ text: text, links: links });
+                if (text !== '' || links.length > 0) {
+                    var row = { text: text, links: links }, $q = $it.find('[data-mm-qty]');
+                    if ($q.length) { row.qty = $q.val(); row.top = $it.find('[data-mm-top]').is(':checked') ? 1 : 0; }
+                    data.items.push(row);
+                }
             });
 
             if (firstError) {

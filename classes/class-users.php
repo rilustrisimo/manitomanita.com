@@ -290,7 +290,8 @@ class Users extends Theme {
         echo '</div>';
     }
 
-    public static function wishlistItemHtml($text, $links){
+    /** Editor row. $reg (My Wishlist lists): array( qty, top ) adds "How many" and "Most wanted". */
+    public static function wishlistItemHtml($text, $links, $reg = null){
         $html  = '<li class="mm-item" data-mm-item>';
         $html .= '<div class="mm-item__head">';
         $html .= '    <span class="mm-wish__num" data-mm-num>1</span>';
@@ -303,6 +304,12 @@ class Users extends Theme {
         $html .= '<div class="mm-links" data-mm-links>';
         foreach($links as $l) $html .= self::wishlistLinkHtml($l);
         $html .= '</div>';
+        if(is_array($reg)){
+            $q = max(1, min(12, (int) ($reg['qty'] ?? 1)));
+            $html .= '<div class="mm-item__reg"><label class="mm-item__qty">How many <select data-mm-qty aria-label="How many">';
+            for($n = 1; $n <= 12; $n++) $html .= '<option value="'.$n.'"'.selected($q, $n, false).'>'.$n.'</option>';
+            $html .= '</select></label><label class="mm-item__top"><input type="checkbox" data-mm-top'.(!empty($reg['top']) ? ' checked' : '').'> <i class="fa-solid fa-star"></i> Most wanted</label></div>';
+        }
         $html .= '<div class="mm-item__actions">';
         $html .= '    <button type="button" class="mm-btn-text" data-mm-add-link><i class="fas fa-link"></i> Add a shop link</button>';
         $html .= '    <span class="mm-item__find" data-mm-find hidden>Find it on <a class="mm-aff mm-find mm-find--lazada" target="_blank" rel="nofollow sponsored noopener" data-store="lazada" href="#">Lazada</a> <a class="mm-aff mm-find mm-find--shopee" target="_blank" rel="nofollow sponsored noopener" data-store="shopee" href="#">Shopee</a></span>';

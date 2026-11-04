@@ -487,3 +487,510 @@
 .mm-wl .mm-wl-follow .mm-social {
     justify-content: center;
 }
+
+/* ---------- Registries: occasions, lists, quantities, cash gift ---------- */
+
+.mm-wl .mm-wl-hero .mmh-eyebrow i {
+    color: var(--wl-occ, var(--wl-accent));
+}
+
+.mm-wl .mm-wl-when {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 0 0;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
+    color: var(--wl-dark);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.mm-wl .mm-wl-when i {
+    color: var(--wl-occ, var(--wl-accent));
+}
+
+/* Inputs the base rules don't cover */
+.mm-wl select,
+.mm-wl input[type="date"],
+.mm-wl .mm-wl-cash textarea {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    min-height: 48px;
+    margin: 6px 0 0;
+    padding: 0 14px;
+    border: 1px solid #d9d9d9;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--wl-dark);
+    font-family: inherit;
+    font-size: 16px;
+    letter-spacing: 0;
+    text-align: left;
+    text-transform: none;
+    box-shadow: none;
+}
+
+.mm-wl .mm-wl-cash textarea {
+    padding: 12px 14px;
+    line-height: 1.45;
+}
+
+.mm-wl select:focus,
+.mm-wl input[type="date"]:focus,
+.mm-wl .mm-wl-cash textarea:focus {
+    border-color: var(--wl-accent);
+    outline: 0;
+    box-shadow: 0 0 0 3px var(--wl-soft);
+}
+
+.mm-wl .mm-wl-edit .mm-field__hint + select,
+.mm-wl .mm-wl-edit .mm-field__hint + input {
+    margin-top: 0;
+}
+
+/* Your lists + Create another list */
+.mm-wl .mm-wl-lists {
+    margin: 0 0 16px;
+}
+
+.mm-wl .mm-wl-lists__label {
+    margin: 0 0 8px !important;
+    color: var(--wl-text);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+}
+
+.mm-wl .mm-wl-lists__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.mm-wl .mm-wl-lists .mm-wl-chip {
+    border-color: var(--wl-line);
+    background: #fff;
+    color: var(--wl-dark);
+}
+
+.mm-wl .mm-wl-lists .mm-wl-chip.is-on {
+    border-color: var(--wl-dark);
+    background: var(--wl-dark);
+    color: #fff;
+}
+
+.mm-wl .mm-wl-lists .mm-wl-chip--add {
+    border-style: dashed;
+    color: var(--wl-accent-dark);
+}
+
+.mm-wl .mm-wl-another {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 12px;
+    margin-top: 12px;
+    padding: 16px;
+    border: 1px solid var(--wl-line);
+    border-radius: 16px;
+    background: #fff;
+}
+
+.mm-wl .mm-wl-another[hidden] {
+    display: none;
+}
+
+.mm-wl .mm-wl-another label {
+    display: block;
+    margin: 0 0 12px;
+    color: var(--wl-dark);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.mm-wl .mm-wl-another label:first-of-type,
+.mm-wl .mm-wl-another .mm-wl-form__msg,
+.mm-wl .mm-wl-another__acts,
+.mm-wl .mm-wl-another__note {
+    grid-column: 1 / -1;
+}
+
+.mm-wl .mm-wl-another small {
+    color: var(--wl-text);
+    font-weight: 400;
+}
+
+.mm-wl .mm-wl-another__acts {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 14px;
+}
+
+.mm-wl .mm-wl-another__note {
+    margin: 8px 0 0 !important;
+    color: var(--wl-text);
+    font-size: 12px;
+    text-align: right;
+}
+
+/* Who's getting what (owner, when reservations are shown) */
+.mm-wl .mm-wl-got {
+    margin: 0 0 22px;
+    padding: 16px;
+    border: 1px solid var(--wl-line);
+    border-radius: 16px;
+    background: #fff;
+}
+
+.mm-wl .mm-wl-got__label {
+    margin: 0 0 10px !important;
+    color: var(--wl-dark);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.mm-wl .mm-wl-got__label i {
+    color: var(--wl-occ, var(--wl-accent));
+}
+
+.mm-wl .mm-wl-got ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mm-wl .mm-wl-got li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 8px;
+    padding: 8px 0;
+    border-top: 1px solid #f0f0f0;
+    font-size: 14px;
+}
+
+.mm-wl .mm-wl-got li em {
+    color: var(--wl-text);
+    font-size: 12px;
+    font-style: normal;
+}
+
+.mm-wl .mm-wl-got li span {
+    margin-left: auto;
+    color: #1f8a5b;
+    font-weight: 600;
+}
+
+.mm-wl .mm-wl-got__empty {
+    margin: 0 !important;
+    color: var(--wl-text);
+    font-size: 14px;
+}
+
+/* Editor */
+.mm-wl .mm-wl-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 12px;
+}
+
+.mm-wl .mm-wl-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 4px 0 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #f6f8f8;
+    cursor: pointer;
+}
+
+.mm-wl .mm-wl-toggle input {
+    width: 20px;
+    height: 20px;
+    margin: 2px 0 0;
+    accent-color: var(--wl-accent-dark);
+}
+
+.mm-wl .mm-wl-toggle strong {
+    display: block;
+    color: var(--wl-dark);
+    font-size: 14px;
+}
+
+.mm-wl .mm-wl-toggle small {
+    color: var(--wl-text);
+    font-size: 12px;
+}
+
+.mm-wl .mm-item__reg {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 18px;
+    margin: 8px 0 4px;
+}
+
+.mm-wl .mm-item__reg label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--wl-text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.mm-wl .mm-item__reg select {
+    width: auto;
+    min-height: 34px;
+    margin: 0;
+    padding: 0 10px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.mm-wl .mm-item__top input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: #e0a100;
+}
+
+.mm-wl .mm-item__top i {
+    color: #e0a100;
+}
+
+/* Cash gift (owner form and guest card) */
+.mm-wl .mm-wl-cash,
+.mm-wl .mm-wl-cashcard {
+    margin-top: 22px;
+    padding: 18px;
+    border: 1px solid var(--wl-line);
+    border-radius: 16px;
+    background: #fff;
+}
+
+.mm-wl .mm-wl-cash__title {
+    margin: 0 0 6px;
+    color: var(--wl-dark);
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.mm-wl .mm-wl-cash__title i {
+    color: var(--wl-occ, var(--wl-accent));
+}
+
+.mm-wl .mm-wl-cash__title em {
+    margin-left: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #f2f4f4;
+    color: var(--wl-text);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+.mm-wl .mm-wl-cash__lead {
+    margin: 0 0 14px !important;
+    color: var(--wl-text);
+    font-size: 14px;
+}
+
+.mm-wl .mm-wl-cash label {
+    display: block;
+    margin: 0 0 14px;
+    color: var(--wl-dark);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.mm-wl .mm-wl-cash label small {
+    color: var(--wl-text);
+    font-weight: 400;
+}
+
+.mm-wl .mm-wl-cash input[type="file"] {
+    display: block;
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+.mm-wl .mm-wl-cash__qr {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0 0 14px;
+}
+
+.mm-wl .mm-wl-cash__qr img {
+    border: 1px solid var(--wl-line);
+    border-radius: 10px;
+    object-fit: contain;
+}
+
+.mm-wl .mm-wl-cash .mm-wl-cash__rm {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-weight: 600;
+}
+
+.mm-wl .mm-wl-cashcard {
+    text-align: center;
+}
+
+.mm-wl .mm-wl-cashcard__label {
+    margin: 0 0 8px !important;
+    color: var(--wl-dark);
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.mm-wl .mm-wl-cashcard__label i {
+    color: var(--wl-occ, var(--wl-accent));
+}
+
+.mm-wl .mm-wl-cashcard p {
+    margin: 0 0 12px !important;
+    color: var(--wl-text);
+}
+
+.mm-wl .mm-wl-cashcard img {
+    display: block;
+    width: 220px;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto 10px;
+    border-radius: 12px;
+}
+
+.mm-wl .mm-wl-cashcard small {
+    display: block;
+    color: var(--wl-text);
+    font-size: 12px;
+}
+
+/* Guest list: tags and counts */
+.mm-wl .mm-wl-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 6px;
+}
+
+.mm-wl .mm-wl-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: #f2f4f4;
+    color: var(--wl-text);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.mm-wl .mm-wl-tag--top {
+    background: rgba(224, 161, 0, .14);
+    color: #8a6200;
+}
+
+.mm-wl .mm-wl-res__count {
+    margin-left: 10px;
+    color: var(--wl-text);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.mm-wl .mm-wl-thanks {
+    margin: 0 0 16px !important;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(224, 69, 123, .1);
+    color: #8a2348;
+    font-size: 14px;
+}
+
+.mm-wl .mm-wl-ideas {
+    margin-top: 22px;
+}
+
+/* Landing: my lists */
+.mm-wl .mm-wl-mine {
+    margin: 0 0 18px;
+}
+
+.mm-wl .mm-wl-mine ul {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mm-wl .mm-wl-mine a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--wl-line);
+    border-radius: 14px;
+    background: #fff;
+    color: var(--wl-dark);
+    text-decoration: none;
+}
+
+.mm-wl .mm-wl-mine a:hover {
+    border-color: var(--wl-accent);
+}
+
+.mm-wl .mm-wl-mine a > span:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+}
+
+.mm-wl .mm-wl-mine strong {
+    display: block;
+    font-size: 15px;
+}
+
+.mm-wl .mm-wl-mine small {
+    color: var(--wl-text);
+    font-size: 12px;
+}
+
+.mm-wl .mm-wl-mine__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: #f6f8f8;
+    color: var(--wl-occ);
+}
+
+@media (max-width: 575px) {
+    .mm-wl .mm-wl-grid,
+    .mm-wl .mm-wl-another {
+        grid-template-columns: 1fr;
+    }
+
+    .mm-wl .mm-wl-got li span {
+        margin-left: 0;
+        flex-basis: 100%;
+    }
+}
