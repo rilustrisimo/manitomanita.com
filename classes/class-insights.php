@@ -431,7 +431,7 @@ class Insights {
                 break;
             case 'overview':
                 $k = self::kpis( $p );
-                $out = array( 'kpis' => $k, 'hints' => self::hints( $k ), 'chart' => self::daysOf( $from, $to, self::series( $from, $to ), array( 'groups', 'members_joined', 'affiliate_click', 'purchase' ) ), 'google' => $g ? $g::overview( $p ) : null );
+                $out = array( 'kpis' => $k, 'hints' => self::hints( $k ), 'scorecard' => class_exists( 'InsightsReport' ) ? InsightsReport::scorecard( $p ) : null, 'chart' => self::daysOf( $from, $to, self::series( $from, $to ), array( 'groups', 'members_joined', 'affiliate_click', 'purchase' ) ), 'google' => $g ? $g::overview( $p ) : null );
                 break;
             case 'growth':
                 $s = self::series( $from, $to );
@@ -439,7 +439,7 @@ class Insights {
                 break;
             case 'revenue':
                 $s = self::series( $from, $to );
-                $out = array( 'kpis' => self::kpis( $p ), 'chart' => self::daysOf( $from, $to, $s, array( 'revenue', 'purchase' ) ), 'features' => self::features(), 'funnel' => $g ? $g::funnel( $p ) : null );
+                $out = array( 'kpis' => self::kpis( $p ), 'chart' => self::daysOf( $from, $to, $s, array( 'revenue', 'purchase' ) ), 'features' => self::features(), 'funnel' => $g ? $g::funnel( $p ) : null, 'site_funnel' => class_exists( 'InsightsReport' ) ? InsightsReport::proFunnel( $from, $to ) : null );
                 break;
             case 'traffic':
                 $out = array( 'google' => $g ? $g::traffic( $p ) : null, 'seo' => $g ? $g::seo( $p ) : null, 'configured' => $g ? $g::configured() : false );
@@ -507,7 +507,9 @@ class Insights {
         $md[] = '- PRO sales, revenue, affiliate clicks, shuffles and repeat groups come from an event log that started on **' . $since . '**. Zeros before that date mean "not recorded", not "none happened".';
         $md[] = '- GA4 (traffic, events, funnel) can lag a few hours. Search Console lags 2-3 days, so its range is shifted (see that section).';
         $md[] = '- Most traffic is "Direct" because members open group links shared in chats and work tools.';
+        if ( class_exists( 'InsightsReport' ) ) $md[] = InsightsReport::dataNotes();
         $md[] = '';
+        if ( class_exists( 'InsightsReport' ) ) $md[] = InsightsReport::scorecardMarkdown( $p );
 
         // Site KPIs
         $k = self::kpis( $p );
@@ -701,12 +703,14 @@ class Insights {
             $md[] = "_Ads are not enabled._\n";
         }
 
+        if ( class_exists( 'InsightsReport' ) ) $md[] = InsightsReport::sectionsMarkdown( $p );
+
         $md[] = '## 12. Automatic hints';
         $h = self::hints( $k );
         $md[] = $h ? '- ' . implode( "\n- ", $h ) . "\n" : "_None._\n";
 
         $md[] = '## What I want from you';
-        $md[] = 'Analyze this period for Manito Manita. 1) Summarize what is happening and how it compares with the previous period. 2) Point out anything unusual (spikes, drops, weak funnel steps, pages or queries with many impressions but low CTR). 3) Explain likely causes, using the season and day-of-week patterns. 4) Give the 5 most valuable, concrete actions for the next 7 days to grow groups, PRO sales, affiliate clicks, registries and sponsor revenue, each with the metric in this report that would show it worked.';
+        $md[] = 'Analyze this period for Manito Manita. 1) Summarize what is happening and how it compares with the previous period. 2) Point out anything unusual (spikes, drops, weak funnel steps, pages or queries with many impressions but low CTR). 3) Explain likely causes, using the season and day-of-week patterns. 4) Give the 5 most valuable, concrete actions for the next 7 days to grow groups, PRO sales, affiliate clicks, registries and sponsor revenue, each with the metric in this report that would show it worked. 5) Use the business scorecard and the change log: say which site changes likely moved which numbers, and which changes show no effect yet. Prefer the site-side PRO funnel over GA4 where they differ.';
 
         return implode( "\n", $md ) . "\n";
     }
@@ -743,6 +747,7 @@ class Insights {
             echo '<button type="button" role="tab" data-mmi-tab="' . $k . '"' . ( $k === 'overview' ? ' class="is-on" aria-selected="true"' : '' ) . '>' . $l . '</button>';
         }
         echo '</nav><div class="mmi-body" data-mmi-body><p class="mmi-loading">Loading&hellip;</p></div>';
+        if ( class_exists( 'InsightsReport' ) ) InsightsReport::changelogForm();
         echo '<p class="mmi-foot">Site data is live (refreshes every minute while this tab is open). GA4 trends can lag a few hours; Search Console data is 2&ndash;3 days behind.</p>';
         echo '</div>';
     }

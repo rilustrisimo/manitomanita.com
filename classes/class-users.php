@@ -454,7 +454,8 @@ class Users extends Theme {
             echo '</ol>';
             echo Affiliate::shopButtonsHtml($gid, 'match-shop-btn', Affiliate::keywordsFrom($wishlist[0]['wishlist_description']), 'Shop for '.$pairName);
         else:
-            echo '<div class="mm-empty"><i class="fas fa-gift"></i><p>'.esc_html($pairName).' hasn&rsquo;t added a wishlist yet. Check the gift ideas below.</p></div>';
+            echo '<div class="mm-empty"><i class="fas fa-gift"></i><p>'.esc_html($pairName).' hasn&rsquo;t added a wishlist yet. Browse gifts within the group budget, or check the ideas below.</p></div>';
+            echo Affiliate::shopButtonsHtml($gid, 'match-empty-shop', '', 'Shop for '.$pairName); // own placement: clicks from empty wishlists
         endif;
         echo '</section>';
 

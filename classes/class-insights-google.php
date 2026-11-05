@@ -181,7 +181,7 @@ class InsightsGoogle {
 
     public static function funnel( $p ) {
         if ( ! self::configured() ) return null;
-        $steps = array( 'view_promotion' => 'Saw the PRO sheet', 'select_promotion' => 'Tapped See PRO', 'begin_checkout' => 'Started checkout', 'add_payment_info' => 'Chose card or PayPal', 'purchase' => 'Paid' );
+        $steps = array( 'view_promotion' => 'Saw a PRO offer (banner or sheet)', 'select_promotion' => 'Tapped a PRO button', 'begin_checkout' => 'Tapped card or PayPal', 'add_payment_info' => 'Submitted payment details', 'purchase' => 'Paid' );
         $ev = self::events( $p, array_keys( $steps ) );
         if ( ! empty( $ev['error'] ) ) return array( 'error' => $ev['error'] );
         $out = array();

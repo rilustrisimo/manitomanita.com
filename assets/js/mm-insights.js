@@ -90,6 +90,13 @@
                 var g = d.google.kpis;
                 h += '<div class="mmi-cards">' + card('Visits (GA4)', num(g.sessions.value), g.sessions.change) + card('People (GA4)', num(g.users.value), g.users.change) + card('Engagement rate', num(g.engagement.value * 100, 1) + '%', g.engagement.change) + card('Avg. visit', dur(g.avg_duration.value), g.avg_duration.change) + '</div>';
             }
+            if (d.scorecard) {
+                var money = { pro_revenue: 1, sponsor: 1, rev_per_1k: 1 };
+                h += '<div class="mmi-panel"><h3>Business scorecard <small>five engines, vs previous period</small></h3><div class="mmi-cards">' + Object.keys(d.scorecard).map(function (k) {
+                    var x = d.scorecard[k];
+                    return card(esc(x.engine) + ' &middot; ' + esc(x.label), money[k] ? peso(x.value) : num(x.value), x.change);
+                }).join('') + '</div></div>';
+            }
             if (d.hints && d.hints.length) h += '<div class="mmi-hints">' + d.hints.map(function (x) { return '<p>\ud83d\udca1 ' + x + '</p>'; }).join('') + '</div>';
             h += '<div class="mmi-grid">' + chartBox('mmi-c1', 'Activity per day') + '<div class="mmi-panel"><h3>Live activity <small data-mmi-at></small></h3><div data-mmi-feed><p class="mmi-empty">Loading\u2026</p></div></div></div>';
             if (d.google && d.google.sources && !d.google.sources.error) h += '<div class="mmi-grid">' + bars('Top sources (visits)', d.google.sources) + '<div class="mmi-panel" data-mmi-rt><h3>On the site right now</h3><p class="mmi-empty">Loading\u2026</p></div></div>';
@@ -117,6 +124,13 @@
             h += '<div class="mmi-cards">' + card('PRO groups (all time)', num(f.pro_groups), false, 'of ' + num(f.groups) + ' groups (' + (f.groups ? num(f.pro_groups / f.groups * 100, 1) : 0) + '%)') + '</div>';
             h += note('Sales are counted from Nov 2026 onward, when exact payment logging started.');
             h += chartBox('mmi-c3', 'Revenue (\u20b1) and sales per day');
+            if (d.site_funnel && d.site_funnel.steps) {
+                var sf = d.site_funnel.steps, top0 = sf[0].count || 0;
+                h += '<div class="mmi-grid"><div class="mmi-panel"><h3>PRO funnel (site log, not blocked by ad blockers)</h3>' + sf.map(function (s, i) {
+                    var pct = top0 ? Math.round(s.count / top0 * 100) : 0, prev = i ? sf[i - 1].count : 0;
+                    return '<div class="mmi-funnel"><span>' + esc(s.step) + '</span><span class="mmi-bar__track"><i style="width:' + Math.max(2, pct) + '%"></i></span><b>' + num(s.count) + '</b><em>' + (i && prev ? Math.round(s.count / prev * 100) + '% of previous' : num(s.groups) + ' groups') + '</em></div>';
+                }).join('') + (d.site_funnel.since ? '' : '<p class="mmi-empty">Steps are logged from today on.</p>') + '</div>' + bars('What opened the PRO sheet (site log)', objBars(d.site_funnel.reasons)) + '</div>';
+            }
             if (d.funnel && d.funnel.steps) {
                 var top = d.funnel.steps[0].users || 0;
                 h += '<div class="mmi-grid"><div class="mmi-panel"><h3>PRO funnel (people, GA4)</h3>' + d.funnel.steps.map(function (s, i) {

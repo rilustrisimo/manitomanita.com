@@ -44,7 +44,7 @@ class Payments {
         if ( self::$hooked ) return;
         self::$hooked = true;
 
-        foreach ( array( 'mm_paypal_create' => 'ajaxCreate', 'mm_paypal_capture' => 'ajaxCapture' ) as $action => $method ) {
+        foreach ( array( 'mm_paypal_create' => 'ajaxCreate', 'mm_paypal_capture' => 'ajaxCapture', 'mm_pay_step' => 'ajaxStep' ) as $action => $method ) {
             add_action( 'wp_ajax_' . $action, array( __CLASS__, $method ) );
             add_action( 'wp_ajax_nopriv_' . $action, array( __CLASS__, $method ) );
         }
@@ -102,6 +102,26 @@ class Payments {
             }).then(function(r){ return r.json(); });
         }
 
+        // Site-side funnel log (Insights), so the steps still count when GA4 is blocked. Once per step per page.
+        var stepsSent = {};
+        function step(name, detail){
+            if (stepsSent[name + detail]) return;
+            stepsSent[name + detail] = 1;
+            var f = new FormData();
+            f.append('action', 'mm_pay_step'); f.append('nonce', nonce); f.append('gid', gid); f.append('product', product); f.append('step', name); f.append('detail', detail || '');
+            if (navigator.sendBeacon) navigator.sendBeacon(ajaxUrl, f); else fetch(ajaxUrl, { method: 'POST', body: f, credentials: 'same-origin' });
+        }
+        // The PRO sheet (#make-pro) holds these buttons: log each time it opens, with the reason that opened it.
+        var sheet = document.getElementById('make-pro');
+        if (sheet && product === 'pro' && window.MutationObserver) {
+            var open = false;
+            new MutationObserver(function(){
+                var now = sheet.style.display === 'flex';
+                if (now && !open) { stepsSent = {}; step('sheet', (window.jQuery && jQuery(sheet).data('mmReason')) || 'header'); }
+                open = now;
+            }).observe(sheet, { attributes: true, attributeFilter: ['style'] });
+        }
+
         function fail(message){
             document.getElementById('loader-overlay-paypal').style.display = 'none';
             alert(message || 'There was an issue processing your payment. Please try again.');
@@ -127,12 +147,16 @@ class Payments {
         }
 
         var cfg = {
+            // Funnel order: begin_checkout when card/PayPal is tapped, add_payment_info when the details are
+            // submitted (PayPal asks for the order only then), purchase when captured.
             onClick: function(data){
-                if (data && data.fundingSource === 'card') cardLoading();
-                track('add_payment_info', { currency: 'PHP', value: item.price, payment_type: data ? data.fundingSource : '' });
+                var src = data ? data.fundingSource : '';
+                if (src === 'card') cardLoading();
+                track('begin_checkout', { currency: 'PHP', value: item.price, payment_type: src, items: [item] });
+                step('checkout', src);
             },
-            createOrder: function(){
-                track('begin_checkout', { currency: 'PHP', value: item.price, items: [item] });
+            createOrder: function(data){
+                track('add_payment_info', { currency: 'PHP', value: item.price, payment_type: data && data.paymentSource ? data.paymentSource : '', items: [item] });
                 return post({ action: 'mm_paypal_create', gid: gid, product: product }).then(function(resp){
                     if(!resp.success) throw new Error(resp.data || 'Could not start the payment.');
                     return resp.data.id;
@@ -212,8 +236,24 @@ class Payments {
         ) );
 
         if ( empty( $order['id'] ) ) wp_send_json_error( 'Could not start the payment. Please try again.' );
+        if ( class_exists( 'Insights' ) ) Insights::log( 'pro_order', $gid, 0, (float) $p['amount'], $product );
 
         wp_send_json_success( array( 'id' => $order['id'] ) );
+    }
+
+    /**
+     * Funnel beacon from the buttons: 'sheet' (PRO sheet opened, detail = reason) or 'checkout' (card or
+     * PayPal tapped, detail = funding source). Logged as pro_sheet / pro_checkout; meta "product|detail".
+     */
+    public static function ajaxStep() {
+        if ( ! wp_verify_nonce( (string) ( $_POST['nonce'] ?? '' ), 'mm_paypal' ) ) wp_die( '', '', array( 'response' => 403 ) );
+        $step    = sanitize_key( (string) ( $_POST['step'] ?? '' ) );
+        $product = sanitize_key( (string) ( $_POST['product'] ?? '' ) );
+        $gid     = absint( $_POST['gid'] ?? 0 );
+        if ( in_array( $step, array( 'sheet', 'checkout' ), true ) && isset( self::$products[ $product ] ) && get_post_type( $gid ) === 'groups' && class_exists( 'Insights' ) ) {
+            Insights::log( 'pro_' . $step, $gid, 0, 0, $product . '|' . substr( sanitize_key( (string) ( $_POST['detail'] ?? '' ) ), 0, 40 ) );
+        }
+        wp_die( '', '', array( 'response' => 204 ) );
     }
 
     public static function ajaxCapture() {

@@ -23,15 +23,15 @@ $mm_stats = Groups::siteStats();
 
         <div class="mm-upsell__top">
             <span class="mm-upsell__badge"><i class="fa-solid fa-star"></i> Manito Manita PRO</span>
-            <h2 id="mm-upsell-title" data-mm-upsell-title>Extra tools for your group&rsquo;s organizer</h2>
-            <p class="mm-upsell__lead" data-mm-upsell-lead>Fix mistakes, let late joiners in and keep everything organized.</p>
+            <h2 id="mm-upsell-title" data-mm-upsell-title>Keep couples and family from getting each other</h2>
+            <p class="mm-upsell__lead" data-mm-upsell-lead>Exclusions, unshuffle for late joiners, reminders and no ads, for the whole group.</p>
         </div>
 
         <!-- Buy first: price and checkout are visible without scrolling -->
         <div class="mm-upsell__buy">
             <div class="mm-upsell__price">
                 <strong>&#8369;199</strong>
-                <span><b>one-time</b> for the whole group<br>no subscription, works right away</span>
+                <span><b>one-time</b> for the whole group<br>anyone in the group can pay &middot; no subscription</span>
             </div>
             <div class="paypal-pay mm-upsell__pay">
                 <?php get_template_part( 'paypal/index', 'paypal' ); ?>

@@ -1801,8 +1801,8 @@ var Theme = {
         if (!sheet.length) return;
 
         var copy = {
-            header:    ['Extra tools for your group\u2019s organizer', 'Fix mistakes, let late joiners in and keep everything organized.'],
-            welcome:   ['Extra tools for your group\u2019s organizer', 'Fix mistakes, let late joiners in and keep everything organized.'],
+            header:    ['Keep couples and family from getting each other', 'Exclusions, unshuffle for late joiners, reminders and no ads, for the whole group.'],
+            welcome:   ['Keep couples and family from getting each other', 'Exclusions, unshuffle for late joiners, reminders and no ads, for the whole group.'],
             unshuffle: ['More people want to join?', 'Unshuffle the group to let them in, then shuffle again. 3 unshuffles included.'],
             fix:       ['Fix your member list before shuffling', 'Remove duplicates and correct misspelled names or emails.'],
             themes:    ['Make it more fun with Weekly Drops', 'An optional Filipino-style activity: a themed mini-gift each week, an email to everyone with ideas, and a reveal at the end.'],
@@ -1811,7 +1811,7 @@ var Theme = {
             gift:    ['Gift PRO to your group', 'Remove ads for everyone and unlock the organizer tools. One payment covers the whole group.']
         }[reason] || null;
 
-        if (!copy) { reason = 'header'; copy = ['Extra tools for your group\u2019s organizer', 'Fix mistakes, let late joiners in and keep everything organized.']; }
+        if (!copy) { reason = 'header'; copy = ['Keep couples and family from getting each other', 'Exclusions, unshuffle for late joiners, reminders and no ads, for the whole group.']; }
 
         sheet.find('[data-mm-upsell-title]').text(copy[0]);
         sheet.find('[data-mm-upsell-lead]').text(copy[1]);
@@ -2409,7 +2409,7 @@ var Theme = {
                             '<b>No one can join</b> after the shuffle.',
                             isPro ? 'You can unshuffle later from PRO Actions (uses 1 credit).' : '<b>Free groups can\u2019t undo a shuffle.</b> If late joiners might come, upgrade to PRO to be able to unshuffle.'
                         ],
-                        extra: isPro ? '' : '<i class="fa-solid fa-user-slash" aria-hidden="true"></i><span><b>Couples or family in the group?</b> Keep them from getting each other with PRO exclusions. Set them up before you shuffle.</span><button type="button" data-mm-upsell="exclude">See PRO</button>',
+                        extra: isPro ? '' : '<i class="fa-solid fa-user-slash" aria-hidden="true"></i><span><b>Couples or family in the group?</b> Keep them from getting each other with PRO exclusions. Set them up before you shuffle.</span><button type="button" data-mm-upsell="exclude">Get PRO, \u20b1199</button>',
                         check: 'Everyone who should be in the group has joined',
                         confirm: 'Shuffle now',
                         icon: 'fa-solid fa-shuffle',

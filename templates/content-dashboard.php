@@ -99,14 +99,14 @@ echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />'
                                 <?php if(!empty($fields['matched'])): ?>
                                 <?php if(((int) $group->getGroupId()) % 2): // A/B: half the groups see each hint ?>
                                 <span><strong>More people want to join?</strong> With PRO the organizer can unshuffle the group to let them in.</span>
-                                <button type="button" data-mm-upsell="unshuffle">See PRO</button>
+                                <button type="button" data-mm-upsell="unshuffle">Get PRO, &#8369;199</button>
                                 <?php else: ?>
                                 <span><strong>Make it more fun:</strong> Weekly Drops add a themed mini-gift each week, with a reveal at the end.</span>
-                                <button type="button" data-mm-upsell="themes">See PRO</button>
+                                <button type="button" data-mm-upsell="themes">Get PRO, &#8369;199</button>
                                 <?php endif; ?>
                                 <?php else: ?>
                                 <span><strong>Organizer:</strong> keep couples from getting each other, or fix a name before shuffling?</span>
-                                <button type="button" data-mm-upsell="exclude">See PRO</button>
+                                <button type="button" data-mm-upsell="exclude">Get PRO, &#8369;199</button>
                                 <?php endif; ?>
                                 <button type="button" class="mm-pro-hint__gift" data-mm-upsell="gift">Gift PRO to the group</button>
                             </div>
