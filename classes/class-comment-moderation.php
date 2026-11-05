@@ -62,9 +62,12 @@ class CommentModeration {
         wp_send_json_success( array( 'cid' => $cid, 'uid' => $uid ) );
     }
 
-    /** Click handler, printed only on pages that showed Remove buttons. Works inside the member popup too. */
+    /**
+     * Click handler for the Remove buttons, on group pages. Member cards arrive by AJAX after the page loads
+     * (Users::user_card_generate), so it can't wait for a button to be rendered first. Works in the popup too.
+     */
     public static function script() {
-        if ( ! self::$used ) return;
+        if ( ! self::$used && ! is_page( 23 ) && empty( $_GET['gid'] ) ) return; // 23 = group dashboard
         ?>
 <script>
 jQuery(function($){
