@@ -1173,6 +1173,9 @@ class Groups extends Theme {
 
         }else{
             if(isset($_SESSION['groupid']) and isset($_SESSION['grouppw'])){
+                // The remembered session only opens its own group: ?gid=<another group> without its password
+                // used to pass here while the page showed the group from the URL.
+                if(isset($_GET['gid']) && (string) $_GET['gid'] !== (string) $_SESSION['groupid']) return false;
                 if(trim(get_field('group_password', $_SESSION['groupid'])) == trim($_SESSION['grouppw'])){
                     $allow = true;
                 }

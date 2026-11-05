@@ -60,12 +60,25 @@ class Users extends Theme {
          */
     }
 
+    /**
+     * Key printed on the group page (only after the group password check) and required to load the member
+     * cards. Without it, anyone could fetch any group's members by its number. Changes with the password.
+     */
+    public static function cardsKey($groupid) {
+        $pw = trim((string) get_field('group_password', (int) $groupid));
+
+        return $pw === '' ? '' : substr(hash_hmac('sha256', 'cards|'.(int) $groupid.'|'.$pw, wp_salt('auth')), 0, 32);
+    }
+
     public function user_card_generate() {
-        //$userids = $_POST['userid'];
-        $groupid = $_POST['groupid'];
+        $groupid = absint($_POST['groupid'] ?? 0);
+        $key = self::cardsKey($groupid);
+        if(!$groupid || get_post_type($groupid) !== 'groups' || $key === '' || !hash_equals($key, (string) ($_POST['key'] ?? ''))){
+            wp_send_json_error('reload');
+        }
         $userids = $this->getAllUsersPerGroup2($groupid);
 
-        list($cards, $wishlist, $whojoined) = $this->generateCardUsers($userids, $groupid);
+        list($cards, $wishlist, $whojoined) = $this->generateCardUsers((array) $userids, $groupid);
 
         $memcount = (!$userids)?0:count($userids);
 
@@ -834,7 +847,7 @@ class Users extends Theme {
         $cardres .= '    <h2 class="mb-0">';
         $cardres .= '        <button class="btn btn-link mm-member-open" type="button" aria-haspopup="dialog">';
         $cardres .= '            <span class="mm-avatar" aria-hidden="true">'.esc_html(mb_strtoupper(mb_substr(trim($screenName), 0, 1))).'</span>';
-        $cardres .= '            <span class="mm-member__text"><span class="mm-member__name">'.$screenName.'</span><span class="mm-member__meta">'.$meta.'</span></span>';
+        $cardres .= '            <span class="mm-member__text"><span class="mm-member__name">'.esc_html($screenName).'</span><span class="mm-member__meta">'.$meta.'</span></span>';
         $cardres .= '        </button>';
         $cardres .= '    </h2>';
         $cardres .= '    </div>';

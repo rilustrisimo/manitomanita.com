@@ -20,6 +20,7 @@ $u = array();
 echo '<div style="display:none;" id="userids">'.json_encode($u).'</div>';
 echo '<div style="display:none;" id="groupid">'.$group->getGroupId().'</div>';
 echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />';
+echo '<input type="hidden" id="mm-cards-key" value="'.esc_attr(Users::cardsKey($group->getGroupId())).'" />';
 ?>
 <div class="container-fluid dashboard">
     <div class="container dashboard__inner">

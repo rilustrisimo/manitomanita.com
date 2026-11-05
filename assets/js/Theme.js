@@ -2195,8 +2195,8 @@ var Theme = {
             dataType: 'JSON',
             data: {
                 action: 'user_card_generate', // Corrected the action name
-                userid: Theme.grpuserids, // Pass the data for the current batch
-                groupid: $('#groupid').text()
+                groupid: $('#groupid').text(),
+                key: $('#mm-cards-key').val() // proves this page passed the group password check
             },
             beforeSend : function()   {           
                //$('.report__result').addClass('overlay');
@@ -2227,8 +2227,8 @@ var Theme = {
                     }
                    */
                 } else {
-                    // Handle the error
-                    //$("#result").append(response.data + "<br>");
+                    // Key missing or the group password changed: the page must be reloaded.
+                    $('#cards-container').removeClass('populating').html('<p class="mm-cards-reload">Please <a href="javascript:location.reload()">reload the page</a> to see the members.</p>');
                 }
             },
             error: function(xhr, status, error) {
