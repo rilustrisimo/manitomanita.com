@@ -69,6 +69,7 @@ class EmailAudience {
         elseif ( $f['exchange'] === 'range' ) $bits[] = 'exchange ' . $f['exchange_from'] . ' to ' . $f['exchange_to'];
         if ( $f['shuffled'] !== 'any' ) $bits[] = $f['shuffled'] === 'yes' ? 'already shuffled' : 'not shuffled yet';
         if ( $f['pro'] !== 'any' ) $bits[] = $f['pro'] === 'yes' ? 'PRO' : 'free';
+        if ( $f['min_size'] !== '' && (int) $f['min_size'] > 1 ) $bits[] = (int) $f['min_size'] . '+ members';
         if ( $f['budget_min'] !== '' || $f['budget_max'] !== '' ) $bits[] = 'budget ₱' . ( $f['budget_min'] !== '' ? $f['budget_min'] : '0' ) . '–' . ( $f['budget_max'] !== '' ? $f['budget_max'] : 'any' );
         if ( in_array( 'members', $f['source'], true ) && $f['gift'] === 'not_bought' ) $bits[] = 'gift not bought yet';
         if ( in_array( 'organizers', $f['source'], true ) && $f['org_active'] !== 'any' ) $bits[] = $f['org_active'] === 'yes' ? 'organizer made a group this season' : 'organizer hasn&rsquo;t made a group this season';
