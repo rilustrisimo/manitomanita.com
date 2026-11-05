@@ -77,6 +77,10 @@ class Users extends Theme {
             wp_send_json_error('reload');
         }
         // Light rows + counts + Who joined (MemberList); details load per member when a card is opened.
+        // Deploys copy files one by one: if this file lands before class-member-list.php, ask for a reload
+        // instead of a fatal error.
+        if(!class_exists('MemberList') && is_readable(__DIR__.'/class-member-list.php')) require_once __DIR__.'/class-member-list.php';
+        if(!class_exists('MemberList')) wp_send_json_error('reload');
         list($cards, $memcount, $wishlist, $whojoined) = MemberList::build($groupid);
 
         wp_send_json_success(array($groupid, $cards, $memcount, $wishlist, $whojoined));
@@ -84,12 +88,13 @@ class Users extends Theme {
     }
 
     public function verify_password(){
-        $password = $_POST['password'];
-        $uid = $_POST['uid'];
+        $password = (string) ($_POST['password'] ?? '');
+        $uid = absint($_POST['uid'] ?? 0);
 
-        $hashed = get_field('password', $uid);
+        // Empty hash (deleted member, wrong id): newer WordPress throws a TypeError in wp_check_password.
+        $hashed = (string) get_field('password', $uid);
 
-		if(wp_check_password($password, $hashed, $uid)) {
+		if($hashed !== '' && $password !== '' && wp_check_password($password, $hashed, $uid)) {
 		    $result = true;
 
             // Lets save_wishlist() trust this member for the rest of the session.
