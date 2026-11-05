@@ -906,14 +906,13 @@ class Users extends Theme {
         $cardres .= '    <span class="mm-member__chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>';
         $cardres .= '</div>';
 
-        // "Who joined" popup row: real name and whether they have a wishlist. Never the screen name, the
-        // exact wish count or the members-list order: any of them would tie a real name to its secret screen name.
+        // "Who joined" popup row: real name only. Never the screen name, wishlist status or the members-list
+        // order: any of them would tie a real name to its secret screen name.
         $fullName = trim((string) get_field('name', $userid));
         $fullName = ($fullName !== '')?$fullName:'Member';
         $row  = '<li class="mm-joined__item" data-name="'.esc_attr(mb_strtolower($fullName)).'">';
         $row .= '<span class="mm-avatar" aria-hidden="true">'.esc_html(mb_strtoupper(mb_substr($fullName, 0, 1))).'</span>';
-        $row .= '<span class="mm-joined__text"><strong>'.esc_html($fullName).'</strong><small>'.(($wishTotal)?'Has a wishlist':'No wishlist yet').'</small></span>';
-        $row .= ($wishTotal)?'<span class="mm-joined__ok" title="Has a wishlist"><i class="fas fa-circle-check"></i></span>':'';
+        $row .= '<span class="mm-joined__text"><strong>'.esc_html($fullName).'</strong></span>';
         $row .= '</li>';
         $joinedRows[] = array(mb_strtolower($fullName), $row);
 
