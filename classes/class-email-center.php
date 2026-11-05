@@ -164,7 +164,7 @@ class EmailCenter {
         $gid = (int) $gid;
         $budget = class_exists( 'Affiliate' ) ? Affiliate::budget( $gid ) : 0;
         $d = DateTime::createFromFormat( '!Ymd', (string) get_post_meta( $gid, 'gift_exchange_date', true ), wp_timezone() );
-        $days = $d ? (int) floor( ( $d->getTimestamp() - strtotime( 'today', time() ) ) / DAY_IN_SECONDS ) : null;
+        $days = $d ? (int) round( ( $d->getTimestamp() - ( new DateTime( 'today', wp_timezone() ) )->getTimestamp() ) / DAY_IN_SECONDS ) : null; // both Manila midnights
         if ( $refType === 'member' ) {
             $first = trim( (string) get_field( 'screen_name', $refId ) ) ?: strtok( trim( (string) get_field( 'name', $refId ) ), ' ' );
             $pair = get_field( 'matched', $gid ) ? (int) get_field( 'pair', $refId, false ) : 0;
@@ -373,8 +373,9 @@ class EmailCenter {
             $rest = $wpdb->get_var( $wpdb->prepare( "SELECT 1 FROM $q WHERE campaign_id = %d AND tier = %d AND canary = 0 AND status = 'queued' LIMIT 1", $id, $t ) );
             if ( ! $rest ) continue;
             $last = $wpdb->get_var( $wpdb->prepare( "SELECT MAX(sent_at) FROM $q WHERE campaign_id = %d AND tier = %d AND canary = 1", $id, $t ) );
-            if ( $last && strtotime( $last ) > time() - self::CANARY_WAIT ) {
-                return array( $name . ' · checking test batch', '', 'waiting for bounce reports until ' . wp_date( 'g:i A', strtotime( $last ) + self::CANARY_WAIT ) );
+            $lastTs = $last ? ( new DateTime( $last, wp_timezone() ) )->getTimestamp() : 0; // sent_at is Manila time, not UTC
+            if ( $lastTs && $lastTs > time() - self::CANARY_WAIT ) {
+                return array( $name . ' · checking test batch', '', 'waiting for bounce reports until ' . wp_date( 'g:i A', $lastTs + self::CANARY_WAIT ) );
             }
 
             return array( $name, $wpdb->prepare( 'tier = %d', $t ), '' );
