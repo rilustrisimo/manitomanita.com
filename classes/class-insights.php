@@ -114,6 +114,8 @@ class Insights {
             $s = Season::seasonStart();
             $from = substr( $s, 0, 4 ) . '-' . substr( $s, 4, 2 ) . '-' . substr( $s, 6, 2 );
             $to = $today;
+        } elseif ( $key === 'yesterday' ) {
+            $from = $to = wp_date( 'Y-m-d', strtotime( $today . ' -1 day' ) ); // compared with the day before
         } elseif ( $key === 'custom' && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $from ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $to ) && $from <= $to ) {
             // as given
         } else {
@@ -738,7 +740,7 @@ class Insights {
         echo '<div class="wrap mmi" data-mmi>';
         echo '<div class="mmi-top"><div><h1>Manito Insights</h1><p class="mmi-sub">Live site data, traffic and search, in one place.</p></div>';
         echo '<div class="mmi-controls"><span class="mmi-live" data-mmi-live><i></i> Live: <b data-mmi-active>&ndash;</b> on the site now</span>';
-        echo '<select data-mmi-period aria-label="Period"><option value="today">Today</option><option value="7d">Last 7 days</option><option value="30d" selected>Last 30 days</option><option value="90d">Last 90 days</option><option value="season">This season (since Sep 1)</option><option value="365d">Last 12 months</option><option value="custom">Custom&hellip;</option></select>';
+        echo '<select data-mmi-period aria-label="Period"><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="7d">Last 7 days</option><option value="30d" selected>Last 30 days</option><option value="90d">Last 90 days</option><option value="season">This season (since Sep 1)</option><option value="365d">Last 12 months</option><option value="custom">Custom&hellip;</option></select>';
         echo '<span class="mmi-custom" data-mmi-custom hidden><input type="date" data-mmi-from> &ndash; <input type="date" data-mmi-to> <button type="button" class="button" data-mmi-apply>Apply</button></span>';
         echo '<button type="button" class="button" data-mmi-export title="One Markdown file with every section for this period, ready to paste into an AI">Export for AI</button>';
         echo '</div></div>';
