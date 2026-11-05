@@ -2590,6 +2590,7 @@ var Theme = {
                 .append(action('leave', 'Leave Group', 'fas fa-sign-out-alt', $leave, 'is-quiet'));
 
             $inner.empty().append($head, $actions, $card.find('.mm-member-details').children().clone());
+            $(document).trigger('mm:member-open', [$card, $inner]); // mm-members.js loads the wishlist and comments
 
             $inner.off('click.mmPop').on('click.mmPop', '.mm-pop-action:not(:disabled)', function(){
                 var kind = $(this).data('kind');

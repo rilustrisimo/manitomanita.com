@@ -76,13 +76,10 @@ class Users extends Theme {
         if(!$groupid || get_post_type($groupid) !== 'groups' || $key === '' || !hash_equals($key, (string) ($_POST['key'] ?? ''))){
             wp_send_json_error('reload');
         }
-        $userids = $this->getAllUsersPerGroup2($groupid);
+        // Light rows + counts + Who joined (MemberList); details load per member when a card is opened.
+        list($cards, $memcount, $wishlist, $whojoined) = MemberList::build($groupid);
 
-        list($cards, $wishlist, $whojoined) = $this->generateCardUsers((array) $userids, $groupid);
-
-        $memcount = (!$userids)?0:count($userids);
-
-       wp_send_json_success(array($groupid, $cards, $memcount, $wishlist, $whojoined));
+        wp_send_json_success(array($groupid, $cards, $memcount, $wishlist, $whojoined));
        //wp_send_json_success($userids);
     }
 
@@ -634,53 +631,6 @@ class Users extends Theme {
         return $users;
     }
 
-    public function getAllUsersPerGroup2($groupid) {
-        $matchbool = get_field('matched', $groupid);
-
-        if($matchbool):
-            $cookiename = 'users_group_' . $groupid;
-            $cookienamecount = 'users_group_count_' . $groupid;
-
-            if (isset($_COOKIE[$cookiename])):
-                $decodecount = json_decode($_COOKIE[$cookiename], true);
-
-                // The cookie is only a cache: keep IDs that really are published members of this group.
-                $decodecount = array_values(array_filter(array_map('intval', (array) $decodecount), function($id) use ($groupid){
-                    return get_post_type($id) === 'users' && get_post_status($id) === 'publish' && (int) get_field('groups', $id, false) === (int) $groupid;
-                }));
-
-                if($decodecount && count($decodecount) == $_COOKIE[$cookienamecount]):
-                    return $decodecount;
-                endif;
-            endif;
-        endif;
-
-        
-        $meta_query = array(
-            'key' => 'groups',
-            'value' => $groupid
-        );
-
-        $p = parent::createQuery2('users', $meta_query);
-        $users = wp_list_pluck($p, 'ID');
-
-        if(count($users) > 0){
-            $users = (array)$users;
-
-            shuffle($users); //randomize users
-            
-            if($matchbool):
-                $cookiename = 'users_group_' . $groupid;
-                $expirationTime = time() + (30 * 24 * 60 * 60); // 30 days * 24 hours * 60 minutes * 60 seconds
-                setcookie($cookiename, json_encode($users), $expirationTime, '/');
-            endif;
-            
-            return $users;
-        }else{
-            return false;
-        }
-    }
-
     public function randString($length) {
         $char = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         $char = str_shuffle($char);
@@ -817,124 +767,4 @@ class Users extends Theme {
         EmailCheck::sendJoinConfirm($uid);
     }
 
-    public function generateCardUsers($userids, $groupid){
-        $groupid = (int)$groupid;
-        $group = new Groups();
-        $fields = $group->getGroupDetails($groupid);
-        $pro = (isset($fields['pro']))?$fields['pro']:false;
-
-        $cardres = '';
-        $wishcount = 0;
-        $whojoined = '';
-        $joinedRows = array();
-
-        foreach($userids as $userid):
-
-        $screenName = (string) get_field('screen_name', $userid);
-        $wishlist = get_field("my_wishlists", $userid);
-        $comments = get_comments(array('post_id' => $userid, 'orderby' => 'comment_date', 'order' => 'DESC')); // newest first
-        // Same plain affiliate link for pro and non-pro groups (the old non-pro second redirect to invl.io is gone).
-        $legacyAff = array('class' => '', 'attrs' => array());
-        if($wishlist) $wishcount++;
-
-        $wishTotal = ($wishlist)?count($wishlist):0;
-        $meta = ($wishTotal)?$wishTotal.' '.(($wishTotal == 1)?'wish':'wishes'):'No wishlist yet';
-        if(count($comments) > 0) $meta .= ' · '.count($comments).' '.((count($comments) == 1)?'comment':'comments');
-
-        // One card per member: quick actions + "View wishlist" (opens the member popup, Theme.initMemberCards).
-        $cardres .= '<div class="card mm-member" data-mm-member="'.$userid.'">';
-        $cardres .= '    <div class="card-header" id="heading'.$userid.'">';
-        $cardres .= '    <h2 class="mb-0">';
-        $cardres .= '        <button class="btn btn-link mm-member-open" type="button" aria-haspopup="dialog">';
-        $cardres .= '            <span class="mm-avatar" aria-hidden="true">'.esc_html(mb_strtoupper(mb_substr(trim($screenName), 0, 1))).'</span>';
-        $cardres .= '            <span class="mm-member__text"><span class="mm-member__name">'.esc_html($screenName).'</span><span class="mm-member__meta">'.$meta.'</span></span>';
-        $cardres .= '        </button>';
-        $cardres .= '    </h2>';
-        $cardres .= '    </div>';
-
-        /** Details shown in the member popup */
-        $cardres .= '    <div class="mm-member-details" hidden>';
-        $cardres .= '        <div class="mm-detail">';
-
-        /** Wishlist */
-        $cardres .= '            <section class="mm-detail__col">';
-        $cardres .= '                <h2>Wish<span>List</span>'.(($wishlist)?'<em class="mm-detail__count">'.count($wishlist).'</em>':'').'</h2>';
-        if($wishlist):
-            $cardres .= '            <ol class="mm-dwish">';
-            foreach($wishlist as $i => $w):
-                $cardres .= '            <li class="mm-dwish__item">';
-                $cardres .= '                <span class="mm-dwish__num">'.($i+1).'</span>';
-                $cardres .= '                <div class="mm-dwish__body">';
-                $cardres .= '                    <div class="wish-content">'.Affiliate::linkify($w['wishlist_description'], 'members-wishlist', $groupid, $legacyAff['class'], $legacyAff['attrs']).'</div>';
-                if($w['reference_links']):
-                    $cardres .= '                <div class="wish-links">';
-                    foreach($w['reference_links'] as $k => $links):
-                        $cardres .= Affiliate::referenceLink($links['link_url'], $k, 'members-wishlist', $groupid, $legacyAff['class'], $legacyAff['attrs']);
-                    endforeach;
-                    $cardres .= '                </div>';
-                endif;
-                $cardres .= '                </div>';
-                $cardres .= '            </li>';
-            endforeach;
-            $cardres .= '            </ol>';
-        else:
-            $cardres .= '            <div class="mm-detail__empty">';
-            $cardres .= '                <div class="mm-detail__empty-text"><i class="fas fa-gifts"></i><div><strong>No wishlist yet</strong><span>'.esc_html($screenName).' hasn&rsquo;t added any items.</span></div></div>';
-            $cardres .=                  Affiliate::shopButtonsHtml($groupid, 'members-empty-wishlist', '', 'Need gift ideas?');
-            $cardres .= '            </div>';
-        endif;
-        $cardres .= '            </section>';
-
-        /** Comments */
-        $cardres .= '            <section class="mm-detail__col">';
-        $cardres .= '                <h2>Comment<span>s</span>'.((count($comments) > 0)?'<em class="mm-detail__count">'.count($comments).'</em>':'').'</h2>';
-        if(count($comments) == 0):
-            $cardres .= '            <div class="mm-detail__empty"><div class="mm-detail__empty-text"><i class="far fa-comment-dots"></i><div><strong>No comments yet</strong><span>Tap <b>Comment</b> to be the first to say something.</span></div></div></div>';
-        else:
-            $cardres .= '            <ul class="mm-dcomments">';
-            foreach($comments as $c):
-                $cardres .= '            <li class="mm-dcomment" data-cid="'.(int) $c->comment_ID.'">';
-                $cardres .= '                <div class="com-content">'.Affiliate::linkifyText($c->comment_content, 'members-comment', $groupid).'</div>';
-                $cardres .= '                <div class="mm-dcomment__foot"><time class="com-date" datetime="'.esc_attr(date('c', strtotime($c->comment_date))).'">'.date('M j, Y · g:i a', strtotime($c->comment_date)).'</time>'.(class_exists('CommentModeration') ? CommentModeration::button($c->comment_ID, $groupid) : '').'</div>';
-                $cardres .= '            </li>';
-            endforeach;
-            $cardres .= '            </ul>';
-        endif;
-        $cardres .= '            </section>';
-
-        $cardres .= '        </div>';
-        $cardres .= '    </div>';
-
-        $matched = get_field('matched', $groupid);
-        $matchattr  = (!$matched)?'disabled class="mm-match-btn" title="Available once the organizer shuffles the group"':'class="user-action match-btn mm-match-btn" user-data="'.$userid.'" data-action="see-match"';
-        $matchattr2 = ($matched)?'disabled class="mm-leave-btn mm-popup-only" title="Members can\'t leave after the group is shuffled"':'class="user-action leave-btn mm-leave-btn mm-popup-only" user-data="'.$userid.'" data-action="leave-group"';
-
-        $cardres .= '    <div class="user-action-btns">';
-        $cardres .= '        <a href="#" class="user-action wish-btn" user-data="'.$userid.'" data-action="edit-wishlist"><i class="fas fa-gift"></i> Edit Wishlist</a>';
-        $cardres .= '        <a href="javascript:;" '.$matchattr.'><i class="fas fa-user-friends"></i> See Match</a>';
-        $cardres .= '        <button type="button" class="mm-view-btn"><i class="far fa-eye"></i> View wishlist</button>';
-        $cardres .= '        <a href="#" class="user-action comment-btn mm-popup-only" user-data="'.$userid.'"><i class="far fa-comment"></i> Comment</a>';
-        $cardres .= '        <a href="javascript:;" '.$matchattr2.'><i class="fas fa-sign-out-alt"></i> Leave Group</a>';
-        $cardres .= '    </div>';
-        $cardres .= '    <span class="mm-member__chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>';
-        $cardres .= '</div>';
-
-        // "Who joined" popup row: real name only. Never the screen name, wishlist status or the members-list
-        // order: any of them would tie a real name to its secret screen name.
-        $fullName = trim((string) get_field('name', $userid));
-        $fullName = ($fullName !== '')?$fullName:'Member';
-        $row  = '<li class="mm-joined__item" data-name="'.esc_attr(mb_strtolower($fullName)).'">';
-        $row .= '<span class="mm-avatar" aria-hidden="true">'.esc_html(mb_strtoupper(mb_substr($fullName, 0, 1))).'</span>';
-        $row .= '<span class="mm-joined__text"><strong>'.esc_html($fullName).'</strong></span>';
-        $row .= '</li>';
-        $joinedRows[] = array(mb_strtolower($fullName), $row);
-
-        endforeach;
-
-        usort($joinedRows, function($a, $b){ return strcmp($a[0], $b[0]); }); // A-Z, not the members-list order
-        // Under 3 members the real names could be matched to the screen names (who joined first), so send none.
-        $whojoined = (count($joinedRows) >= 3)?implode('', array_column($joinedRows, 1)):'';
-
-        return array($cardres, $wishcount, $whojoined);
-    }
 }

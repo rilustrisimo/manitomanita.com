@@ -158,8 +158,9 @@ echo '<input type="hidden" id="mm-cards-key" value="'.esc_attr(Users::cardsKey($
                                 <!-- SAMPLE CARD END-->
 
                             <div id="cards-container">
-
-                                <!-- CARDS HERE-->
+                                <?php // Placeholder rows until the members load (MemberList via Theme.ajaxCardUsers) ?>
+                                <?php for ( $i = 0; $i < 4; $i++ ) : ?><div class="mm-skel" aria-hidden="true"><span class="mm-skel__dot"></span><span class="mm-skel__lines"><i></i><i></i></span></div><?php endfor; ?>
+                                <p class="screen-reader-text">Loading members&hellip;</p>
                             </div>
                             </div>
                         </div>

@@ -2592,3 +2592,32 @@ body.pro-version:not(.mm-gtheme) .dashboard .dashboard__gd .mm-coorg i {
     border-style: dashed;
     border-color: #d4c48f;
 }
+
+/* ---------------------------------------------------------------- Members list (MemberList, mm-members.js) */
+#cards-container.populating:before { display: none !important; } /* old full overlay; skeleton rows instead */
+#cards-container.populating { padding-bottom: 0 !important; }
+#cards-container.populating > .card { opacity: .55; transition: opacity .2s; } /* refreshing after an edit */
+
+.mm-skel { display: flex; align-items: center; gap: 14px; padding: 16px 18px; margin: 0 0 10px; background: #fff; border-radius: 16px; }
+.mm-skel__dot { flex: 0 0 40px; height: 40px; border-radius: 50%; background: #eef1f1; }
+.mm-skel__lines { flex: 1; display: grid; gap: 8px; }
+.mm-skel__lines i, .mm-detail--loading span { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, #eef1f1 25%, #f7f9f9 50%, #eef1f1 75%); background-size: 200% 100%; animation: mm-skel 1.2s linear infinite; }
+.mm-skel__lines i:first-child { width: 45%; }
+.mm-skel__lines i:last-child { width: 28%; height: 10px; }
+@keyframes mm-skel { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .mm-skel__lines i, .mm-detail--loading span { animation: none; } }
+
+.mm-detail.mm-detail--loading { display: grid; gap: 12px; padding: 18px 4px; }
+.mm-detail--loading span:nth-child(1) { width: 40%; height: 16px; }
+.mm-detail--loading span:nth-child(2) { width: 85%; }
+.mm-detail--loading span:nth-child(3) { width: 65%; }
+.mm-detail__error { margin: 18px 4px; color: #666; }
+
+#members-list#members-list .card.mm-member.is-more { display: none; }
+#members-list#members-list #cards-container.is-all .card.mm-member.is-more,
+#members-list#members-list #cards-container.is-searching .card.mm-member.is-more { display: flex; }
+#members-list#members-list #cards-container.is-all .card.mm-member.is-more.is-filtered,
+#members-list#members-list #cards-container.is-searching .card.mm-member.is-more.is-filtered { display: none !important; }
+#cards-container.is-searching .mm-members-more { display: none; }
+.mm-members-more { display: block; width: 100%; margin: 4px 0 10px; padding: 14px; border: 1px dashed #b9d9d7; border-radius: 16px; background: #fff; color: #1f8580; font-weight: 700; cursor: pointer; }
+.mm-members-more:hover, .mm-members-more:focus-visible { background: #f2faf9; }

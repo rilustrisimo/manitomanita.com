@@ -54,6 +54,8 @@ if [ "$MODE" = "live" ] || [ "$MODE" = "all" ]; then
   echo "$r" | grep -q '"success":false' && ok "member cards need the group page key" || bad "member cards without key: $(echo "$r" | head -c 80)"
   r=$(curl -s -X POST "$SITE/wp-admin/admin-ajax.php" -d "action=user_card_generate&groupid=171650&key=0123456789abcdef0123456789abcdef")
   echo "$r" | grep -q '"success":false' && ok "member cards refuse a wrong key" || bad "member cards with a wrong key: $(echo "$r" | head -c 80)"
+  r=$(curl -s -X POST "$SITE/wp-admin/admin-ajax.php" -d "action=mm_member_detail&gid=171650&uid=171687")
+  echo "$r" | grep -q '"success":false' && ok "member details need the group page key" || bad "member details without key: $(echo "$r" | head -c 80)"
   r=$(curl -s -X POST "$SITE/wp-admin/admin-ajax.php" -d "action=mm_comment_remove&cid=1&gid=1&nonce=x")
   echo "$r" | grep -q '"success":false' && ok "comment removal needs a PRO moderator" || bad "comment removal: $r"
   code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$SITE/wp-admin/admin-ajax.php" -d "action=mm_pay_step&nonce=x&step=sheet"); [ "$code" = "403" ] && ok "PRO funnel log refuses a forged step" || bad "PRO funnel log gave $code"
