@@ -843,6 +843,66 @@
     font-size: 12px;
 }
 
+/* Date on the left, the organizer's Remove (CommentModeration) on the right */
+:is(#members-list#members-list, #member-popup#member-popup) .mm-dcomment__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 10px;
+    margin-top: 4px;
+}
+
+:is(#members-list#members-list, #member-popup#member-popup) .mm-dcomment__foot .com-date {
+    margin: 0;
+}
+
+:is(#members-list#members-list, #member-popup#member-popup) .mm-dcomment .mm-dcomment__rm {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    min-height: 0;
+    margin: 0 -6px 0 0;
+    padding: 4px 8px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    box-shadow: none;
+    color: #8a8a8a;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.2;
+    text-transform: none;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+
+:is(#members-list#members-list, #member-popup#member-popup) .mm-dcomment .mm-dcomment__rm i {
+    font-size: 12px;
+}
+
+:is(#members-list#members-list, #member-popup#member-popup) .mm-dcomment .mm-dcomment__rm:hover,
+:is(#members-list#members-list, #member-popup#member-popup) .mm-dcomment .mm-dcomment__rm:focus-visible {
+    background: #fbeaea;
+    color: #b32d2e;
+}
+
+:is(#members-list#members-list, #member-popup#member-popup) .mm-dcomment .mm-dcomment__rm.is-locked:hover,
+:is(#members-list#members-list, #member-popup#member-popup) .mm-dcomment .mm-dcomment__rm.is-locked:focus-visible {
+    background: #eef3f3;
+    color: #1b1b1b;
+}
+
+:is(#members-list#members-list, #member-popup#member-popup) .mm-dcomment .mm-dcomment__rm:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
 @media (max-width: 991px) {
     .mm-detail {
         grid-template-columns: 1fr;

@@ -90,7 +90,6 @@ jQuery(function($){
     });
 });
 </script>
-<style>.mm-dcomment__rm{margin-left:8px;padding:2px 8px;border:1px solid #e6c7c7;border-radius:999px;background:#fff;color:#b32d2e;font-size:12px;font-weight:600;cursor:pointer}.mm-dcomment__rm:hover{background:#fbeaea}.mm-dcomment__rm:disabled{opacity:.5}.mm-dcomment__rm.is-locked{border-color:#e3e5e8;color:#6d6d6d}.mm-dcomment__rm.is-locked:hover{background:#f5f8f8;color:#1b1b1b}</style>
         <?php
     }
 }

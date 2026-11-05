@@ -880,7 +880,7 @@ class Users extends Theme {
             foreach($comments as $c):
                 $cardres .= '            <li class="mm-dcomment" data-cid="'.(int) $c->comment_ID.'">';
                 $cardres .= '                <div class="com-content">'.Affiliate::linkifyText($c->comment_content, 'members-comment', $groupid).'</div>';
-                $cardres .= '                <time class="com-date" datetime="'.esc_attr(date('c', strtotime($c->comment_date))).'">'.date('M j, Y · g:i a', strtotime($c->comment_date)).'</time>'.(class_exists('CommentModeration') ? CommentModeration::button($c->comment_ID, $groupid) : '');
+                $cardres .= '                <div class="mm-dcomment__foot"><time class="com-date" datetime="'.esc_attr(date('c', strtotime($c->comment_date))).'">'.date('M j, Y · g:i a', strtotime($c->comment_date)).'</time>'.(class_exists('CommentModeration') ? CommentModeration::button($c->comment_ID, $groupid) : '').'</div>';
                 $cardres .= '            </li>';
             endforeach;
             $cardres .= '            </ul>';
