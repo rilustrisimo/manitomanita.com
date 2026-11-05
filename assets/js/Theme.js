@@ -2888,7 +2888,8 @@ var Theme = {
             input = box.find('[data-mm-joined-search]'),
             empty = box.find('[data-mm-joined-empty]');
 
-        box.find('[data-mm-joined-count]').html('<strong>' + n + '</strong> ' + (n === 1 ? 'member' : 'members') + ' joined &middot; the group has been shuffled');
+        // The server sends no names until 3 people have joined (fewer could be matched to their screen names).
+        box.find('[data-mm-joined-count]').html(n ? '<strong>' + n + '</strong> ' + (n === 1 ? 'member' : 'members') + ' joined &middot; the group has been shuffled' : 'Names show here once <strong>3 or more</strong> people have joined, so no one can tell who is behind each screen name.');
         search.prop('hidden', n <= 6);
 
         input.off('input.mmJoined').on('input.mmJoined', function(){

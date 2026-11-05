@@ -813,6 +813,7 @@ class Users extends Theme {
         $cardres = '';
         $wishcount = 0;
         $whojoined = '';
+        $joinedRows = array();
 
         foreach($userids as $userid):
 
@@ -905,16 +906,22 @@ class Users extends Theme {
         $cardres .= '    <span class="mm-member__chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>';
         $cardres .= '</div>';
 
-        // "Who joined" popup row: real name, screen name and wishlist status.
+        // "Who joined" popup row: real name and whether they have a wishlist. Never the screen name, the
+        // exact wish count or the members-list order: any of them would tie a real name to its secret screen name.
         $fullName = trim((string) get_field('name', $userid));
-        $fullName = ($fullName !== '')?$fullName:$screenName;
-        $whojoined .= '<li class="mm-joined__item" data-name="'.esc_attr(mb_strtolower($fullName.' '.$screenName)).'">';
-        $whojoined .= '<span class="mm-avatar" aria-hidden="true">'.esc_html(mb_strtoupper(mb_substr($fullName, 0, 1))).'</span>';
-        $whojoined .= '<span class="mm-joined__text"><strong>'.esc_html($fullName).'</strong><small>'.esc_html($screenName).' &middot; '.(($wishTotal)?$wishTotal.' '.(($wishTotal == 1)?'wish':'wishes'):'No wishlist yet').'</small></span>';
-        $whojoined .= ($wishTotal)?'<span class="mm-joined__ok" title="Has a wishlist"><i class="fas fa-circle-check"></i></span>':'';
-        $whojoined .= '</li>';
+        $fullName = ($fullName !== '')?$fullName:'Member';
+        $row  = '<li class="mm-joined__item" data-name="'.esc_attr(mb_strtolower($fullName)).'">';
+        $row .= '<span class="mm-avatar" aria-hidden="true">'.esc_html(mb_strtoupper(mb_substr($fullName, 0, 1))).'</span>';
+        $row .= '<span class="mm-joined__text"><strong>'.esc_html($fullName).'</strong><small>'.(($wishTotal)?'Has a wishlist':'No wishlist yet').'</small></span>';
+        $row .= ($wishTotal)?'<span class="mm-joined__ok" title="Has a wishlist"><i class="fas fa-circle-check"></i></span>':'';
+        $row .= '</li>';
+        $joinedRows[] = array(mb_strtolower($fullName), $row);
 
         endforeach;
+
+        usort($joinedRows, function($a, $b){ return strcmp($a[0], $b[0]); }); // A-Z, not the members-list order
+        // Under 3 members the real names could be matched to the screen names (who joined first), so send none.
+        $whojoined = (count($joinedRows) >= 3)?implode('', array_column($joinedRows, 1)):'';
 
         return array($cardres, $wishcount, $whojoined);
     }
