@@ -76,7 +76,8 @@ class EmailCenterAdmin {
         if ( isset( $_POST['content'] ) ) {
             foreach ( array( 'subject', 'preheader', 'eyebrow', 'title', 'button_label' ) as $k ) $d['content'][ $k ] = mb_substr( sanitize_text_field( (string) ( $c[ $k ] ?? '' ) ), 0, 200 );
             $u = trim( (string) ( $c['button_url'] ?? '' ) );
-            $d['content']['button_url'] = preg_match( '/^\{(group_link|start_link)\}$/', $u ) ? $u : esc_url_raw( $u );
+            // A token alone, or with extra parameters after it (e.g. {group_link}&pop=pro-exclude opens the PRO sheet).
+            $d['content']['button_url'] = preg_match( '/^\{(group_link|start_link)\}(&[A-Za-z0-9_\-]+=[A-Za-z0-9_\-.%]*)*$/', $u ) ? $u : esc_url_raw( $u );
             $d['content']['body'] = wp_kses_post( (string) ( $c['body'] ?? '' ) );
             foreach ( array( 'ideas', 'wish', 'card' ) as $k ) $d['content'][ $k ] = empty( $c[ $k ] ) ? 0 : 1;
         }
@@ -455,7 +456,7 @@ class EmailCenterAdmin {
         echo '<p class="mmec-tokens">Personal tokens: ';
         foreach ( EmailCenter::tokenNames() as $t ) if ( ! in_array( $t, array( 'group_link', 'start_link' ), true ) ) echo '<button type="button" class="button-link" data-mmec-token="{' . esc_attr( $t ) . '}">{' . esc_html( $t ) . '}</button> ';
         echo '</p>';
-        echo '<div class="mmec-two"><label>Button label' . $in( 'content[button_label]', $c['button_label'], 'maxlength="40" data-mmec-c' ) . '</label><label>Button link <small>{group_link}, {start_link} or a URL</small>' . $in( 'content[button_url]', $c['button_url'], 'data-mmec-c' ) . '</label></div>';
+        echo '<div class="mmec-two"><label>Button label' . $in( 'content[button_label]', $c['button_label'], 'maxlength="40" data-mmec-c' ) . '</label><label>Button link <small>{group_link}, {start_link} (optionally + &amp;pop=pro-exclude) or a URL</small>' . $in( 'content[button_url]', $c['button_url'], 'data-mmec-c' ) . '</label></div>';
         echo '<fieldset class="mmec-blocks"><legend>Extra blocks</legend><label><input type="checkbox" name="content[ideas]" value="1" data-mmec-c' . checked( ! empty( $c['ideas'] ), true, false ) . '> Gift ideas within their group budget</label><label><input type="checkbox" name="content[wish]" value="1" data-mmec-c' . checked( ! empty( $c['wish'] ), true, false ) . '> Their match&rsquo;s wishlist shop buttons (members of shuffled groups)</label><label><input type="checkbox" name="content[card]" value="1" data-mmec-c' . checked( ! empty( $c['card'] ), true, false ) . '> Group card (name, date, budget)</label></fieldset>';
         echo '</div><aside class="mmec-ai" data-mmec-ai><h3>Write with AI</h3>';
         if ( EmailAI::enabled() ) {
