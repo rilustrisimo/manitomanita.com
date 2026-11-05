@@ -42,6 +42,8 @@ class AdsPortal {
         add_filter( 'wpseo_robots', array( __CLASS__, 'robots' ), 30 );
         add_filter( 'wpseo_exclude_from_sitemap_by_post_ids', array( __CLASS__, 'sitemapExclude' ) );
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'assets' ), 30 );
+        add_filter( 'wp_nav_menu_objects', array( __CLASS__, 'headerCta' ) );
+        add_filter( 'nav_menu_link_attributes', array( __CLASS__, 'headerCtaAttrs' ), 10, 2 );
 
         foreach ( array( 'login', 'logout', 'save', 'checkout', 'activate', 'cancel', 'switch', 'wait', 'profile' ) as $a ) {
             add_action( 'wp_ajax_mm_ads_' . $a, array( __CLASS__, 'ajax' . ucfirst( $a ) ) );
@@ -127,6 +129,29 @@ class AdsPortal {
             . '<h2>Your card</h2><ul><li>Use your real brand name and a logo you own.</li><li>Links must use https and lead to the page the ad describes.</li><li>Promo codes must work for everyone who sees the ad.</li></ul>'
             . '<h2>Reviews, payments and refunds</h2><ul><li>You pay when you book. If we reject the ad, the first payment is refunded in full and the subscription is cancelled.</li><li>Subscriptions renew every week or month until you cancel. When you cancel, your ad keeps running until the end of the period you paid for; that period isn&rsquo;t refunded.</li><li>Christmas placements run Sep 1 to Dec 20. Subscriptions for them stop before billing a period after Dec 20.</li><li>We may pause or remove an ad that breaks these rules. Edits to a live ad are reviewed before they replace the current version.</li></ul>'
             . '<h2>Privacy</h2><p>Advertisers get totals only (views, clicks, emails and group budget or size ranges). We never share names, emails or group details.</p>';
+    }
+
+    /** On the advertiser pages the header's "Create Group" menu item becomes "Book a spot". */
+    public static function headerCta( $items ) {
+        if ( ! self::isPage( 'advertise' ) && ! self::isPage( 'ad-guidelines' ) ) return $items;
+        foreach ( $items as $item ) {
+            if ( isset( $item->url ) && strpos( (string) $item->url, '#create-group' ) !== false ) {
+                $item->title = 'Book a spot';
+                $item->url = self::pageUrl( 'account' );
+                $item->mm_book = true;
+            }
+        }
+
+        return $items;
+    }
+
+    public static function headerCtaAttrs( $atts, $item ) {
+        if ( ! empty( $item->mm_book ) ) {
+            $atts['data-mm-track'] = 'advertise_cta';
+            $atts['data-mm-slot'] = 'header';
+        }
+
+        return $atts;
     }
 
     public static function isPage( $slug ) {
