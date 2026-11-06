@@ -327,6 +327,7 @@ class InsightsReport {
             array( 'Delivered (SES)', self::n( $t['delivered'] ?? 0 ) ),
             array( 'Hard bounces', self::n( $t['bounce'] ?? 0 ) . ( $sent ? ' (' . round( ( $t['bounce'] ?? 0 ) / $sent * 100, 2 ) . '%)' : '' ) ),
             array( 'Soft bounces', self::n( $t['soft_bounce'] ?? 0 ) ),
+            array( 'Refused by SES (already on its suppression list; not counted by SES)', self::n( $t['ses_listed'] ?? 0 ) ),
             array( 'Complaints', self::n( $t['complaint'] ?? 0 ) . ( $sent ? ' (' . round( ( $t['complaint'] ?? 0 ) / $sent * 100, 3 ) . '%)' : '' ) ),
             array( 'Suppressed inboxes (all time)', self::n( $e['suppressed_all'] ) ),
         ) );

@@ -126,6 +126,14 @@ class EmailCenterAdmin {
             $back( array( 'tab' => 'edit', 'id' => $new ) );
         }
 
+        if ( $op === 'import' ) {
+            $text = '';
+            if ( ! empty( $_FILES['file']['tmp_name'] ) && is_uploaded_file( $_FILES['file']['tmp_name'] ) && (int) $_FILES['file']['size'] <= 20 * MB_IN_BYTES ) $text = (string) file_get_contents( $_FILES['file']['tmp_name'] );
+            if ( $text === '' ) $text = wp_unslash( (string) ( $_POST['list'] ?? '' ) );
+            @set_time_limit( 300 );
+            list( $a, $b, $c ) = EmailDeliver::importList( $text );
+            $back( array( 'tab' => 'deliverability', 'msg' => 'imported', 'na' => $a, 'nb' => $b, 'nc' => $c ) );
+        }
         if ( $op === 'unsuppress' ) {
             EmailDeliver::unsuppress( preg_replace( '/[^a-f0-9]/', '', (string) ( $_POST['hash'] ?? '' ) ) );
             $back( array( 'tab' => 'deliverability', 'msg' => 'unsuppressed' ) );
@@ -293,7 +301,7 @@ class EmailCenterAdmin {
             'chip'  => self::chip( $id ),
             'stage' => trim( $stage[0] . ( $stage[2] ? ' · ' . $stage[2] : '' ) ),
             'pct'   => $total ? round( $done / $total * 100 ) : 0,
-            'line'  => $total ? number_format( $c['sent'] ) . ' sent of ' . number_format( $total ) . ( $c['failed'] ? ' · ' . number_format( $c['failed'] ) . ' failed' : '' ) . ( $c['skipped'] ? ' · ' . number_format( $c['skipped'] ) . ' skipped' : '' ) . ( $c['bounced'] ? ' · ' . number_format( $c['bounced'] ) . ' bounced' : '' ) . ( $left ? ' · about ' . ( $runsLeft * 2 ) . ' min left' : '' ) : '',
+            'line'  => $total ? number_format( $c['sent'] ) . ' sent of ' . number_format( $total ) . ( $c['failed'] ? ' · ' . number_format( $c['failed'] ) . ' failed' : '' ) . ( $c['skipped'] ? ' · ' . number_format( $c['skipped'] ) . ' skipped' : '' ) . ( $c['bounced'] - $c['ses_listed'] ? ' · ' . number_format( $c['bounced'] - $c['ses_listed'] ) . ' bounced' : '' ) . ( $c['ses_listed'] ? ' · ' . number_format( $c['ses_listed'] ) . ' already on SES list' : '' ) . ( $left ? ' · about ' . ( $runsLeft * 2 ) . ' min left' : '' ) : '',
             'stats' => $c['sent'] ? number_format( $c['opened'] ) . ' opens (' . round( $c['opened'] / $c['sent'] * 100 ) . '%) · ' . number_format( $c['clicked'] ) . ' clicks (' . round( $c['clicked'] / $c['sent'] * 100, 1 ) . '%)' : '',
             'live'  => in_array( EmailCenter::status( $id ), array( 'scheduled', 'sending' ), true ),
         );
@@ -317,7 +325,7 @@ class EmailCenterAdmin {
             }
             echo '</nav>';
         }
-        $msgs = array( 'scheduled' => array( 'success', 'Scheduled. It starts at its time and sends inside its send window.' ), 'saved' => array( 'success', 'Saved.' ), 'tested' => array( 'success', 'Test sent. Check it on your phone; you can schedule now.' ), 'test-fail' => array( 'error', 'The test could not be sent.' ), 'needs-test' => array( 'warning', 'Send a test of the latest version first.' ), 'no-subject' => array( 'warning', 'Add a subject first.' ), 'locked' => array( 'warning', 'This campaign has started, so it can&rsquo;t be edited. Duplicate it instead.' ), 'unsuppressed' => array( 'success', 'Removed from the suppression list.' ) );
+        $msgs = array( 'scheduled' => array( 'success', 'Scheduled. It starts at its time and sends inside its send window.' ), 'saved' => array( 'success', 'Saved.' ), 'tested' => array( 'success', 'Test sent. Check it on your phone; you can schedule now.' ), 'test-fail' => array( 'error', 'The test could not be sent.' ), 'needs-test' => array( 'warning', 'Send a test of the latest version first.' ), 'no-subject' => array( 'warning', 'Add a subject first.' ), 'locked' => array( 'warning', 'This campaign has started, so it can&rsquo;t be edited. Duplicate it instead.' ), 'unsuppressed' => array( 'success', 'Removed from the suppression list.' ), 'imported' => array( 'success', sprintf( 'Imported %s addresses from the SES list (%s complaints); %s were already blocked.', number_format( absint( $_GET['na'] ?? 0 ) ), number_format( absint( $_GET['nc'] ?? 0 ) ), number_format( absint( $_GET['nb'] ?? 0 ) ) ) ) );
         $m = sanitize_key( (string) ( $_GET['msg'] ?? '' ) );
         if ( isset( $msgs[ $m ] ) ) echo '<div class="notice notice-' . $msgs[ $m ][0] . ' is-dismissible"><p>' . $msgs[ $m ][1] . '</p></div>';
 
@@ -551,7 +559,7 @@ class EmailCenterAdmin {
         global $wpdb;
         list( $s7, $b7, $c7 ) = self::rates( 7 );
         list( $s30, $b30, $c30, $t30 ) = self::rates( 30 );
-        echo '<div class="mmi-cards">' . self::card( 'Sent (7 days)', number_format( $s7 ), 'bounce ' . $b7 . '% · complaints ' . $c7 . '%' ) . self::card( 'Sent (30 days)', number_format( $s30 ), 'failed ' . number_format( $t30['failed'] ?? 0 ) . ' · skipped ' . number_format( $t30['suppressed'] ?? 0 ) )
+        echo '<div class="mmi-cards">' . self::card( 'Sent (7 days)', number_format( $s7 ), 'bounce ' . $b7 . '% · complaints ' . $c7 . '%' ) . self::card( 'Sent (30 days)', number_format( $s30 ), 'failed ' . number_format( $t30['failed'] ?? 0 ) . ' · skipped ' . number_format( $t30['suppressed'] ?? 0 ) . ' · already on SES list ' . number_format( $t30['ses_listed'] ?? 0 ) )
             . self::card( 'Bounce rate (30 days)', $b30 . '%', 'SES warns at 5%; keep under 2%', $b30 >= 5 ? 'is-bad' : ( $b30 >= 2 ? 'is-warn' : '' ) ) . self::card( 'Complaint rate (30 days)', $c30 . '%', 'SES warns at 0.1%', $c30 >= 0.1 ? 'is-bad' : ( $c30 >= 0.05 ? 'is-warn' : '' ) ) . '</div>';
 
         $topic = (string) get_option( 'mm_ses_topic', '' );
@@ -559,6 +567,14 @@ class EmailCenterAdmin {
         if ( $topic !== '' ) echo '<p><span class="mmec-chip is-sending">Connected</span> Bounces and complaints arrive from <code>' . esc_html( $topic ) . '</code>.</p>';
         else echo '<p><span class="mmec-chip is-paused">Not set up</span> Until it is, the site can&rsquo;t learn which addresses bounced. Steps: (1) AWS console &rsaquo; SNS &rsaquo; Create topic (Standard, e.g. <code>manito-ses-feedback</code>). (2) Create subscription: protocol HTTPS, endpoint <code>' . esc_html( rest_url( 'mm/v1/ses-events' ) ) . '</code> (it confirms itself). (3) SES &rsaquo; Identities &rsaquo; manitomanita.com &rsaquo; Notifications &rsaquo; Feedback notifications: set Bounce and Complaint to that topic.</p>';
         echo '</div>';
+
+        echo '<div class="mmi-panel"><h3>Import Amazon SES suppression list</h3>';
+        echo '<p>Addresses SES blocked before bounce feedback was connected (Nov 4) aren&rsquo;t on our list yet; each one is tried once and counted as a bounce. Import them so campaigns skip them from the start. Past campaign stats don&rsquo;t change.</p>';
+        echo '<ol class="mmi-muted"><li>In the AWS console, open <b>CloudShell</b> (the <code>&gt;_</code> icon at the top), region <b>us-east-1</b>.</li><li>Run: <code>aws sesv2 list-suppressed-destinations --output json &gt; ses-suppressed.json</code></li><li><b>Actions &rsaquo; Download file</b>: <code>ses-suppressed.json</code>, then upload it here. (A CSV or plain list, one address per line, works too.)</li></ol>';
+        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" enctype="multipart/form-data">';
+        wp_nonce_field( 'mm_ec' );
+        echo '<input type="hidden" name="action" value="mm_ec"><input type="hidden" name="op" value="import">';
+        echo '<p><input type="file" name="file" accept=".json,.csv,.txt"> <button class="button button-primary" onclick="return confirm(\'Add every address in this file to the suppression list?\');">Import</button></p></form></div>';
 
         $s = sanitize_text_field( wp_unslash( (string) ( $_GET['s'] ?? '' ) ) );
         $where = '';

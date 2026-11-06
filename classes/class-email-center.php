@@ -37,6 +37,7 @@ class EmailCenter {
         add_action( 'template_redirect', array( __CLASS__, 'click' ), 1 );
         add_action( 'mm_email_suppressed', array( __CLASS__, 'onSuppressed' ), 10, 3 );
         add_action( 'mm_email_daily', array( __CLASS__, 'purge' ) );
+        add_action( 'admin_init', array( __CLASS__, 'relabelSesListed' ) );
         // Measure every automatic email job without touching its code: emails sent between start and end.
         foreach ( self::jobHooks() as $hook => $key ) {
             add_action( $hook, function () use ( $hook ) { self::$jobStart[ $hook ] = Emails::$sentCount; }, -1000 );
@@ -141,7 +142,8 @@ class EmailCenter {
         global $wpdb;
         $out = array( 'queued' => 0, 'sending' => 0, 'sent' => 0, 'failed' => 0, 'skipped' => 0, 'bounced' => 0, 'opened' => 0, 'clicked' => 0 );
         foreach ( (array) $wpdb->get_results( $wpdb->prepare( 'SELECT status, COUNT(*) n FROM ' . self::queueTable() . ' WHERE campaign_id = %d GROUP BY status', (int) $id ) ) as $r ) $out[ $r->status ] = (int) $r->n;
-        $oc = $wpdb->get_row( $wpdb->prepare( 'SELECT SUM(opened_at IS NOT NULL) o, SUM(clicked_at IS NOT NULL) c FROM ' . self::queueTable() . ' WHERE campaign_id = %d', (int) $id ) );
+        $oc = $wpdb->get_row( $wpdb->prepare( 'SELECT SUM(opened_at IS NOT NULL) o, SUM(clicked_at IS NOT NULL) c, SUM(status = \'bounced\' AND reason = \'on SES list\') l FROM ' . self::queueTable() . ' WHERE campaign_id = %d', (int) $id ) );
+        $out['ses_listed'] = (int) ( $oc->l ?? 0 ); // part of 'bounced': SES refused, already on its suppression list
         $out['opened'] = (int) ( $oc->o ?? 0 );
         $out['clicked'] = (int) ( $oc->c ?? 0 );
 
@@ -451,13 +453,26 @@ class EmailCenter {
         $q = self::queueTable();
         $since = wp_date( 'Y-m-d H:i:s', time() - 7 * DAY_IN_SECONDS );
         $rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, campaign_id, domain, tier FROM $q WHERE inbox = %s AND status = 'sent' AND sent_at > %s", $hash, $since ) );
-        $wpdb->query( $wpdb->prepare( "UPDATE $q SET status = 'bounced', reason = %s WHERE inbox = %s AND status = 'sent' AND sent_at > %s", $reason === 'complaint' ? 'marked as spam' : 'bounced', $hash, $since ) );
-        if ( $reason === 'complaint' ) return;
+        // 'on SES list' rows are not counted by the breakers (they only count reason 'bounced').
+        $why = $reason === 'complaint' ? 'marked as spam' : ( EmailDeliver::$sesListed ? 'on SES list' : 'bounced' );
+        $wpdb->query( $wpdb->prepare( "UPDATE $q SET status = 'bounced', reason = %s WHERE inbox = %s AND status = 'sent' AND sent_at > %s", $why, $hash, $since ) );
+        if ( $reason === 'complaint' || EmailDeliver::$sesListed ) return;
         foreach ( $rows as $r ) {
             if ( (int) $r->tier !== 2 || $r->domain === '' ) continue;
             $n = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $q WHERE campaign_id = %d AND domain = %s AND status = 'bounced' AND reason = 'bounced'", $r->campaign_id, $r->domain ) );
             if ( $n >= self::DOMAIN_STOP ) $wpdb->query( $wpdb->prepare( "UPDATE $q SET status = 'skipped', reason = %s WHERE campaign_id = %d AND domain = %s AND status = 'queued'", 'domain ' . $r->domain . ' bounced', $r->campaign_id, $r->domain ) );
         }
+    }
+
+    /**
+     * Once (2026-11-06): bounces recorded before SES-list bounces were told apart were all 'bounced'. The
+     * suppression list kept the subtype, so relabel those queue rows; the breakers then see real bounces only.
+     */
+    public static function relabelSesListed() {
+        if ( get_option( 'mm_ec_relabel_ses' ) ) return;
+        global $wpdb;
+        $wpdb->query( 'UPDATE ' . self::queueTable() . " SET reason = 'on SES list' WHERE status = 'bounced' AND reason = 'bounced' AND inbox IN (SELECT inbox FROM " . EmailDeliver::suppressTable() . " WHERE source = 'ses: OnAccountSuppressionList')" );
+        update_option( 'mm_ec_relabel_ses', 1, false );
     }
 
     /** Daily: forget addresses in queue rows older than 90 days (counts stay). */

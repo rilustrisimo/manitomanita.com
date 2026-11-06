@@ -106,6 +106,8 @@ class EmailDeliver {
 
     /** Suppression reason for an inbox, or ''. */
     protected static $cache = array();
+    public static $sesListed = false; // true while handling a bounce SES sent only because the address is on its suppression list
+    protected static $quiet = false;  // imports: suppress without touching campaign rows
 
     public static function reason( $email ) {
         global $wpdb;
@@ -135,7 +137,7 @@ class EmailDeliver {
             $h, substr( $reason, 0, 20 ), substr( (string) $source, 0, 60 ), self::mask( $email ), $now
         ) );
         self::$cache[ $h ] = $reason;
-        do_action( 'mm_email_suppressed', $email, $reason, $h );
+        if ( ! self::$quiet ) do_action( 'mm_email_suppressed', $email, $reason, $h );
     }
 
     /**
@@ -155,6 +157,40 @@ class EmailDeliver {
             $h, 'soft', substr( 'ses soft: ' . $why, 0, 60 ), self::mask( $email ), current_time( 'mysql' ), $n
         ) );
         self::$cache[ $h ] = 'soft';
+    }
+
+    /**
+     * Import addresses from SES's account suppression list: the JSON of `aws sesv2 list-suppressed-destinations`,
+     * or any text/CSV with one address per line (lines mentioning COMPLAINT count as complaints).
+     * Returns array( added, already, complaints ). Campaign rows and stats are not touched.
+     */
+    public static function importList( $text ) {
+        $items = array();
+        $j = json_decode( (string) $text, true );
+        if ( is_array( $j ) ) {
+            $list = $j['SuppressedDestinationSummaries'] ?? ( isset( $j[0] ) ? $j : array() );
+            foreach ( (array) $list as $r ) {
+                if ( ! empty( $r['EmailAddress'] ) ) $items[] = array( (string) $r['EmailAddress'], strtoupper( (string) ( $r['Reason'] ?? '' ) ) === 'COMPLAINT' );
+            }
+        } else {
+            foreach ( preg_split( '/\r\n|\r|\n/', (string) $text ) as $line ) {
+                if ( preg_match( '/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i', $line, $m ) ) $items[] = array( $m[0], stripos( $line, 'complaint' ) !== false );
+            }
+        }
+        $added = $already = $complaints = 0;
+        self::$quiet = true;
+        foreach ( $items as $it ) {
+            list( $email, $complaint ) = $it;
+            if ( ! is_email( $email ) ) continue;
+            $cur = self::reason( $email );
+            if ( $cur !== '' && ! in_array( $cur, array( 'soft', 'promo_unsub' ), true ) ) { $already++; continue; }
+            self::suppress( $email, $complaint ? 'complaint' : 'bounce', 'ses list import' );
+            $added++;
+            if ( $complaint ) $complaints++;
+        }
+        self::$quiet = false;
+
+        return array( $added, $already, $complaints );
     }
 
     public static function unsuppress( $hash ) {
@@ -271,9 +307,18 @@ class EmailDeliver {
             foreach ( (array) ( $n['bounce']['bouncedRecipients'] ?? array() ) as $r ) {
                 $email = (string) ( $r['emailAddress'] ?? '' );
                 if ( $email === '' ) continue;
-                self::count( $hard ? 'bounce' : 'soft_bounce', 'any' );
-                if ( $hard ) self::suppress( $email, 'bounce', 'ses: ' . (string) ( $n['bounce']['bounceSubType'] ?? '' ) );
-                else self::softBounce( $email, (string) ( $n['bounce']['bounceSubType'] ?? '' ) );
+                $sub = (string) ( $n['bounce']['bounceSubType'] ?? '' );
+                // Already on SES's account suppression list: SES didn't even try, and it doesn't count toward
+                // its bounce rate, so neither do our safeguards. Still recorded, so we stop trying.
+                $listed = $hard && $sub === 'OnAccountSuppressionList';
+                self::count( $listed ? 'ses_listed' : ( $hard ? 'bounce' : 'soft_bounce' ), 'any' );
+                if ( $hard ) {
+                    self::$sesListed = $listed;
+                    self::suppress( $email, 'bounce', 'ses: ' . $sub );
+                    self::$sesListed = false;
+                } else {
+                    self::softBounce( $email, $sub );
+                }
             }
         } elseif ( $type === 'Complaint' ) {
             foreach ( (array) ( $n['complaint']['complainedRecipients'] ?? array() ) as $r ) {
