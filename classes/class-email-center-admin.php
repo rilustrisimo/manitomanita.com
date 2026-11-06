@@ -332,6 +332,7 @@ class EmailCenterAdmin {
         if ( $tab === 'edit' ) self::editScreen( absint( $_GET['id'] ?? 0 ) );
         elseif ( $tab === 'campaigns' ) self::campaignsScreen();
         elseif ( $tab === 'automatic' ) self::automaticScreen();
+        elseif ( $tab === 'sale' && class_exists( 'SaleDays' ) ) SaleDays::previewScreen();
         elseif ( $tab === 'deliverability' ) self::deliverScreen();
         else self::overviewScreen();
         echo '</div>';
@@ -547,7 +548,7 @@ class EmailCenterAdmin {
             echo '<tr><td><strong>' . esc_html( $j['label'] ) . '</strong>';
             if ( $k === 'sale' ) {
                 $on = get_option( 'mm_sale_mail', '1' ) !== '0';
-                echo '<br>' . ( $on ? '<span class="mmec-chip is-sending">On</span>' : '<span class="mmec-chip is-cancelled">Off</span>' ) . ' <small><a href="' . esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'mm_ec_sale_toggle' ), admin_url( 'admin-post.php' ) ), 'mm_ec_sale' ) ) . '">' . ( $on ? 'Turn off' : 'Turn on' ) . '</a></small>';
+                echo '<br>' . ( $on ? '<span class="mmec-chip is-sending">On</span>' : '<span class="mmec-chip is-cancelled">Off</span>' ) . ' <small><a href="' . esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'mm_ec_sale_toggle' ), admin_url( 'admin-post.php' ) ), 'mm_ec_sale' ) ) . '">' . ( $on ? 'Turn off' : 'Turn on' ) . '</a> &middot; <a href="' . esc_url( self::url( array( 'tab' => 'sale' ) ) ) . '">Preview the emails</a></small>';
             }
             echo '</td><td>' . esc_html( $j['who'] ) . '</td><td>' . ( $j['next'] ? esc_html( wp_date( 'D, M j · g:i A', $j['next'] ) ) : '–' ) . '</td><td>' . ( $j['last'] ? esc_html( human_time_diff( $j['last'] ) ) . ' ago' : '<span class="mmi-muted">not reported yet</span>' ) . '</td><td>' . ( $j['last_sent'] ? number_format( $j['sent'] ) . ' sent · ' . esc_html( wp_date( 'M j', $j['last_sent'] ) ) : '–' ) . '</td></tr>';
         }

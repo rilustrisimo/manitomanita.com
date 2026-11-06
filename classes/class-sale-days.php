@@ -100,22 +100,29 @@ class SaleDays {
             if ( ! add_post_meta( $gid, '_mm_sale_eve_' . self::tag( $key ), time(), true ) ) continue;
             $to = (string) get_field( 'your_email', $gid );
             if ( ! is_email( $to ) ) continue;
-            $name = (string) get_field( 'group_name', $gid );
-            $budget = class_exists( 'Affiliate' ) ? Affiliate::budget( $gid ) : 0;
-            $off = add_query_arg( array( 'mm_sale_off' => $gid, 's' => self::sig( 'off' . $gid ) ), home_url( '/' ) );
-            Emails::send( $to, 'Tonight: a short ' . $s['label'] . ' gift email to your members', array( 'kind' => 'sale',
-                'preheader' => 'One email with gift ideas within your budget. You can turn it off for ' . $name . '.',
-                'eyebrow'   => $s['label'] . ' sale',
-                'title'     => 'Heads-up for ' . esc_html( $name ),
-                'body'      => array(
-                    '<p>Lazada and Shopee&rsquo;s <strong>' . $s['label'] . ' sale starts at midnight</strong>. At 6 pm today we&rsquo;ll send your members one short email with gift ideas' . ( $budget ? ' within your &#8369;' . number_format( $budget ) . ' budget' : '' ) . ', and after the shuffle, buttons to shop their match&rsquo;s wishlist.</p>',
-                    '<p>Members who already marked their gift as bought won&rsquo;t get it, and anyone can unsubscribe. Prefer your group not get it?</p>',
-                ),
-                'button'    => array( 'Turn it off for my group', $off ),
-                'footer'    => 'You&rsquo;re getting this because you organize ' . esc_html( $name ) . ' (PRO) on Manito Manita.',
-            ) );
+            list( $subject, $o ) = self::headsUpEmail( $key, $gid );
+            Emails::send( $to, $subject, $o );
             $n++;
         }
+    }
+
+    /** The PRO organizer heads-up (9 am): array( subject, Emails options ). Used to send and to preview. */
+    public static function headsUpEmail( $key, $gid ) {
+        $s = self::sales()[ $key ];
+        $name = (string) get_field( 'group_name', $gid );
+        $budget = class_exists( 'Affiliate' ) ? Affiliate::budget( $gid ) : 0;
+        $off = add_query_arg( array( 'mm_sale_off' => $gid, 's' => self::sig( 'off' . $gid ) ), home_url( '/' ) );
+        return array( 'Tonight: a short ' . $s['label'] . ' gift email to your members', array( 'kind' => 'sale',
+            'preheader' => 'One email with gift ideas within your budget. You can turn it off for ' . $name . '.',
+            'eyebrow'   => $s['label'] . ' sale',
+            'title'     => 'Heads-up for ' . esc_html( $name ),
+            'body'      => array(
+                '<p>Lazada and Shopee&rsquo;s <strong>' . $s['label'] . ' sale starts at midnight</strong>. At 6 pm today we&rsquo;ll send your members one short email with gift ideas' . ( $budget ? ' within your &#8369;' . number_format( $budget ) . ' budget' : '' ) . ', and after the shuffle, buttons to shop their match&rsquo;s wishlist.</p>',
+                '<p>Members who already marked their gift as bought won&rsquo;t get it, and anyone can unsubscribe. Prefer your group not get it?</p>',
+            ),
+            'button'    => array( 'Turn it off for my group', $off ),
+            'footer'    => 'You&rsquo;re getting this because you organize ' . esc_html( $name ) . ' (PRO) on Manito Manita.',
+        ) );
     }
 
     /** Up to BATCH member emails for today's sale. */
@@ -148,6 +155,13 @@ class SaleDays {
     }
 
     public static function send( $key, $gid, $uid, $to ) {
+        list( $subject, $o ) = self::memberEmail( $key, $gid, $uid );
+
+        return Emails::send( $to, $subject, $o );
+    }
+
+    /** One member's sale-eve email: array( subject, Emails options ). Used to send and to preview. */
+    public static function memberEmail( $key, $gid, $uid ) {
         $s = self::sales()[ $key ];
         $name = (string) get_field( 'group_name', $gid );
         $budget = class_exists( 'Affiliate' ) ? Affiliate::budget( $gid ) : 0;
@@ -177,12 +191,66 @@ class SaleDays {
             );
         }
 
-        return Emails::send( $to, html_entity_decode( $subject, ENT_QUOTES, 'UTF-8' ), $o + array( 'kind' => 'sale',
+        return array( html_entity_decode( $subject, ENT_QUOTES, 'UTF-8' ), $o + array( 'kind' => 'sale',
             'eyebrow'     => $s['label'] . ' sale tonight',
             'card'        => Emails::groupCard( $gid ),
             'unsubscribe' => $uid,
             'footer'      => 'You&rsquo;re getting this because you&rsquo;re in ' . esc_html( $name ) . ' on Manito Manita. We send this once, the evening before each big sale.',
         ) );
+    }
+
+    /* ------------------------------------------------------------------ Admin preview */
+
+    /** Real groups to preview with: one shuffled (a member with a match), one not shuffled yet, one PRO. */
+    protected static function samples() {
+        $ids = get_posts( array( 'post_type' => 'groups', 'post_status' => 'publish', 'posts_per_page' => 300, 'fields' => 'ids', 'orderby' => 'date', 'order' => 'DESC', 'no_found_rows' => true ) );
+        $today = wp_date( 'Ymd' );
+        $out = array( 'shuffled' => null, 'open' => null, 'pro' => 0 );
+        foreach ( $ids as $gid ) {
+            $d = DateTime::createFromFormat( '!m/d/Y', (string) get_field( 'gift_exchange_date', $gid ), wp_timezone() );
+            if ( ! $d || $d->format( 'Ymd' ) < $today ) continue;
+            if ( ! $out['pro'] && get_field( 'pro', $gid ) ) $out['pro'] = (int) $gid;
+            $members = Groups::memberIds( $gid );
+            if ( count( $members ) < 3 ) continue;
+            if ( get_field( 'matched', $gid ) ) {
+                if ( ! $out['shuffled'] ) foreach ( $members as $uid ) { if ( (int) get_field( 'pair', $uid, false ) ) { $out['shuffled'] = array( (int) $gid, (int) $uid ); break; } }
+            } elseif ( ! $out['open'] ) {
+                $out['open'] = array( (int) $gid, (int) $members[0] );
+            }
+            if ( $out['shuffled'] && $out['open'] && $out['pro'] ) break;
+        }
+
+        return $out;
+    }
+
+    /** Manito Emails > Automatic emails > Preview: the three sale-eve emails rendered with real groups. */
+    public static function previewScreen() {
+        if ( ! current_user_can( 'manage_options' ) ) return;
+        $key = isset( self::sales()[ (string) ( $_GET['sale'] ?? '' ) ] ) ? (string) $_GET['sale'] : '1111';
+        $label = self::sales()[ $key ]['label'];
+        $x = self::samples();
+        echo '<p><a href="' . esc_url( admin_url( 'admin.php?page=mm-emails&tab=automatic' ) ) . '">&larr; Automatic emails</a></p>';
+        echo '<h2>' . esc_html( $label ) . ' sale-eve emails &middot; preview</h2>';
+        echo '<p>';
+        foreach ( self::sales() as $k => $s ) echo '<a class="button' . ( $k === $key ? ' button-primary' : '' ) . '" href="' . esc_url( admin_url( 'admin.php?page=mm-emails&tab=sale&sale=' . $k ) ) . '">' . esc_html( $s['label'] ) . '</a> ';
+        echo '</p><p class="mmi-muted">Shown with real upcoming groups, exactly as the emails are built. Members get one at 6 pm the day before the sale; PRO organizers get the heads-up at 9 am that day. Nothing is sent from this page.</p>';
+
+        $cards = array();
+        if ( $x['shuffled'] ) $cards[] = array( 'Members of shuffled groups', 'With their match&rsquo;s name and wishlist shop buttons, plus ideas within budget.', self::memberEmail( $key, $x['shuffled'][0], $x['shuffled'][1] ) );
+        if ( $x['open'] ) $cards[] = array( 'Members of groups not shuffled yet', 'Gift ideas within the group budget.', self::memberEmail( $key, $x['open'][0], $x['open'][1] ) );
+        if ( $x['pro'] ) $cards[] = array( 'PRO organizers (9 am heads-up)', 'With a one-tap link to turn it off for their group.', self::headsUpEmail( $key, $x['pro'] ) );
+        if ( ! $cards ) { echo '<p>No upcoming groups to preview with yet.</p>'; return; }
+
+        foreach ( $cards as $c ) {
+            list( $subject, $o ) = $c[2];
+            $html = Emails::render( $o );
+            echo '<div class="mmi-panel"><h3>' . $c[0] . '</h3><p class="mmi-muted">' . $c[1] . '</p>';
+            echo '<div style="background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:10px 14px;max-width:960px;margin:0 0 12px;"><div style="font-weight:600;">' . esc_html( $subject ) . '</div><div style="color:#646970;font-size:13px;">' . esc_html( html_entity_decode( wp_strip_all_tags( (string) ( $o['preheader'] ?? '' ) ), ENT_QUOTES, 'UTF-8' ) ) . '</div></div>';
+            echo '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">';
+            echo '<iframe title="Desktop preview" sandbox="" srcdoc="' . esc_attr( $html ) . '" style="flex:1 1 600px;max-width:680px;height:900px;border:1px solid #dcdcde;border-radius:8px;background:#f2f5f5;"></iframe>';
+            echo '<iframe title="Phone preview" sandbox="" srcdoc="' . esc_attr( $html ) . '" style="flex:0 0 375px;width:375px;height:900px;border:1px solid #dcdcde;border-radius:18px;background:#f2f5f5;"></iframe>';
+            echo '</div></div>';
+        }
     }
 
     public static function routes() {
