@@ -2621,3 +2621,7 @@ body.pro-version:not(.mm-gtheme) .dashboard .dashboard__gd .mm-coorg i {
 #cards-container.is-searching .mm-members-more { display: none; }
 .mm-members-more { display: block; width: 100%; margin: 4px 0 10px; padding: 14px; border: 1px dashed #b9d9d7; border-radius: 16px; background: #fff; color: #1f8580; font-weight: 700; cursor: pointer; }
 .mm-members-more:hover, .mm-members-more:focus-visible { background: #f2faf9; }
+
+/* Share to Teams next to the group link (GroupExtras::teamsShare) */
+.mm-clip-hint .mm-teams-link { color: inherit; font-weight: 700; text-decoration: underline; white-space: nowrap; }
+.mm-clip-hint .mm-teams-link i { margin-right: 2px; }

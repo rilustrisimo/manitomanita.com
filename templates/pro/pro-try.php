@@ -22,6 +22,7 @@ defined( 'ABSPATH' ) || die();
             <span class="mm-upsell__badge mm-upsell__badge--ok"><i class="fa-solid fa-circle-check"></i> Group created</span>
             <h2 id="mm-try-title">Your group is ready!</h2>
             <p class="mm-upsell__lead">Copy the group link from the <b>Members Area</b> and share it on Messenger, Viber or email. Everything you need is free.</p>
+            <p class="mm-try-share"><?php $mmG = new Groups(); echo GroupExtras::teamsShare( $mmG->getGroupId(), 'created', 'mm-teams-btn' ); ?></p>
         </div>
 
         <div class="mm-upsell__extra">

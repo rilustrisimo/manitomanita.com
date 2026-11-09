@@ -23,6 +23,23 @@ class GroupExtras {
 
     protected static $hooked = false;
 
+    /**
+     * "Share to Teams" link for the group link (Microsoft Teams is the top referral: office groups). Opens
+     * Teams' share page with the link and a short message; tracked as share_teams with the slot.
+     */
+    public static function teamsShare( $gid, $slot, $class = 'mm-teams-link' ) {
+        $gid = (int) $gid;
+        if ( ! $gid || get_post_type( $gid ) !== 'groups' ) return '';
+        $name = html_entity_decode( (string) get_field( 'group_name', $gid ), ENT_QUOTES, 'UTF-8' );
+        $url = add_query_arg( array(
+            'href'    => rawurlencode( Emails::groupLink( $gid ) ),
+            'msgText' => rawurlencode( 'Join our gift exchange' . ( $name !== '' ? ': ' . $name : '' ) . '. Open the link, tap Join Group and add your wishlist.' ),
+            'preview' => 'true',
+        ), 'https://teams.microsoft.com/share' );
+
+        return '<a class="' . esc_attr( $class ) . '" href="' . esc_url( $url ) . '" target="_blank" rel="noopener" data-mm-track="share_teams" data-mm-slot="' . esc_attr( $slot ) . '"><i class="fa-brands fa-microsoft" aria-hidden="true"></i> Share to Teams</a>';
+    }
+
     public static function init() {
         if ( self::$hooked ) return;
         self::$hooked = true;

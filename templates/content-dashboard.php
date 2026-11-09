@@ -79,7 +79,7 @@ echo '<input type="hidden" id="mm-cards-key" value="'.esc_attr(Users::cardsKey($
                             <div class="row">
                                 <?php $creds = $group->getGroupCredentials(); ?>
                                 <div class="col-12 col-sm-12 col-md-6"><h2>MEMBERS<span>AREA</span></h2></div>
-                                <div class="col-12 col-sm-12 col-md-6 clip"><i class="fas fa-link"></i> <input type="text" name="clipboard" id="clipboard" readonly value="<?php echo get_permalink(get_the_ID()).'?gid='.$creds[0].'&pw='.$creds[1]; ?>"><div class="label">Copied to clipboard</div><div class="mm-clip-hint">Share this link to invite members &middot; tap to copy</div></div>
+                                <div class="col-12 col-sm-12 col-md-6 clip"><i class="fas fa-link"></i> <input type="text" name="clipboard" id="clipboard" readonly value="<?php echo get_permalink(get_the_ID()).'?gid='.$creds[0].'&pw='.$creds[1]; ?>"><div class="label">Copied to clipboard</div><div class="mm-clip-hint">Share this link to invite members &middot; tap to copy &middot; <?php echo GroupExtras::teamsShare( $group->getGroupId(), 'members-area' ); ?></div></div>
                             </div>
                         </div>
                         <div class="body-dash">

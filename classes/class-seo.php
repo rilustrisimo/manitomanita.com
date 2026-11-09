@@ -31,8 +31,8 @@ class SEO {
     const OLD_GIFT_IDEAS = 77; // redirected to /exchange-gift-ideas-500-pesos/ (Landing::redirects)
     const FACEBOOK       = 'https://www.facebook.com/manitomanitaph';
 
-    const HOME_TITLE = 'Manito Manita: Free Online Bunutan & Secret Santa Generator (PH)';
-    const HOME_DESC  = 'Do your Monito Monita, Kris Kringle or online bunutan in 2 minutes. Free forever: wishlists, gift ideas within budget and private matches. No sign-up.';
+    const HOME_TITLE = 'Manito Manita: Free Monito Monita & Online Bunutan Generator'; // 2026-11-09: "monito monita" had 675 impressions at 1.6% CTR
+    const HOME_DESC  = 'Free Monito Monita, Kris Kringle or online bunutan for your Christmas party. Draw names in 2 minutes, with wishlists and gift ideas. No sign-up.';
 
     protected static $hooked = false;
 

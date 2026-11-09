@@ -15,6 +15,10 @@
 defined( 'ABSPATH' ) || die();
 
 $mm_stats = Groups::siteStats();
+// Per-person price for this group: office committees compare it with collecting from everyone.
+$mm_g = new Groups();
+$mm_n = count( (array) Groups::memberIds( (int) $mm_g->getGroupId() ) );
+$mm_each = $mm_n >= 4 ? (int) ceil( 199 / $mm_n ) : 0;
 ?>
 
 <div class="pop-container mm-upsell mm-upsell--buy" id="make-pro" role="dialog" aria-modal="true" aria-labelledby="mm-upsell-title">
@@ -27,12 +31,23 @@ $mm_stats = Groups::siteStats();
             <p class="mm-upsell__lead" data-mm-upsell-lead>Exclusions, unshuffle for late joiners, reminders and no ads, for the whole group.</p>
         </div>
 
+        <!-- Shown when the sheet was opened for exclusions (Theme.openUpsell sets data-mm-reason) -->
+        <div class="mm-upsell__example" aria-hidden="true">
+            <span class="mm-upsell__example-label">Example</span>
+            <span class="mm-upsell__pair">Ana <i class="fa-solid fa-xmark"></i> Ben</span>
+            <span class="mm-upsell__pair">Carlo <i class="fa-solid fa-xmark"></i> Dana</span>
+            <span class="mm-upsell__example-note">They&rsquo;ll never draw each other. Set it up before you shuffle.</span>
+        </div>
+
         <!-- Buy first: price and checkout are visible without scrolling -->
         <div class="mm-upsell__buy">
             <div class="mm-upsell__price">
                 <strong>&#8369;199</strong>
                 <span><b>one-time</b> for the whole group<br>anyone in the group can pay &middot; no subscription</span>
             </div>
+            <?php if ( $mm_each ) : ?>
+            <p class="mm-upsell__each">That&rsquo;s about <b>&#8369;<?php echo (int) $mm_each; ?> per person</b> for your <?php echo (int) $mm_n; ?> members.</p>
+            <?php endif; ?>
             <div class="paypal-pay mm-upsell__pay">
                 <?php get_template_part( 'paypal/index', 'paypal' ); ?>
             </div>

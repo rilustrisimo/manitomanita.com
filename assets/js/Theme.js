@@ -1822,7 +1822,7 @@ var Theme = {
 
         $('.pop-container').hide();
         if ($.fancybox && $.fancybox.getInstance && $.fancybox.getInstance()) $.fancybox.close(true);
-        sheet.css('display', 'flex').data('mmReason', reason);
+        sheet.css('display', 'flex').data('mmReason', reason).attr('data-mm-reason', reason); // CSS shows the exclusions example
         sheet.find('.mm-upsell__inner').scrollTop(0);
 
         Theme.track('view_promotion', { creative_slot: reason, promotion_name: 'pro_upgrade' });
