@@ -214,6 +214,15 @@ class InsightsReport {
             $c = self::seed();
             update_option( self::CHANGELOG, $c, false );
         }
+        // Entries added after the log was first saved: appended once, then editable like the rest.
+        $added = (array) get_option( 'mm_changelog_added', array() );
+        foreach ( self::later() as $k => $e ) {
+            if ( in_array( $k, $added, true ) ) continue;
+            $c[] = $e;
+            $added[] = $k;
+            update_option( self::CHANGELOG, $c, false );
+            update_option( 'mm_changelog_added', $added, false );
+        }
         usort( $c, function ( $a, $b ) { return strcmp( $b['d'], $a['d'] ); } );
 
         return $c;
@@ -226,6 +235,12 @@ class InsightsReport {
             array( 'd' => '2026-11-04', 't' => '8 registry guide pages + registry extras (QR cards, owner digest, guest reminders). One confirmed spot per email per group. Sale-day emails (11.11/12.12). Manito Emails dashboard with SES bounce/complaint feedback. Footer rebalanced.' ),
             array( 'd' => '2026-11-05', 't' => 'PRO: organizers can remove comments; free groups see a locked "Remove - PRO" button.' ),
             array( 'd' => '2026-11-05', 't' => 'PRO funnel tracking fixed: GA4 begin_checkout now = tapped card/PayPal, add_payment_info = submitted details (before this the two were reversed). Site-side funnel log started (pro_sheet, pro_checkout, pro_order). PRO sheet copy leads with exclusions and "anyone in the group can pay"; PRO buttons say "Get PRO, P199". Match screen: Lazada/Shopee buttons within budget when the match has no wishlist (placement match-empty-shop).' ),
+        );
+    }
+
+    protected static function later() {
+        return array(
+            'ga4-cleanup' => array( 'd' => '2026-11-09', 't' => 'GA4 cleanup: removed GA4 "Create event" rules that also counted every page view as create_group, begin_checkout and join_group (about 25k each, all fake). ExactMetrics plugin removed; the theme\'s own GA4 tag (same stream G-1QRP0XF3M8) took over with no gap. GA4 property renamed to Manito Manita.' ),
         );
     }
 
@@ -277,6 +292,7 @@ class InsightsReport {
         $md = array();
         $s = self::since( 'pro_sheet' );
         $md[] = '- Site-side PRO funnel steps (sheet opened, card/PayPal tapped, order created) are logged since **' . ( $s ?: '2026-11-05' ) . '**; they count even when GA4 is blocked.';
+        $md[] = '- GA4 create_group, begin_checkout and join_group (and their key-event conversions) are inflated before **2026-11-09**: GA4 rules also fired them on every page view. Only counts from 2026-11-09 on are real; for earlier dates use the site-side numbers (groups created, PRO funnel).';
         $md[] = '- GA4 checkout events changed meaning on 2026-11-05: before it, add_payment_info fired before begin_checkout. GA4 "view_promotion" counts PRO banner impressions as well as sheet opens, so use the site-side funnel for sheet opens.';
         $s = self::since( 'wishlist_reserve' );
         $md[] = '- Registry reservations are logged since ' . ( $s ?: '2026-11-04' ) . '; email stats (sent/bounces by kind) since Manito Emails launched on 2026-11-04; comment removals since 2026-11-05.';
