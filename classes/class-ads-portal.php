@@ -700,11 +700,63 @@ class AdsPortal {
         usort( $pays, function ( $a, $b ) { return (int) $a['t'] - (int) $b['t']; } );
         update_post_meta( $id, '_mm_ad_payments', $pays );
 
+        // A renewal the webhook missed (or that landed after the hourly job ended the ad): extend, or bring it back.
+        $last = end( $pays );
+        $st = Ads::meta( $id, 'status' );
+        if ( ( $st === 'live' || ( $st === 'ended' && ! Ads::meta( $id, 'cancelled' ) ) ) && ! get_post_meta( $id, '_mm_ad_refund_due', true ) && (int) $last['t'] >= (int) Ads::meta( $id, 'end', 0 ) - DAY_IN_SECONDS ) {
+            self::extendPaid( $id );
+        }
+
         // A rejected ad whose payment hadn't arrived yet: refund it now.
         if ( Ads::meta( $id, 'status' ) === 'rejected' || get_post_meta( $id, '_mm_ad_refund_due', true ) ) {
             $ok = true;
             foreach ( $new as $sale ) $ok = self::refundOne( $id, $sale ) && $ok;
             if ( $ok ) delete_post_meta( $id, '_mm_ad_refund_due' );
+        }
+    }
+
+    /** A renewal came in: paid through the next billing time, back to live if the hourly job had ended it. */
+    protected static function extendPaid( $id ) {
+        $s = AdsPayPal::subscription( Ads::meta( $id, 'mode', 'live' ), Ads::meta( $id, 'sub' ) );
+        update_post_meta( $id, '_mm_ad_end', max( (int) Ads::meta( $id, 'end', 0 ), $s ? AdsPayPal::periodEnd( $s, Ads::meta( $id, 'cadence', 'weekly' ) ) : time() + ( Ads::meta( $id, 'cadence', 'weekly' ) === 'monthly' ? 30 : 7 ) * DAY_IN_SECONDS ) );
+        update_post_meta( $id, '_mm_ad_payfail', 0 );
+        delete_post_meta( $id, '_mm_ad_due' );
+        if ( Ads::meta( $id, 'status' ) === 'ended' ) update_post_meta( $id, '_mm_ad_status', 'live' );
+        Ads::flush();
+    }
+
+    /**
+     * Ads::hourly() asks this for a live ad whose paid period ends within the hour. PayPal bills a renewal
+     * at, or hours after, the next billing time, so while the subscription is active (not cancelled, no
+     * failed payment) the ad keeps running for up to 2 days until the payment lands; without this the ad
+     * stopped and the advertiser was still charged. True = keep it live.
+     */
+    public static function awaitRenewal( $id ) {
+        $sub = (string) Ads::meta( $id, 'sub' );
+        if ( $sub === '' || Ads::meta( $id, 'cancelled' ) || Ads::meta( $id, 'payfail' ) || ! class_exists( 'AdsPayPal' ) ) return false;
+        self::syncPayments( $id, true ); // extends the paid period if the renewal is already in
+        $end = (int) Ads::meta( $id, 'end', 0 );
+        if ( $end > time() + HOUR_IN_SECONDS ) return true;
+
+        $due = (int) get_post_meta( $id, '_mm_ad_due', true );
+        if ( ! $due ) update_post_meta( $id, '_mm_ad_due', $due = $end );
+        if ( time() - $due > 2 * DAY_IN_SECONDS ) return false;
+        $s = AdsPayPal::subscription( Ads::meta( $id, 'mode', 'live' ), $sub );
+        if ( strtoupper( (string) ( $s['status'] ?? '' ) ) !== 'ACTIVE' ) return false;
+        update_post_meta( $id, '_mm_ad_end', max( $end, time() + 2 * HOUR_IN_SECONDS ) ); // checked again next hour
+        Ads::flush();
+
+        return true;
+    }
+
+    /** Ads ended in the last week with a subscription still running: pick up a renewal that came in after. */
+    public static function reviveEnded() {
+        $ids = get_posts( array( 'post_type' => Ads::CPT, 'post_status' => 'any', 'posts_per_page' => 20, 'fields' => 'ids', 'meta_query' => array(
+            array( 'key' => '_mm_ad_status', 'value' => 'ended' ),
+            array( 'key' => '_mm_ad_end', 'value' => time() - 7 * DAY_IN_SECONDS, 'compare' => '>=', 'type' => 'NUMERIC' ),
+        ) ) );
+        foreach ( $ids as $id ) {
+            if ( Ads::meta( $id, 'sub' ) !== '' && ! Ads::meta( $id, 'cancelled' ) ) self::syncPayments( $id );
         }
     }
 
@@ -828,11 +880,8 @@ class AdsPortal {
 
                 if ( Ads::meta( $id, 'status' ) === 'rejected' || get_post_meta( $id, '_mm_ad_refund_due', true ) ) {
                     if ( self::refundOne( $id, $sale ) ) delete_post_meta( $id, '_mm_ad_refund_due' );
-                } elseif ( Ads::meta( $id, 'status' ) === 'live' ) {
-                    $s = AdsPayPal::subscription( $mode, Ads::meta( $id, 'sub' ) );
-                    if ( $s ) update_post_meta( $id, '_mm_ad_end', max( (int) Ads::meta( $id, 'end', 0 ), AdsPayPal::periodEnd( $s, Ads::meta( $id, 'cadence', 'weekly' ) ) ) );
-                    update_post_meta( $id, '_mm_ad_payfail', 0 );
-                    Ads::flush();
+                } elseif ( Ads::meta( $id, 'status' ) === 'live' || ( Ads::meta( $id, 'status' ) === 'ended' && ! Ads::meta( $id, 'cancelled' ) ) ) {
+                    self::extendPaid( $id );
                     self::mailAdvertiser( $id, 'renewed', array( 'amount' => $amount ) ); // the first payment is covered by the "received" email
                 }
                 break;

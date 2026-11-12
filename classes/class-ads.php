@@ -596,13 +596,17 @@ class Ads {
         global $wpdb;
         $ended = get_posts( array( 'post_type' => self::CPT, 'posts_per_page' => 50, 'fields' => 'ids', 'meta_query' => array(
             array( 'key' => '_mm_ad_status', 'value' => 'live' ),
-            array( 'key' => '_mm_ad_end', 'value' => time(), 'compare' => '<=', 'type' => 'NUMERIC' ),
+            array( 'key' => '_mm_ad_end', 'value' => time() + HOUR_IN_SECONDS, 'compare' => '<=', 'type' => 'NUMERIC' ),
         ) ) );
-        foreach ( $ended as $id ) {
+        foreach ( $ended as $k => $id ) {
+            // Subscriptions renew by themselves: wait for the renewal instead of stopping the ad (AdsPortal).
+            if ( class_exists( 'AdsPortal' ) && AdsPortal::awaitRenewal( $id ) ) { unset( $ended[ $k ] ); continue; }
+            if ( (int) self::meta( $id, 'end', 0 ) > time() ) { unset( $ended[ $k ] ); continue; } // ends within the hour; next run
             update_post_meta( $id, '_mm_ad_status', 'ended' );
             if ( class_exists( 'AdsPortal' ) && (int) self::meta( $id, 'adv', 0 ) ) AdsPortal::mailAdvertiser( $id, 'ended' );
         }
         if ( $ended ) self::flush();
+        if ( class_exists( 'AdsPortal' ) ) AdsPortal::reviveEnded();
 
         $wpdb->query( $wpdb->prepare( 'DELETE FROM ' . self::uniqTable() . ' WHERE d < %s LIMIT 5000', wp_date( 'Y-m-d', strtotime( '-90 days' ) ) ) );
     }
