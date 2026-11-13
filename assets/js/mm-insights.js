@@ -131,6 +131,13 @@
                     return '<div class="mmi-funnel"><span>' + esc(s.step) + '</span><span class="mmi-bar__track"><i style="width:' + Math.max(2, pct) + '%"></i></span><b>' + num(s.count) + '</b><em>' + (i && prev ? Math.round(s.count / prev * 100) + '% of previous' : num(s.groups) + ' groups') + '</em></div>';
                 }).join('') + (d.site_funnel.since ? '' : '<p class="mmi-empty">Steps are logged from today on.</p>') + '</div>' + bars('What opened the PRO sheet (site log)', objBars(d.site_funnel.reasons)) + '</div>';
             }
+            if (d.plus_funnel && d.plus_funnel.steps) {
+                var pf = d.plus_funnel.steps, ptop = pf[0].count || 0;
+                h += '<div class="mmi-grid"><div class="mmi-panel"><h3>Member+ funnel (\u20b199 per member, site log)</h3>' + pf.map(function (s, i) {
+                    var pct = ptop ? Math.round(s.count / ptop * 100) : 0, prev = i ? pf[i - 1].count : 0;
+                    return '<div class="mmi-funnel"><span>' + esc(s.step) + '</span><span class="mmi-bar__track"><i style="width:' + Math.max(2, pct) + '%"></i></span><b>' + num(s.count) + '</b><em>' + (i && prev ? Math.round(s.count / prev * 100) + '% of previous' : num(s.groups) + ' groups') + '</em></div>';
+                }).join('') + '<p class="mmi-empty">Revenue: \u20b1' + num(d.plus_funnel.revenue) + '</p></div>' + bars('Where Member+ was opened', objBars(d.plus_funnel.slots)) + bars('Member+ perks used', objBars(d.plus_funnel.used)) + '</div>';
+            }
             if (d.funnel && d.funnel.steps) {
                 var top = d.funnel.steps[0].users || 0;
                 h += '<div class="mmi-grid"><div class="mmi-panel"><h3>PRO funnel (people, GA4)</h3>' + d.funnel.steps.map(function (s, i) {

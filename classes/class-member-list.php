@@ -119,11 +119,13 @@ class MemberList {
         $matchattr  = ! $matched ? 'disabled class="mm-match-btn" title="Available once the organizer shuffles the group"' : 'class="user-action match-btn mm-match-btn" user-data="' . $uid . '" data-action="see-match"';
         $leaveattr  = $matched ? 'disabled class="mm-leave-btn mm-popup-only" title="Members can\'t leave after the group is shuffled"' : 'class="user-action leave-btn mm-leave-btn mm-popup-only" user-data="' . $uid . '" data-action="leave-group"';
 
-        return '<div class="card mm-member' . ( $more ? ' is-more' : '' ) . '" data-mm-member="' . $uid . '">'
+        $plus = class_exists( 'MemberPlus' ); // Member+ look (screen-name card only, never Who Joined) and its chip
+
+        return '<div class="card mm-member' . ( $more ? ' is-more' : '' ) . ( $plus ? MemberPlus::cardClasses( $uid ) : '' ) . '" data-mm-member="' . $uid . '">'
             . '<div class="card-header" id="heading' . $uid . '"><h2 class="mb-0"><button class="btn btn-link mm-member-open" type="button" aria-haspopup="dialog">'
-            . '<span class="mm-avatar" aria-hidden="true">' . esc_html( mb_strtoupper( mb_substr( trim( $screen ), 0, 1 ) ) ) . '</span>'
+            . '<span class="mm-avatar" aria-hidden="true">' . esc_html( mb_strtoupper( mb_substr( trim( $screen ), 0, 1 ) ) ) . ( $plus ? MemberPlus::badgeHtml( $uid ) : '' ) . '</span>'
             . '<span class="mm-member__text"><span class="mm-member__name">' . esc_html( $screen ) . '</span><span class="mm-member__meta">' . esc_html( $meta ) . '</span></span>'
-            . '</button></h2></div>'
+            . '</button>' . ( $plus ? MemberPlus::chip( $uid ) : '' ) . '</h2></div>'
             . '<div class="mm-member-details" hidden data-mm-details="0"></div>'
             . '<div class="user-action-btns">'
             . '<a href="#" class="user-action wish-btn" user-data="' . $uid . '" data-action="edit-wishlist"><i class="fas fa-gift"></i> Edit Wishlist</a>'

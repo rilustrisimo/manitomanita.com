@@ -2415,6 +2415,9 @@ var Theme = {
                         icon: 'fa-solid fa-shuffle',
                         onConfirm: function(done){ done(); Theme.initMatching($, Theme.userid); }
                     });
+                }else if(Theme.action == "member-plus"){
+                    Theme.removeOverlay($);
+                    $(document).trigger('mm:member-plus', [Theme.userid]); // mm-member-plus.js
                 }else if(Theme.action == "repeat-group"){
                     Theme.removeOverlay($);
                     Theme.startRepeat($, Theme.userid);

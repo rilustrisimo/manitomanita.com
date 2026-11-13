@@ -56,6 +56,11 @@ if [ "$MODE" = "live" ] || [ "$MODE" = "all" ]; then
   echo "$r" | grep -q '"success":false' && ok "member cards refuse a wrong key" || bad "member cards with a wrong key: $(echo "$r" | head -c 80)"
   r=$(curl -s -X POST "$SITE/wp-admin/admin-ajax.php" -d "action=mm_member_detail&gid=171650&uid=171687")
   echo "$r" | grep -q '"success":false' && ok "member details need the group page key" || bad "member details without key: $(echo "$r" | head -c 80)"
+  r=$(curl -s -X POST "$SITE/wp-admin/admin-ajax.php" -d "action=mm_mplus_details&uid=171687&name=x&screen=x&nonce=x")
+  echo "$r" | grep -q '"success":false' && ok "Member+ edits need the member's password" || bad "Member+ details: $(echo "$r" | head -c 80)"
+  r=$(curl -s -X POST "$SITE/wp-admin/admin-ajax.php" -d "action=load_popup_content&form=42&uid=171687")
+  echo "$r" | grep -q 'session has expired' && ok "member edit form is locked" || bad "member edit form: $(echo "$r" | head -c 80)"
+  code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/?mm_mpe=171687&e=1&t=bad"); case "$code" in 30*) ok "Member+ email link refuses a bad token";; *) bad "Member+ email link gave $code";; esac
   r=$(curl -s -X POST "$SITE/wp-admin/admin-ajax.php" -d "action=mm_comment_remove&cid=1&gid=1&nonce=x")
   echo "$r" | grep -q '"success":false' && ok "comment removal needs a PRO moderator" || bad "comment removal: $r"
   code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$SITE/wp-admin/admin-ajax.php" -d "action=mm_pay_step&nonce=x&step=sheet"); [ "$code" = "403" ] && ok "PRO funnel log refuses a forged step" || bad "PRO funnel log gave $code"

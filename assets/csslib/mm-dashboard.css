@@ -2625,3 +2625,197 @@ body.pro-version:not(.mm-gtheme) .dashboard .dashboard__gd .mm-coorg i {
 /* Share to Teams next to the group link (GroupExtras::teamsShare) */
 .mm-clip-hint .mm-teams-link { color: inherit; font-weight: 700; text-decoration: underline; white-space: nowrap; }
 .mm-clip-hint .mm-teams-link i { margin-right: 2px; }
+
+/* ---------- Member+ (MemberPlus, mm-member-plus.js): a member's own card look ---------- */
+
+.mm-ct-gold { --ct: #d4af37; --ct-deep: #5a4300; }
+.mm-ct-noche { --ct: #ff5a5f; --ct-deep: #6b1a1f; }
+.mm-ct-evergreen { --ct: #34c38f; --ct-deep: #0d4a33; }
+.mm-ct-parol { --ct: #ffb020; --ct-deep: #6a4100; }
+.mm-ct-midnight { --ct: #7aa2ff; --ct-deep: #1d2c66; }
+.mm-ct-candy { --ct: #ff7ac0; --ct-deep: #6d1846; }
+.mm-ct-teal { --ct: #3ec7c2; --ct-deep: #10514e; }
+
+/* Themed card: a soft wash of the color, a hairline border and a tinted avatar */
+#members-list#members-list .card.mm-member.mm-ct {
+    border-color: color-mix(in srgb, var(--ct) 45%, #fff);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--ct) 10%, #fff) 0%, #fff 60%);
+}
+#members-list#members-list .card.mm-member.mm-ct:hover { border-color: var(--ct); }
+.mm-ct .mm-avatar,
+.mm-pop-head.mm-ct .mm-avatar {
+    background: color-mix(in srgb, var(--ct) 22%, #fff);
+    color: var(--ct-deep);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3px color-mix(in srgb, var(--ct) 60%, #fff);
+}
+#members-list#members-list .card.mm-member.mm-ct .mm-member__name { color: var(--ct-deep); }
+
+/* Badge: a small sticker on the avatar's corner */
+.mm-avatar { position: relative; }
+.mm-badge {
+    position: absolute;
+    right: -6px;
+    bottom: -4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+    font-size: 12px;
+    line-height: 1;
+}
+.mm-pop-head .mm-badge { width: 24px; height: 24px; font-size: 14px; }
+
+/* Sparkle frame: one slow light travelling round a hairline border; static when motion is reduced */
+@property --mm-cf-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.mm-cf { position: relative; isolation: isolate; }
+.mm-cf::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: 1;
+    padding: 1.5px;
+    border-radius: inherit;
+    background: conic-gradient(from var(--mm-cf-a), transparent 0 62%, color-mix(in srgb, var(--ct, #d4af37) 70%, transparent) 76%, #fff 82%, color-mix(in srgb, var(--ct, #d4af37) 70%, transparent) 88%, transparent 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    animation: mm-cf-turn 9s linear infinite;
+}
+@keyframes mm-cf-turn { to { --mm-cf-a: 360deg; } }
+@media (prefers-reduced-motion: reduce) {
+    .mm-cf::after { animation: none; background: linear-gradient(135deg, var(--ct, #d4af37), #fff 50%, var(--ct, #d4af37)); opacity: .7; }
+}
+
+/* "Member+" chip on cards that haven't upgraded */
+#members-list#members-list .card .card-header h2 .mm-plus-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border: 1px solid #ecd78f;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #fffaf0, #fbf0cc);
+    color: #6b5200;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+#members-list#members-list .card .card-header h2 .mm-plus-chip:hover { border-color: #d4af37; box-shadow: 0 2px 8px rgba(212, 175, 55, .25); }
+
+/* "Your card" bar above the members list */
+.mp-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border: 1px solid #ecd78f;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #fffaf0, #fff 70%);
+}
+.mp-bar__card { display: inline-flex; border-radius: 50%; }
+.mp-bar__card .mm-avatar { width: 38px; height: 38px; }
+.mp-bar__text { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; color: #1b1b1b; font-size: 14px; line-height: 1.3; }
+.mp-bar__text span { color: #6d6d6d; font-size: 13px; }
+.mp-bar__go {
+    flex: 0 0 auto;
+    padding: 9px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #e7c75a, #c9a227);
+    color: #2b2100;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+}
+.mp-bar__x { flex: 0 0 auto; padding: 4px 6px; border: 0; background: none; color: #9a9a9a; font-size: 20px; line-height: 1; cursor: pointer; }
+
+/* Member popup: Member+ action and "Get yours" */
+.mm-pop-action.is-plus {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    min-height: 46px;
+    border-color: #e1c25a;
+    background: linear-gradient(135deg, #fffaf0, #fbf0cc);
+    color: #5a4300;
+}
+.mm-pop-action.is-plus:hover { border-color: #c9a227; }
+.mm-pop-head.mm-cf { padding: 8px 10px; border-radius: 16px; }
+.mp-getyours { margin: -6px 0 14px; padding: 0; border: 0; background: none; color: #8a6d00; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+/* Panel */
+#mp-popup .popup__inner { padding: 22px 18px 24px; }
+.mp { color: #1b1b1b; }
+.mp-hero { margin-bottom: 14px; text-align: center; }
+.mp-kicker { display: inline-block; margin-bottom: 6px; padding: 3px 10px; border-radius: 999px; background: #fbf0cc; color: #6b5200; font-size: 12px; font-weight: 800; letter-spacing: .5px; }
+.mp-hero h3 { margin: 0 0 4px; font-size: 22px; font-weight: 800; line-height: 1.2; }
+.mp-hero p { margin: 0; color: #6d6d6d; font-size: 14px; }
+.mp-preview { display: flex; justify-content: center; margin: 4px 0 14px; padding: 16px; border-radius: 16px; background: #f6f6f6; }
+.mp-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 320px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--ct, #d4af37) 45%, #fff);
+    border-radius: 14px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--ct, #d4af37) 12%, #fff), #fff 65%);
+}
+.mp-card__text { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.mp-card__name { color: var(--ct-deep, #1b1b1b); font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+.mp-card__badge { font-size: 16px; }
+.mp-card__tag { margin-left: auto; color: color-mix(in srgb, var(--ct, #d4af37) 80%, #000); font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
+.mp-tools { display: grid; gap: 10px; margin-bottom: 14px; }
+.mp-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mp-label { flex: 0 0 96px; color: #6d6d6d; font-size: 13px; font-weight: 700; }
+.mp-swatches, .mp-badges { display: flex; flex: 1 1 200px; flex-wrap: wrap; gap: 6px; }
+.mp-swatch { width: 30px; height: 30px; padding: 0; border: 2px solid #fff; border-radius: 50%; background: var(--sw); box-shadow: 0 0 0 1px #dcdcdc; cursor: pointer; }
+.mp-swatch.is-on { box-shadow: 0 0 0 2px #1b1b1b; }
+.mp-badge-opt { width: 34px; height: 34px; padding: 0; border: 1px solid #e3e3e3; border-radius: 10px; background: #fff; color: #9a9a9a; font-size: 17px; line-height: 1; cursor: pointer; }
+.mp-badge-opt.is-on { border-color: #1b1b1b; background: #fafafa; }
+.mp-switch { cursor: pointer; }
+.mp-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.mp-switch__ui { position: relative; width: 42px; height: 24px; border-radius: 999px; background: #d6d6d6; transition: background .15s ease; }
+.mp-switch__ui::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .2); transition: transform .15s ease; }
+.mp-switch input:checked + .mp-switch__ui { background: #c9a227; }
+.mp-switch input:checked + .mp-switch__ui::after { transform: translateX(18px); }
+.mp-switch input:focus-visible + .mp-switch__ui { outline: 2px solid #1b1b1b; outline-offset: 2px; }
+.mp-perks { display: grid; gap: 8px; margin: 0 0 16px; padding: 0; list-style: none; }
+.mp-perks li { display: flex; gap: 10px; color: #3d3d3d; font-size: 14px; line-height: 1.4; }
+.mp-perks i { flex: 0 0 18px; margin-top: 3px; color: #c9a227; }
+.mp-pay { padding: 14px; border: 1px solid #ececec; border-radius: 16px; }
+.mp-pay__price { margin: 0 0 10px; text-align: center; font-size: 15px; }
+.mp-pay__price strong { font-size: 22px; }
+.mp-fine { margin: 10px 0 0; color: #8a8a8a; font-size: 12px; text-align: center; }
+.mp-tabs { display: flex; gap: 6px; margin-bottom: 14px; padding: 4px; border-radius: 999px; background: #f2f2f2; }
+.mp-tabs button { flex: 1 1 0; padding: 8px 6px; border: 0; border-radius: 999px; background: none; color: #6d6d6d; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.mp-tabs button.is-on { background: #fff; color: #1b1b1b; box-shadow: 0 1px 3px rgba(0, 0, 0, .1); }
+.mp-form { display: grid; gap: 12px; }
+.mp-form label { display: grid; gap: 4px; font-size: 14px; font-weight: 700; }
+.mp-form label small { color: #8a8a8a; font-size: 12px; font-weight: 500; }
+.mp-form input[type="text"], .mp-form input[type="email"] { width: 100%; padding: 10px 12px; border: 1px solid #d6d6d6; border-radius: 10px; font: inherit; font-size: 15px; }
+.mp-btn { padding: 11px 16px; border: 0; border-radius: 999px; background: #1b1b1b; color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.mp-btn:disabled { opacity: .6; }
+.mp-btn--ghost { border: 1px solid #d6d6d6; background: #fff; color: #1b1b1b; }
+.mp-row-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.mp-msg { margin: 0; color: #1f8a5b; font-size: 14px; }
+.mp-msg.is-bad { color: #b32d2e; }
+.mp-note { margin: 0; color: #6d6d6d; font-size: 13px; }
+.mp-current { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.mp-pending { display: flex; gap: 10px; padding: 12px; border-radius: 12px; background: #fff8e6; font-size: 14px; }
+.mp-pending div { display: grid; gap: 2px; }
+.mp-pending span { color: #6d6d6d; overflow-wrap: anywhere; }
+@media (max-width: 767px) {
+    .mp-label { flex-basis: 100%; }
+    .mp-bar__text span { display: none; }
+}

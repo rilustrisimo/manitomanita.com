@@ -91,6 +91,26 @@ class InsightsReport {
         } );
     }
 
+    /** Member+ (one member's own card, PHP 99): panel shown -> card/PayPal tapped -> order -> paid, plus perk use. */
+    public static function plusFunnel( $from, $to ) {
+        return self::cached( 'plusfunnel|' . $from . '|' . $to, $to, function () use ( $from, $to ) {
+            $paid = self::events( 'purchase', $from, $to, 'plus' );
+
+            return array(
+                'steps'   => array(
+                    array( 'key' => 'pro_sheet',    'step' => 'Opened the Member+ panel' ) + self::events( 'pro_sheet', $from, $to, 'plus|' ),
+                    array( 'key' => 'pro_checkout', 'step' => 'Tapped card or PayPal' ) + self::events( 'pro_checkout', $from, $to, 'plus|' ),
+                    array( 'key' => 'pro_order',    'step' => 'Submitted payment details (order created)' ) + self::events( 'pro_order', $from, $to, 'plus' ),
+                    array( 'key' => 'purchase',     'step' => 'Paid' ) + $paid,
+                ),
+                'slots'   => self::byMeta( 'pro_sheet', $from, $to, 'plus|' ),
+                'used'    => self::byMeta( 'mp_use', $from, $to ),
+                'revenue' => $paid['count'] * ( class_exists( 'MemberPlus' ) ? MemberPlus::PRICE : 99 ),
+                'since'   => self::since( 'mp_use' ) ?: self::since( 'pro_sheet' ),
+            );
+        } );
+    }
+
     /* ------------------------------------------------------------------ Scorecard */
 
     /** The five engines for one range. */
@@ -240,6 +260,7 @@ class InsightsReport {
 
     protected static function later() {
         return array(
+            'member-plus' => array( 'd' => '2026-11-13', 't' => 'Member+ launched: PHP 99 one time for a member\'s own card (free or PRO groups): change own name/screen name/email (new email confirmed, one email per group), card color theme, emoji badge, sparkle frame. Offered by a chip on each card, a "your card" bar, the member popup and "Get yours" on Member+ cards. Edit-member form (42) locked to PRO organizers.' ),
             'ga4-cleanup' => array( 'd' => '2026-11-09', 't' => 'GA4 cleanup: removed GA4 "Create event" rules that also counted every page view as create_group, begin_checkout and join_group (about 25k each, all fake). ExactMetrics plugin removed; the theme\'s own GA4 tag (same stream G-1QRP0XF3M8) took over with no gap. GA4 property renamed to Manito Manita.' ),
         );
     }
@@ -331,6 +352,21 @@ class InsightsReport {
         $md[] = $f['reasons'] ? self::table( array( 'Reason', 'Opens' ), array_map( null, array_keys( $f['reasons'] ), array_values( $f['reasons'] ) ) ) : "_None in this period._\n";
         $md[] = '### Payment method tapped';
         $md[] = $f['methods'] ? self::table( array( 'Method', 'Taps' ), array_map( null, array_keys( $f['methods'] ), array_values( $f['methods'] ) ) ) : "_None in this period._\n";
+
+        $pf = self::plusFunnel( $from, $to );
+        $md[] = '## Member+ funnel (PHP 99 per member, their own card; site log)';
+        $rows = array();
+        $prev = null;
+        foreach ( $pf['steps'] as $s ) {
+            $rows[] = array( $s['step'], self::n( $s['count'] ), self::n( $s['groups'] ), $prev ? round( $s['count'] / $prev * 100, 1 ) . '%' : '-' );
+            $prev = $s['count'];
+        }
+        $md[] = self::table( array( 'Step', 'Times', 'Groups', '% of previous step' ), $rows );
+        $md[] = '- Member+ revenue in this period: PHP ' . self::n( $pf['revenue'] );
+        $md[] = '### Where the Member+ panel was opened from';
+        $md[] = $pf['slots'] ? self::table( array( 'Placement', 'Opens' ), array_map( null, array_keys( $pf['slots'] ), array_values( $pf['slots'] ) ) ) : "_None in this period._\n";
+        $md[] = '### Member+ perks used';
+        $md[] = $pf['used'] ? self::table( array( 'Perk', 'Times' ), array_map( null, array_keys( $pf['used'] ), array_values( $pf['used'] ) ) ) : "_None in this period._\n";
 
         $e = self::emails( $from, $to );
         $md[] = '## Emails (Manito Emails and automatic emails)';

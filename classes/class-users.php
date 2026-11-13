@@ -134,6 +134,14 @@ class Users extends Theme {
             elseif(trim($form) == "99999"): //leave group
                 echo "<h2>Are you sure you want to leave group?</h2><div class='leave-btns'><a href='#' data-action='false'>No</a><a href='#' data-action='true'>Yes</a></div>";
             else:
+                // Only two ACF forms load here: edit group (27, moderator) and edit member (42, PRO organizer only:
+                // it has the password, group and pair fields; members change their own details with Member+).
+                $type = get_post_type($uid);
+                $gid = $type == 'users' ? (int) get_field('groups', $uid, false) : (int) $uid;
+                if(!(($form == '27' && $type == 'groups') || ($form == '42' && $type == 'users' && Groups::isModerator($gid) && get_field('pro', $gid)))){
+                    echo '<p class="mm-empty">Your session has expired. Please close this window and enter your password again.</p>';
+                    wp_die();
+                }
                 $group = new Groups();
                 $creds = $group->getGroupCredentials();
 

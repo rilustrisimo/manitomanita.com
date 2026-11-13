@@ -441,7 +441,7 @@ class Insights {
                 break;
             case 'revenue':
                 $s = self::series( $from, $to );
-                $out = array( 'kpis' => self::kpis( $p ), 'chart' => self::daysOf( $from, $to, $s, array( 'revenue', 'purchase' ) ), 'features' => self::features(), 'funnel' => $g ? $g::funnel( $p ) : null, 'site_funnel' => class_exists( 'InsightsReport' ) ? InsightsReport::proFunnel( $from, $to ) : null );
+                $out = array( 'kpis' => self::kpis( $p ), 'chart' => self::daysOf( $from, $to, $s, array( 'revenue', 'purchase' ) ), 'features' => self::features(), 'funnel' => $g ? $g::funnel( $p ) : null, 'site_funnel' => class_exists( 'InsightsReport' ) ? InsightsReport::proFunnel( $from, $to ) : null, 'plus_funnel' => class_exists( 'InsightsReport' ) && method_exists( 'InsightsReport', 'plusFunnel' ) ? InsightsReport::plusFunnel( $from, $to ) : null );
                 break;
             case 'traffic':
                 $out = array( 'google' => $g ? $g::traffic( $p ) : null, 'seo' => $g ? $g::seo( $p ) : null, 'configured' => $g ? $g::configured() : false );

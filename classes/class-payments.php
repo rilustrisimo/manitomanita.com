@@ -35,6 +35,7 @@ class Payments {
     protected static $products = array(
         'pro'     => array( 'amount' => '199.00', 'label' => 'Manito Manita PRO' ),
         'credits' => array( 'amount' => '99.00',  'label' => 'Manito Manita PRO - 3 unshuffle credits' ),
+        'plus'    => array( 'amount' => '99.00',  'label' => 'Manito Manita Member+' ), // one member's own card (MemberPlus)
     );
 
     protected static $hooked  = false;
@@ -219,11 +220,19 @@ class Payments {
         if ( $product === 'pro' && $pro ) wp_send_json_error( 'This group is already PRO.' );
         if ( $product === 'credits' && ! $pro ) wp_send_json_error( 'Credits are for PRO groups.' );
 
+        // Member+: for one member's card; the order carries the member id (custom_id "gid:plus:uid").
+        $uid = 0;
+        if ( $product === 'plus' ) {
+            $uid = absint( $_POST['uid'] ?? 0 );
+            $why = class_exists( 'MemberPlus' ) ? MemberPlus::cantBuy( $uid, $gid ) : 'Member+ is not available right now.';
+            if ( $why !== '' ) wp_send_json_error( $why );
+        }
+
         $p = self::$products[ $product ];
         $order = self::request( 'POST', 'v2/checkout/orders', array(
             'intent'         => 'CAPTURE',
             'purchase_units' => array( array(
-                'custom_id'   => $gid . ':' . $product,
+                'custom_id'   => $gid . ':' . $product . ( $uid ? ':' . $uid : '' ),
                 'description' => $p['label'],
                 'amount'      => array( 'currency_code' => self::CURRENCY, 'value' => $p['amount'] ),
             ) ),
@@ -236,7 +245,7 @@ class Payments {
         ) );
 
         if ( empty( $order['id'] ) ) wp_send_json_error( 'Could not start the payment. Please try again.' );
-        if ( class_exists( 'Insights' ) ) Insights::log( 'pro_order', $gid, 0, (float) $p['amount'], $product );
+        if ( class_exists( 'Insights' ) ) Insights::log( 'pro_order', $gid, $uid, (float) $p['amount'], $product );
 
         wp_send_json_success( array( 'id' => $order['id'] ) );
     }
@@ -293,13 +302,24 @@ class Payments {
 
         if ( ( $capture['status'] ?? '' ) !== 'COMPLETED' ) return 'capture ' . ( $capture['status'] ?? 'missing' );
 
-        list( $gid, $product ) = array_pad( explode( ':', $custom, 2 ), 2, '' );
+        list( $gid, $product, $uid ) = array_pad( explode( ':', $custom, 3 ), 3, '' );
         $gid = absint( $gid );
+        $uid = absint( $uid );
 
         if ( ! isset( self::$products[ $product ] ) || get_post_type( $gid ) !== 'groups' ) return 'unknown item ' . $custom;
 
         $amount = $capture['amount'] ?? array();
         if ( ( $amount['currency_code'] ?? '' ) !== self::CURRENCY || (float) ( $amount['value'] ?? 0 ) < (float) self::$products[ $product ]['amount'] ) return 'amount mismatch';
+
+        if ( $product === 'plus' ) {
+            if ( ! class_exists( 'MemberPlus' ) ) return 'Member+ unavailable';
+            $ok = MemberPlus::unlock( $uid, $gid, $orderId );
+            if ( $ok !== true ) return $ok;
+            self::$tracked = self::ga4Purchase( $orderId, $product, (float) $amount['value'] );
+            if ( class_exists( 'Insights' ) ) Insights::log( 'purchase', $gid, $uid, (float) $amount['value'], $product );
+
+            return true;
+        }
 
         $paid = (array) get_post_meta( $gid, self::PAID_META, true );
         if ( in_array( $orderId, $paid, true ) ) return true; // already applied
@@ -344,7 +364,7 @@ class Payments {
                         'transaction_id' => $orderId,
                         'currency'       => self::CURRENCY,
                         'value'          => $value,
-                        'items'          => array( array( 'item_id' => $product, 'item_name' => self::$products[ $product ]['label'], 'price' => $value, 'quantity' => 1 ) ),
+                        'items'          => array( array( 'item_id' => $product === 'plus' ? 'member_plus' : $product, 'item_name' => self::$products[ $product ]['label'], 'price' => $value, 'quantity' => 1 ) ),
                     ),
                 ) ),
             ) ),
