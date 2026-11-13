@@ -2933,3 +2933,36 @@ label.mp-btn { display: inline-flex; align-items: center; cursor: pointer; }
 .mp-sec-head p strong { color: #1b1b1b; overflow-wrap: anywhere; }
 .mp-form__foot .mp-msg { flex: 1 1 200px; }
 .mp-pending { margin-bottom: 12px; }
+
+/* Sparkle frame glints (MemberPlus::glints): tiny four-point stars twinkling at random over the card */
+.mm-glints { display: none; position: absolute; inset: 0; z-index: -1; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.mm-cf .mm-glints { display: block; }
+.mm-glints i {
+    position: absolute;
+    width: var(--gs, 14px);
+    height: var(--gs, 14px);
+    margin: calc(var(--gs, 14px) / -2) 0 0 calc(var(--gs, 14px) / -2);
+    opacity: 0;
+    transform: scale(.2) rotate(0deg);
+    animation: mm-glint var(--gt, 3.2s) ease-in-out var(--gd, 0s) infinite;
+    will-change: transform, opacity;
+}
+/* soft halo (not clipped) + the star itself */
+.mm-glints i::before, .mm-glints i::after { content: ''; position: absolute; inset: 0; }
+.mm-glints i::before { inset: 22%; border-radius: 50%; background: radial-gradient(circle, #fff 0, color-mix(in srgb, var(--ct, #d4af37) 35%, transparent) 55%, transparent 75%); filter: blur(1px); }
+.mm-glints i::after {
+    background: radial-gradient(circle, #fff 0 22%, color-mix(in srgb, var(--ct, #d4af37) 90%, #fff) 60%);
+    clip-path: polygon(50% 0, 54% 46%, 100% 50%, 54% 54%, 50% 100%, 46% 54%, 0 50%, 46% 46%);
+}
+.mm-glints i:nth-child(3n)::after { background: radial-gradient(circle, #fff 0 40%, #ffe9a8 80%); }
+@keyframes mm-glint {
+    0%, 45%, 100% { opacity: 0; transform: scale(.2) rotate(0deg); }
+    60% { opacity: 1; transform: scale(1) rotate(45deg); }
+    72% { opacity: .9; transform: scale(.8) rotate(70deg); }
+    86% { opacity: 0; transform: scale(.3) rotate(90deg); }
+}
+.mp-card { position: relative; isolation: isolate; }
+@media (prefers-reduced-motion: reduce) {
+    .mm-glints i { animation: none; opacity: .45; transform: scale(.6) rotate(45deg); }
+    .mm-glints i:nth-child(2n) { opacity: 0; }
+}

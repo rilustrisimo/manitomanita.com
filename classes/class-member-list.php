@@ -135,6 +135,7 @@ class MemberList {
             . '<a href="javascript:;" ' . $leaveattr . '><i class="fas fa-sign-out-alt"></i> Leave Group</a>'
             . '</div>'
             . '<span class="mm-member__chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>'
+            . ( $plus && MemberPlus::has( $uid ) ? MemberPlus::glints( $uid ) : '' )
             . '</div>';
     }
 

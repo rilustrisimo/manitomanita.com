@@ -93,6 +93,25 @@ class MemberPlus {
         return $l['badge'] ? '<span class="mm-badge" aria-hidden="true">' . self::badges()[ $l['badge'] ] . '</span>' : '';
     }
 
+    /**
+     * Diamond-like glints scattered over a sparkle-frame card (shown only with .mm-cf). Positions, sizes and
+     * timing come from the member id, so each card has its own pattern and it doesn't jump on reload.
+     */
+    public static function glints( $uid, $n = 12 ) {
+        $h = '<span class="mm-glints" aria-hidden="true">';
+        for ( $i = 0; $i < $n; $i++ ) {
+            $r = crc32( 'g|' . (int) $uid . '|' . $i );
+            $x = 4 + ( $r % 92 );                       // 4-95 %
+            $y = 8 + ( ( $r >> 7 ) % 84 );              // 8-91 %
+            $s = 14 + ( ( $r >> 13 ) % 13 );            // 14-26 px
+            $d = round( ( ( $r >> 17 ) % 40 ) / 10, 1 ); // 0-3.9 s delay
+            $t = round( 2.4 + ( ( $r >> 21 ) % 16 ) / 10, 1 ); // 2.4-3.9 s
+            $h .= '<i style="left:' . $x . '%;top:' . $y . '%;--gs:' . $s . 'px;--gd:' . $d . 's;--gt:' . $t . 's"></i>';
+        }
+
+        return $h . '</span>';
+    }
+
     /** Hidden trigger on every card: the popup's Member+ button (get it, or its settings) clicks it, so the card's password flow runs as usual. */
     public static function chip( $uid ) {
         return '<a href="#" class="user-action mm-plus-chip" user-data="' . (int) $uid . '" data-action="member-plus" aria-hidden="true" tabindex="-1">Member+</a>';
@@ -343,7 +362,7 @@ class MemberPlus {
         $preview = '<div class="mp-preview" data-mp-preview><div class="mp-card mm-ct' . ( $look['theme'] ? ' mm-ct-' . $look['theme'] : ' mm-ct-gold' ) . ( $look['frame'] || ! $plus ? ' mm-cf' : '' ) . '" data-mp-card>'
             . '<span class="mm-avatar" aria-hidden="true">' . esc_html( $initial ) . '</span>'
             . '<span class="mp-card__text"><span class="mp-card__name">' . esc_html( $screen ) . '</span><span class="mp-card__badge" data-mp-badge>' . ( $look['badge'] ? self::badges()[ $look['badge'] ] : ( $plus ? '' : '🎄' ) ) . '</span></span>'
-            . '<span class="mp-card__tag">Member+</span></div></div>';
+            . '<span class="mp-card__tag">Member+</span>' . self::glints( $uid, 7 ) . '</div></div>';
 
         $swatches = '';
         foreach ( self::themes() as $k => $t ) {
