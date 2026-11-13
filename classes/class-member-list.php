@@ -146,11 +146,13 @@ class MemberList {
         $h = '<div class="mm-detail">';
 
         $h .= '<section class="mm-detail__col"><h2>Wish<span>List</span>' . ( $wishlist ? '<em class="mm-detail__count">' . count( $wishlist ) . '</em>' : '' ) . '</h2>';
+        $h .= apply_filters( 'mm_wishlist_profile', '', (int) $uid ); // Wishlist+ (Member+)
+        $wishlist = apply_filters( 'mm_wishlist_view', $wishlist, (int) $uid );
         if ( $wishlist ) {
             $h .= '<ol class="mm-dwish">';
             foreach ( $wishlist as $i => $w ) {
                 $h .= '<li class="mm-dwish__item"><span class="mm-dwish__num">' . ( $i + 1 ) . '</span><div class="mm-dwish__body">';
-                $h .= '<div class="wish-content">' . Affiliate::linkify( $w['wishlist_description'], 'members-wishlist', $gid ) . '</div>';
+                $h .= '<div class="wish-content">' . Affiliate::linkify( $w['wishlist_description'], 'members-wishlist', $gid ) . '</div>' . apply_filters( 'mm_wish_extra', '', $w, (int) $uid );
                 if ( ! empty( $w['reference_links'] ) ) {
                     $h .= '<div class="wish-links">';
                     foreach ( $w['reference_links'] as $k => $l ) $h .= Affiliate::referenceLink( $l['link_url'], $k, 'members-wishlist', $gid );

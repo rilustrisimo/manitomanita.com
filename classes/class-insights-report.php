@@ -260,6 +260,7 @@ class InsightsReport {
 
     protected static function later() {
         return array(
+            'member-plus-2' => array( 'd' => '2026-11-13', 't' => 'Member+ phase 2: Wishlist+ (photo per wish, pinned top wish, About you sizes/likes) and a thank-you card to your Secret Santa from the exchange date (emailed + on their See Match). See Match prompts members without Member+ to send one. WP Admin: Members > Member+ to give/remove it for free.' ),
             'member-plus' => array( 'd' => '2026-11-13', 't' => 'Member+ launched: PHP 99 one time for a member\'s own card (free or PRO groups): change own name/screen name/email (new email confirmed, one email per group), card color theme, emoji badge, sparkle frame. Offered by a chip on each card, a "your card" bar, the member popup and "Get yours" on Member+ cards. Edit-member form (42) locked to PRO organizers.' ),
             'ga4-cleanup' => array( 'd' => '2026-11-09', 't' => 'GA4 cleanup: removed GA4 "Create event" rules that also counted every page view as create_group, begin_checkout and join_group (about 25k each, all fake). ExactMetrics plugin removed; the theme\'s own GA4 tag (same stream G-1QRP0XF3M8) took over with no gap. GA4 property renamed to Manito Manita.' ),
         );

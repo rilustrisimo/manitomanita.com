@@ -432,6 +432,7 @@ class Users extends Theme {
         if($date) echo '<span class="mm-chip"><i class="far fa-calendar"></i> '.$date->format('M j, Y').'</span>';
         echo '    </div>';
         echo '</div>';
+        do_action('mm_see_match_top', (int) $uid, (int) $pair, (int) $gid); // ThankYou: a card from your match / send one to your Secret Santa
 
         /** QUESTIONS FROM THEIR OWN SECRET SANTA (private: only for the member themselves) */
         if($this->isVerifiedMember($uid)) echo QA::inboxSection($uid);
@@ -457,6 +458,9 @@ class Users extends Theme {
         /** WISHLIST */
         echo '<section class="mm-sec">';
         echo '    <h3 class="mm-sec__title"><i class="fas fa-gifts"></i> WISH<span>LIST</span>'.(($wishlist)?'<em class="mm-sec__count">'.count($wishlist).'</em>':'').'</h3>';
+        // Wishlist+ (Member+): their sizes/likes, pinned top wish first, photos per wish.
+        echo apply_filters('mm_wishlist_profile', '', (int) $pair);
+        $wishlist = apply_filters('mm_wishlist_view', $wishlist, (int) $pair);
         if($wishlist):
             echo '<ol class="mm-wish">';
             foreach($wishlist as $i => $w):
@@ -464,6 +468,7 @@ class Users extends Theme {
                 echo '    <span class="mm-wish__num">'.($i+1).'</span>';
                 echo '    <div class="mm-wish__body">';
                 echo '        <div class="mm-wish__text">'.Affiliate::linkify($w['wishlist_description'], 'match-wishlist', $gid).'</div>';
+                echo apply_filters('mm_wish_extra', '', $w, (int) $pair);
                 if($w['reference_links']):
                     echo '    <div class="mm-wish__links">';
                     foreach($w['reference_links'] as $k => $links):

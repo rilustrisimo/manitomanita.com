@@ -371,7 +371,8 @@ class MemberPlus {
                 . '<ul class="mp-perks">'
                 . '<li><i class="fa-solid fa-palette" aria-hidden="true"></i><span><b>Your own color, badge and sparkle frame</b>, seen by everyone in the group</span></li>'
                 . '<li><i class="fa-solid fa-pen" aria-hidden="true"></i><span><b>Change your name, screen name or email</b> anytime, even after the shuffle</span></li>'
-                . '<li><i class="fa-solid fa-gift" aria-hidden="true"></i><span><b>Coming soon, in time for your gift exchange:</b> wishlist photos, a pinned top wish, and a thank-you card for your Secret Santa</span></li>'
+                . '<li><i class="fa-solid fa-image" aria-hidden="true"></i><span><b>Wishlist photos, a pinned top wish</b> and your sizes and likes, so your Secret Santa gets it right</span></li>'
+                . '<li><i class="fa-solid fa-envelope-open-text" aria-hidden="true"></i><span><b>A thank-you card</b> for your Secret Santa after the exchange</span></li>'
                 . '<li><i class="fa-solid fa-user-secret" aria-hidden="true"></i><span>Only your card changes. Your real name and match stay secret.</span></li>'
                 . '</ul>'
                 . '<div class="mp-pay" data-mp-pay>'
@@ -380,13 +381,28 @@ class MemberPlus {
                 . '<p class="mp-fine"><i class="fa-solid fa-lock" aria-hidden="true"></i> Secure checkout by PayPal &middot; any debit or credit card, no PayPal account needed</p></div>';
         } else {
             $h .= '<div class="mp-hero is-plus"><span class="mp-kicker">✨ Member+</span><h3>Your card</h3><p>Changes show right away for everyone in the group.</p></div>'
-                . '<div class="mp-tabs" role="tablist"><button type="button" class="is-on" data-mp-tab="look">Look</button><button type="button" data-mp-tab="details">Details</button><button type="button" data-mp-tab="email">Email</button></div>'
-                . '<section data-mp-pane="look">' . $preview . $lookTools . '</section>'
-                . '<section data-mp-pane="details" hidden>' . self::detailsForm( $uid ) . '</section>'
-                . '<section data-mp-pane="email" hidden>' . self::emailBox( $uid ) . '</section>';
+                . self::tabs( array_merge(
+                    array( 'look' => array( 'Look', $preview . $lookTools ) ),
+                    (array) apply_filters( 'mm_mplus_tabs', array(), $uid ), // Wishlist+, Thank you
+                    array( 'details' => array( 'Details', self::detailsForm( $uid ) ), 'email' => array( 'Email', self::emailBox( $uid ) ) )
+                ) );
         }
 
         return $h . '</div>';
+    }
+
+    /** array( key => array( label, html ) ) as tabs; the first one is open. */
+    protected static function tabs( array $tabs ) {
+        $nav = '';
+        $panes = '';
+        $first = true;
+        foreach ( $tabs as $k => $t ) {
+            $nav .= '<button type="button"' . ( $first ? ' class="is-on"' : '' ) . ' data-mp-tab="' . esc_attr( $k ) . '">' . esc_html( $t[0] ) . '</button>';
+            $panes .= '<section data-mp-pane="' . esc_attr( $k ) . '"' . ( $first ? '' : ' hidden' ) . '>' . $t[1] . '</section>';
+            $first = false;
+        }
+
+        return '<div class="mp-tabs" role="tablist">' . $nav . '</div>' . $panes;
     }
 
     protected static function detailsForm( $uid ) {

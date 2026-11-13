@@ -2832,3 +2832,58 @@ body.pro-version:not(.mm-gtheme) .dashboard .dashboard__gd .mm-coorg i {
     .mp-label { flex-basis: 100%; }
     .mp-bar__text span { display: none; }
 }
+
+/* ---------- Member+ phase 2: Wishlist+ (WishlistPlus) and thank-you cards (ThankYou) ---------- */
+
+.mp-tabs { overflow-x: auto; scrollbar-width: none; }
+.mp-tabs::-webkit-scrollbar { display: none; }
+.mp-tabs button { flex: 1 0 auto; white-space: nowrap; }
+.mp-h4 { margin: 4px 0 6px; color: #1b1b1b; font-size: 15px; font-weight: 800; }
+.mp-btn--sm { padding: 7px 12px; font-size: 13px; }
+.mp-btn--ghost.is-on { border-color: #c9a227; background: #fff8e6; color: #6b5200; }
+label.mp-btn { display: inline-flex; align-items: center; cursor: pointer; }
+.mp input[type="file"] { display: none !important; }
+.mp-form input, .mp-form textarea, .mp-form button { box-sizing: border-box; max-width: 100%; }
+
+.mp-wishes { display: grid; gap: 10px; margin: 8px 0 18px; padding: 0; list-style: none; }
+.mp-wish { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 6px 12px; align-items: center; padding: 10px; border: 1px solid #ececec; border-radius: 14px; transition: opacity .15s ease; }
+.mp-wish.is-busy { opacity: .55; pointer-events: none; }
+.mp-wish__thumb { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; overflow: hidden; border-radius: 10px; background: #f4f4f4; color: #b8b8b8; font-size: 20px; grid-row: span 2; }
+.mp-wish__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.mp-wish__text { color: #1b1b1b; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
+.mp-wish__acts { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Shown on the wishlist (member popup, See Match) */
+.mm-wplus-profile { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 0 0 14px; padding: 12px 14px; border: 1px solid #f0e2b0; border-radius: 14px; background: #fffbef; }
+.mm-wplus-profile div { min-width: 0; }
+.mm-wplus-profile dt { color: #8a6d00; font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
+.mm-wplus-profile dd { margin: 2px 0 0; color: #1b1b1b; font-size: 14px; overflow-wrap: anywhere; }
+.mm-wplus-pin { display: inline-flex; align-items: center; gap: 5px; align-self: flex-start; margin: 0 0 6px; padding: 2px 9px; border-radius: 999px; background: #fbf0cc; color: #6b5200; font-size: 11px; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; }
+.mm-wish__body:has(.mm-wplus-pin), .mm-dwish__body:has(.mm-wplus-pin) { display: flex; flex-direction: column; }
+.mm-wish__body .mm-wplus-pin, .mm-dwish__body .mm-wplus-pin { order: -1; }
+.mm-wplus-photo { display: block; max-width: 260px; margin-top: 8px; overflow: hidden; border-radius: 12px; border: 1px solid #ececec; }
+.mm-wplus-photo img { display: block; width: 100%; height: auto; }
+
+/* Thank-you card */
+.mm-ty { position: relative; overflow: hidden; padding: 24px 20px 20px; border: 2px solid var(--ty-a); border-radius: 18px; background: linear-gradient(160deg, var(--ty-b) 0%, #fff 75%); text-align: center; }
+.mm-ty__art { font-size: 40px; line-height: 1; }
+.mm-ty__title { margin: 10px 0 8px; color: #1b1b1b; font-size: 22px; font-weight: 800; }
+.mm-ty__msg { margin: 0 auto; max-width: 420px; color: #1b1b1b; font-size: 16px; line-height: 1.55; overflow-wrap: anywhere; }
+.mm-ty__from { margin-top: 12px; color: #6d6d6d; font-size: 13px; font-style: italic; }
+.mm-ty-got .mm-ty { margin-top: 4px; }
+.mp-ty-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.mp-ty-opt { position: relative; cursor: pointer; }
+.mp-ty-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.mp-ty-opt span { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border: 2px solid transparent; border-radius: 14px; background: linear-gradient(160deg, var(--ty-b), #fff); box-shadow: 0 0 0 1px var(--ty-a) inset; font-size: 24px; }
+.mp-ty-opt input:checked + span { border-color: #1b1b1b; }
+.mp-ty-opt input:focus-visible + span { outline: 2px solid #1b1b1b; outline-offset: 2px; }
+.mp-form textarea { width: 100%; padding: 10px 12px; border: 1px solid #d6d6d6; border-radius: 10px; font: inherit; font-size: 15px; resize: vertical; }
+.mm-ty-prompt { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; padding: 14px; border: 1px solid #f3c5d9; border-radius: 16px; background: linear-gradient(135deg, #fff0f6, #fff 70%); }
+.mm-ty-prompt > span { font-size: 28px; }
+.mm-ty-prompt div { display: grid; flex: 1 1 200px; gap: 2px; min-width: 0; font-size: 14px; }
+.mm-ty-prompt div span { color: #6d6d6d; font-size: 13px; }
+.mm-ty-prompt .mp-btn { flex: 0 0 auto; background: linear-gradient(135deg, #f3d873 0%, #d4af37 55%, #c39a22 100%); color: #2b2100; box-shadow: 0 4px 12px rgba(196, 154, 34, .3); }
+@media (max-width: 767px) {
+    .mm-ty-prompt { flex-wrap: wrap; }
+    .mm-ty-prompt .mp-btn { width: 100%; }
+}

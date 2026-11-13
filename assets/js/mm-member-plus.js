@@ -104,7 +104,7 @@ jQuery(function ($) {
 
     var $pop = $('#mp-popup'), $in = $pop.find('[data-mp-inner]');
 
-    $(document).on('mm:member-plus', function (e, uid) {
+    $(document).on('mm:member-plus', function (e, uid, tab) {
         $in.html('<div class="mm-detail mm-detail--loading" aria-busy="true"><span></span><span></span><span></span></div>');
         $.fancybox.open({
             src: '#mp-popup', type: 'inline', animationDuration: 400, animationEffect: 'slide-in-out',
@@ -115,7 +115,8 @@ jQuery(function ($) {
             if (!r || !r.success) { $in.html('<p class="mm-empty">' + ((r && r.data && r.data.message) || 'Could not open Member+.') + '</p>'); return; }
             $in.html(r.data.html);
             var $mp = $in.find('[data-mp]');
-            if (r.data.plus) unlocked($mp, uid); else locked($mp, uid);
+            if (r.data.plus) { unlocked($mp, uid); if (tab) $mp.find('[data-mp-tab="' + tab + '"]').trigger('click'); }
+            else locked($mp, uid);
         }).fail(function () { $in.html('<p class="mm-empty">Network error. Please try again.</p>'); });
     });
 
@@ -268,6 +269,83 @@ jQuery(function ($) {
         $mp.on('click', '[data-mp-email-op]', function () {
             emailOp({ op: $(this).attr('data-mp-email-op') }, $(this).closest('[data-mp-emailbox]'));
         });
+
+        // Wishlist+: a photo per wish, the pinned top wish, the about-you profile.
+        function wishPost($li, data, file) {
+            var f = new FormData();
+            f.append('nonce', cfg.nonce); f.append('uid', uid); f.append('key', $li.attr('data-key'));
+            Object.keys(data).forEach(function (k) { f.append(k, data[k]); });
+            if (file) f.append('photo', file);
+            $li.addClass('is-busy');
+            return $.ajax({ url: cfg.ajax, type: 'POST', data: f, processData: false, contentType: false }).always(function () { $li.removeClass('is-busy'); });
+        }
+        function setThumb($li, url) {
+            $li.find('.mp-wish__thumb').html(url ? $('<img alt="">').attr('src', url) : '<i class="fa-regular fa-image" aria-hidden="true"></i>');
+            $li.find('[data-wplus-photo]').parent().contents().last()[0].nodeValue = url ? 'Change photo' : 'Add photo';
+            $li.find('[data-wplus-photo-remove]').remove();
+            if (url) $li.find('.mp-wish__acts label').after('<button type="button" class="mp-btn mp-btn--ghost mp-btn--sm" data-wplus-photo-remove>Remove photo</button>');
+        }
+        $mp.on('change', '[data-wplus-photo]', function () {
+            var file = this.files && this.files[0], $li = $(this).closest('.mp-wish');
+            this.value = '';
+            if (!file) return;
+            if (file.size > 3145728) return toast('That photo is over 3 MB. Please pick a smaller one.', 'error');
+            wishPost($li, { action: 'mm_wplus_photo' }, file).done(function (r) {
+                if (!r || !r.success) return toast((r && r.data && r.data.message) || 'Upload failed.', 'error');
+                setThumb($li, r.data.thumb);
+                track('mp_use', { feature: 'wish_photo' });
+            }).fail(function () { toast('Upload failed. Please try again.', 'error'); });
+        });
+        $mp.on('click', '[data-wplus-photo-remove]', function () {
+            var $li = $(this).closest('.mp-wish');
+            wishPost($li, { action: 'mm_wplus_photo', op: 'remove' }).done(function (r) { if (r && r.success) setThumb($li, ''); });
+        });
+        $mp.on('click', '[data-wplus-pin]', function () {
+            var $li = $(this).closest('.mp-wish');
+            wishPost($li, { action: 'mm_wplus_pin' }).done(function (r) {
+                if (!r || !r.success) return toast((r && r.data && r.data.message) || 'Could not save.', 'error');
+                $mp.find('[data-wplus-pin]').removeClass('is-on').text('Pin as top wish');
+                if (r.data.pin) { $li.find('[data-wplus-pin]').addClass('is-on').html('<i class="fa-solid fa-thumbtack"></i> Top wish'); track('mp_use', { feature: 'wish_pin' }); }
+            });
+        });
+        $mp.on('submit', '[data-wplus-profile]', function (e) {
+            e.preventDefault();
+            var $f = $(this), data = { action: 'mm_wplus_profile', uid: uid };
+            $f.find('input[name]').each(function () { data[this.name] = this.value; });
+            post(data).done(function (r) {
+                if (!r || !r.success) return msg($f, (r && r.data && r.data.message) || 'Could not save.', true);
+                msg($f, r.data.message);
+                track('mp_use', { feature: 'profile' });
+            });
+        });
+
+        // Thank-you card to their Secret Santa.
+        $mp.on('submit', '[data-ty-form]', function (e) {
+            e.preventDefault();
+            var $f = $(this), $b = $f.find('button[type="submit"]').prop('disabled', true);
+            post({ action: 'mm_ty_send', uid: uid, design: $f.find('[name="design"]:checked').val() || '', message: $f.find('[name="message"]').val() }).done(function (r) {
+                if (!r || !r.success) { $b.prop('disabled', false); return msg($f, (r && r.data && r.data.message) || 'Could not send.', true); }
+                $f.replaceWith('<p class="mp-note"><i class="fa-solid fa-check" aria-hidden="true"></i> ' + r.data.message + '</p>' + r.data.html);
+                track('mp_use', { feature: 'thankyou' });
+                $('.mm-ty-prompt').remove();
+            }).fail(function () { $b.prop('disabled', false); });
+        });
+    }
+
+    // See Match: the "send a thank-you card" prompt (opens Member+ on the Thank you tab) and a received card.
+    $(document).on('click', '[data-mp-open]', function () {
+        var uid = $(this).attr('data-uid'), tab = $(this).attr('data-mp-open');
+        slot = 'thankyou_prompt';
+        promo('select_promotion', slot);
+        $.fancybox.close();
+        setTimeout(function () { $(document).trigger('mm:member-plus', [uid, tab]); }, 350);
+    });
+    var cp = document.querySelector('#custom-popup .popup__inner');
+    if (cp && window.MutationObserver) {
+        new MutationObserver(function () {
+            if (cp.querySelector('.mm-ty-prompt')) viewOnce('thankyou_prompt');
+            if (cp.querySelector('.mm-ty-got') && !seen.tyOpen) { seen.tyOpen = 1; track('mp_thankyou_open', {}); }
+        }).observe(cp, { childList: true });
     }
 
     /* ---------------------------------------------------------------- Returns */
