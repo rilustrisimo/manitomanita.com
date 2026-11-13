@@ -380,7 +380,7 @@ class MemberPlus {
         } else {
             $h .= '<div class="mp-hero is-plus"><span class="mp-kicker">✨ Member+</span><h3>Your card</h3><p>Changes show right away for everyone in the group.</p></div>'
                 . self::tabs( array_merge(
-                    array( 'look' => array( 'Look', $preview . $lookTools ) ),
+                    array( 'look' => array( 'Look', $preview . self::section( 'fa-solid fa-palette', 'Card look', 'Tap to change. Everyone in the group sees it right away.', $lookTools ) ) ),
                     (array) apply_filters( 'mm_mplus_tabs', array(), $uid ), // Wishlist+, Thank you
                     array( 'details' => array( 'Details', self::detailsForm( $uid ) ), 'email' => array( 'Email', self::emailBox( $uid ) ) )
                 ) );
@@ -403,29 +403,35 @@ class MemberPlus {
         return '<div class="mp-tabs" role="tablist">' . $nav . '</div>' . $panes;
     }
 
+    /** A panel section card: icon, title, one-line explainer, then the body. */
+    public static function section( $icon, $title, $note, $body, $attrs = '' ) {
+        return '<section class="mp-card-sec"' . $attrs . '><header class="mp-sec-head"><i class="' . esc_attr( $icon ) . '" aria-hidden="true"></i><div><h4>' . $title . '</h4>' . ( $note !== '' ? '<p>' . $note . '</p>' : '' ) . '</div></header>' . $body . '</section>';
+    }
+
     protected static function detailsForm( $uid ) {
         $gid = self::groupOf( $uid );
         $after = get_field( 'matched', $gid ) ? '<p class="mp-note"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> The group is shuffled: your Secret Santa will see your new screen name.</p>' : '';
 
-        return '<form class="mp-form" data-mp-details>'
-            . '<label>Your name <small>Shown in Who Joined, never next to your screen name</small><input type="text" name="name" maxlength="60" required value="' . esc_attr( (string) get_field( 'name', $uid ) ) . '"></label>'
-            . '<label>Screen name <small>What everyone sees on your card</small><input type="text" name="screen" maxlength="40" required value="' . esc_attr( (string) get_field( 'screen_name', $uid ) ) . '"></label>'
-            . $after . '<button type="submit" class="mp-btn">Save</button><p class="mp-msg" data-mp-msg hidden></p></form>';
+        return self::section( 'fa-solid fa-id-card', 'Your details', 'Your real name shows only in Who Joined, never next to your screen name.',
+            '<form class="mp-form" data-mp-details><div class="mp-grid2">'
+            . '<label class="mp-field"><span>Your name</span><input type="text" name="name" maxlength="60" required value="' . esc_attr( (string) get_field( 'name', $uid ) ) . '"></label>'
+            . '<label class="mp-field"><span>Screen name</span><input type="text" name="screen" maxlength="40" required value="' . esc_attr( (string) get_field( 'screen_name', $uid ) ) . '"></label>'
+            . '</div>' . $after . '<div class="mp-form__foot"><button type="submit" class="mp-btn">Save</button><p class="mp-msg" data-mp-msg hidden></p></div></form>' );
     }
 
     public static function emailBox( $uid ) {
         $current = (string) get_field( 'email', $uid );
         $pending = self::pendingFresh( $uid ) ? (string) get_post_meta( $uid, self::NEW_EMAIL, true ) : '';
-        $h = '<div class="mp-form" data-mp-emailbox><p class="mp-current">Current email: <strong>' . esc_html( $current ) . '</strong></p>';
         if ( $pending !== '' ) {
-            $h .= '<div class="mp-pending"><i class="fa-regular fa-envelope" aria-hidden="true"></i><div><strong>Waiting for confirmation</strong><span>We sent a link to ' . esc_html( $pending ) . '. Your current email stays active until you tap it.</span></div></div>'
-                . '<div class="mp-row-btns"><button type="button" class="mp-btn mp-btn--ghost" data-mp-email-op="resend">Resend link</button><button type="button" class="mp-btn mp-btn--ghost" data-mp-email-op="cancel">Cancel change</button></div>';
+            $body = '<div class="mp-pending"><i class="fa-regular fa-envelope" aria-hidden="true"></i><div><strong>Waiting for confirmation</strong><span>We sent a link to ' . esc_html( $pending ) . '. Your current email stays active until you tap it.</span></div></div>'
+                . '<div class="mp-form__foot"><button type="button" class="mp-btn mp-btn--ghost" data-mp-email-op="resend">Resend link</button><button type="button" class="mp-btn mp-btn--ghost" data-mp-email-op="cancel">Cancel change</button></div>';
         } else {
-            $h .= '<form data-mp-email><label>New email <small>We&rsquo;ll send a link to confirm it. It can&rsquo;t be an email someone in this group already uses.</small><input type="email" name="email" required autocomplete="email"></label>'
-                . '<button type="submit" class="mp-btn">Send confirmation link</button></form>';
+            $body = '<form class="mp-form" data-mp-email><label class="mp-field"><span>New email</span><input type="email" name="email" required autocomplete="email" placeholder="name@example.com"></label>'
+                . '<div class="mp-form__foot"><button type="submit" class="mp-btn">Send confirmation link</button></div></form>';
         }
 
-        return $h . '<p class="mp-msg" data-mp-msg hidden></p></div>';
+        return self::section( 'fa-solid fa-envelope', 'Your email', 'Now: <strong>' . esc_html( $current ) . '</strong>. A new one must be confirmed, and can&rsquo;t be one someone in this group already uses.',
+            $body . '<p class="mp-msg" data-mp-msg hidden></p>', ' data-mp-emailbox' );
     }
 
     /* ------------------------------------------------------------------ Page */

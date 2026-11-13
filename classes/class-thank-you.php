@@ -120,11 +120,12 @@ class ThankYou {
                 $first = false;
             }
             $html = '<form class="mp-form" data-ty-form>'
-                . '<p class="mp-note">Your Secret Santa gets this by email, from &ldquo;your match, ' . esc_html( (string) get_field( 'screen_name', $uid ) ) . '&rdquo;. You won&rsquo;t see who they are. One card only.</p>'
+                . '<p class="mp-note">Signed &ldquo;your match, ' . esc_html( (string) get_field( 'screen_name', $uid ) ) . '&rdquo;. One card only.</p>'
                 . '<div class="mp-ty-opts" role="radiogroup" aria-label="Card design">' . $opts . '</div>'
-                . '<label>Your message <small>Up to ' . self::MAX . ' characters</small><textarea name="message" rows="4" maxlength="' . self::MAX . '" required placeholder="Thank you so much! I love it because…"></textarea></label>'
-                . '<button type="submit" class="mp-btn">Send thank-you card</button><p class="mp-msg" data-mp-msg hidden></p></form>';
+                . '<label class="mp-field"><span>Your message <small>(up to ' . self::MAX . ' characters)</small></span><textarea name="message" rows="4" maxlength="' . self::MAX . '" required placeholder="Thank you so much! I love it because…"></textarea></label>'
+                . '<div class="mp-form__foot"><button type="submit" class="mp-btn">Send thank-you card</button><p class="mp-msg" data-mp-msg hidden></p></div></form>';
         }
+        $html = class_exists( 'MemberPlus' ) ? MemberPlus::section( 'fa-solid fa-envelope-open-text', 'Thank your Secret Santa', 'They get it by email and on their match screen. You won&rsquo;t see who they are.', $html ) : $html;
         $tabs['thanks'] = array( 'Thank you', $html );
 
         return $tabs;

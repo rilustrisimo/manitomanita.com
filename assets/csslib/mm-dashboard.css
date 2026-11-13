@@ -2920,3 +2920,16 @@ label.mp-btn { display: inline-flex; align-items: center; cursor: pointer; }
     .mp-grid2 { grid-template-columns: 1fr; }
     .mp-form__foot .mp-btn { width: 100%; }
 }
+
+/* Member+ panel: tabs focus, consistent section spacing */
+.mp-tabs button { border: 0 !important; outline: 0; box-shadow: none; }
+.mp-tabs button.is-on { box-shadow: 0 1px 3px rgba(0, 0, 0, .1); }
+.mp-tabs button:focus { outline: 0; }
+.mp-tabs button:focus-visible { box-shadow: 0 0 0 2px #c9a227 inset; }
+.mp [data-mp-pane] > .mp-card-sec:last-child { margin-bottom: 0; }
+.mp-card-sec .mp-tools { margin-bottom: 0; }
+.mp-card-sec .mp-form { gap: 14px; }
+.mp-field > span small { color: #8a8a8a; font-weight: 500; }
+.mp-sec-head p strong { color: #1b1b1b; overflow-wrap: anywhere; }
+.mp-form__foot .mp-msg { flex: 1 1 200px; }
+.mp-pending { margin-bottom: 12px; }
