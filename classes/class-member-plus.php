@@ -92,11 +92,11 @@ class MemberPlus {
         return $l['badge'] ? '<span class="mm-badge" aria-hidden="true">' . self::badges()[ $l['badge'] ] . '</span>' : '';
     }
 
-    /** The "Member+" chip on a card that hasn't upgraded (goes through the card's password like the other actions). */
+    /** Hidden trigger on a card without Member+: the popup's Member+ button clicks it, so the card's password flow runs as usual. */
     public static function chip( $uid ) {
         if ( self::has( $uid ) ) return '';
 
-        return '<a href="#" class="user-action mm-plus-chip" user-data="' . (int) $uid . '" data-action="member-plus" data-mm-plus-slot="card_button"><span aria-hidden="true">✨</span> Member+</a>';
+        return '<a href="#" class="user-action mm-plus-chip" user-data="' . (int) $uid . '" data-action="member-plus" aria-hidden="true" tabindex="-1">Member+</a>';
     }
 
     /* ------------------------------------------------------------------ Access */
@@ -328,7 +328,7 @@ class MemberPlus {
         $badges = '<button type="button" class="mp-badge-opt' . ( $plus && ! $look['badge'] ? ' is-on' : '' ) . '" data-mp-badge-key="" aria-label="No badge">&times;</button>';
         foreach ( self::badges() as $k => $e ) {
             $on = $plus ? $look['badge'] === $k : $k === 'tree';
-            $badges .= '<button type="button" class="mp-badge-opt' . ( $on ? ' is-on' : '' ) . '" data-mp-badge-key="' . esc_attr( $k ) . '">' . $e . '</button>';
+            $badges .= '<button type="button" class="mp-badge-opt' . ( $on ? ' is-on' : '' ) . '" data-mp-badge-key="' . esc_attr( $k ) . '" data-emoji="' . esc_attr( $e ) . '">' . $e . '</button>';
         }
         $frameOn = $plus ? $look['frame'] : true;
         $lookTools = '<div class="mp-tools">'
@@ -347,9 +347,10 @@ class MemberPlus {
                 . '<li><i class="fa-solid fa-gift" aria-hidden="true"></i><span><b>Coming soon, in time for your gift exchange:</b> wishlist photos, a pinned top wish, and a thank-you card for your Secret Santa</span></li>'
                 . '<li><i class="fa-solid fa-user-secret" aria-hidden="true"></i><span>Only your card changes. Your real name and match stay secret.</span></li>'
                 . '</ul>'
-                . '<div class="mp-pay" data-mp-pay><p class="mp-pay__price"><strong>&#8369;' . self::PRICE . '</strong> one time &middot; just your card in this group</p>'
-                . '<div id="mp-card-container" class="mm-pay__card"></div><div class="mm-pay__or mp-or"><span>or</span></div><div id="mp-paypal-container" class="mm-pay__paypal"></div>'
-                . '<p class="mp-fine"><i class="fa-solid fa-lock" aria-hidden="true"></i> Secure checkout by PayPal. Any debit or credit card works, no PayPal account needed.</p></div>';
+                . '<div class="mp-pay" data-mp-pay>'
+                . '<div class="mp-pay__head"><div class="mp-pay__what"><strong>Member+ for your card</strong><span>One time &middot; only your card in this group</span></div><div class="mp-pay__amount"><small>&#8369;</small>' . self::PRICE . '</div></div>'
+                . '<div class="mp-pay__btns"><div id="mp-card-container"></div><div class="mp-or"><span>or</span></div><div id="mp-paypal-container"></div></div>'
+                . '<p class="mp-fine"><i class="fa-solid fa-lock" aria-hidden="true"></i> Secure checkout by PayPal &middot; any debit or credit card, no PayPal account needed</p></div>';
         } else {
             $h .= '<div class="mp-hero is-plus"><span class="mp-kicker">✨ Member+</span><h3>Your card</h3><p>Changes show right away for everyone in the group.</p></div>'
                 . '<div class="mp-tabs" role="tablist"><button type="button" class="is-on" data-mp-tab="look">Look</button><button type="button" data-mp-tab="details">Details</button><button type="button" data-mp-tab="email">Email</button></div>'

@@ -6,7 +6,7 @@
  * Theme.js runs the card password and then triggers 'mm:member-plus' with the member id.
  */
 jQuery(function ($) {
-    var cfg = window.mmPlus || {}, slot = 'card_button', seen = {}, item = { item_id: 'member_plus', item_name: 'Member+', price: cfg.price || 99, quantity: 1 };
+    var cfg = window.mmPlus || {}, slot = 'member_popup', seen = {}, item = { item_id: 'member_plus', item_name: 'Member+', price: cfg.price || 99, quantity: 1 };
 
     function track(name, params) { if (window.Theme && Theme.track) Theme.track(name, params || {}); }
     function toast(msg, kind) { if (window.Theme && Theme.toast) Theme.toast(msg, kind); else alert(msg); }
@@ -30,7 +30,6 @@ jQuery(function ($) {
     function placements() {
         var $cards = $('#cards-container .mm-member');
         if (!$cards.length) return;
-        if ($cards.find('.mm-plus-chip').length) viewOnce('card_button');
 
         // "Your card" bar: this device knows the member, and their card hasn't upgraded yet.
         $('.mp-bar').remove();
@@ -68,7 +67,6 @@ jQuery(function ($) {
         if ($chip.length) $chip.trigger('click'); else $(document).trigger('mm:member-plus', [uid]);
     }
 
-    $(document).on('click', '.mm-plus-chip', function () { slot = $(this).attr('data-mm-plus-slot') || 'card_button'; promo('select_promotion', slot); });
     $(document).on('click', '.mp-bar__go', function () { openFor($(this).closest('.mp-bar').attr('data-uid'), 'your_card_bar'); });
     $(document).on('click', '.mp-bar__x', function () {
         try { localStorage.setItem('mm_mp_bar', String(Date.now())); } catch (e) {}
@@ -86,7 +84,7 @@ jQuery(function ($) {
                 viewOnce('others_card');
             }
         } else if ($card.find('.mm-plus-chip').length) {
-            $('<button type="button" class="mm-pop-action is-plus" data-kind="plus">✨ Member+ for this card</button>')
+            $('<button type="button" class="mm-pop-action is-plus" data-kind="plus">\u2728 Get Member+ <span class="mp-price">&#8369;' + (cfg.price || 99) + '</span></button>')
                 .appendTo($inner.find('.mm-pop-actions'))
                 .on('click', function () { $.fancybox.close(); setTimeout(function () { openFor(uid, 'member_popup'); }, 350); });
             viewOnce('member_popup');
@@ -133,7 +131,7 @@ jQuery(function ($) {
         $mp.on('click', '[data-mp-badge-key]', function () {
             $mp.find('[data-mp-badge-key]').removeClass('is-on'); $(this).addClass('is-on');
             var k = $(this).attr('data-mp-badge-key');
-            $c.find('[data-mp-badge]').text(k ? $(this).text() : '');
+            $c.find('[data-mp-badge]').text(k ? $(this).attr('data-emoji') : ''); // not .text(): WordPress swaps emoji for <img>
             onChange('badge', k);
         });
         $mp.on('change', '[data-mp-frame]', function () {
