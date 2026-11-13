@@ -19,7 +19,8 @@ defined( 'ABSPATH' ) || die();
 
 class MemberPlus {
     const PRICE     = 99;
-    const META      = '_mm_plus';           // unlock time
+    const META      = '_mm_plus';           // unlock time (0/absent = no Member+)
+    const SOURCE    = '_mm_plus_by';        // 'paid' or 'admin:<login>' (given for free in WP Admin)
     const ORDERS    = '_mm_paid_orders';    // PayPal orders applied to this member
     const THEME     = '_mm_card_theme';
     const BADGE     = '_mm_card_badge';
@@ -135,10 +136,36 @@ class MemberPlus {
 
         $paid[] = $orderId;
         update_post_meta( $uid, self::ORDERS, array_values( $paid ) );
-        if ( ! self::has( $uid ) ) update_post_meta( $uid, self::META, time() );
-        if ( ! get_post_meta( $uid, self::THEME, true ) ) update_post_meta( $uid, self::THEME, 'gold' ); // looks special right away
-        update_post_meta( $uid, self::FRAME, 1 );
+        self::grant( $uid, 'paid' );
         self::mailUnlocked( $uid, $gid );
+
+        return true;
+    }
+
+    /** Turns Member+ on (paid, or given in WP Admin). Keeps a look chosen earlier; new cards start gold with the frame. */
+    public static function grant( $uid, $by ) {
+        $uid = (int) $uid;
+        if ( get_post_type( $uid ) !== 'users' ) return false;
+        $was = self::has( $uid );
+        if ( ! $was ) update_post_meta( $uid, self::META, time() );
+        update_post_meta( $uid, self::SOURCE, $by === 'paid' || ! $was ? $by : get_post_meta( $uid, self::SOURCE, true ) );
+        if ( get_post_meta( $uid, self::THEME, true ) === '' ) {
+            update_post_meta( $uid, self::THEME, 'gold' );
+            update_post_meta( $uid, self::FRAME, 1 );
+        }
+        if ( ! $was && $by !== 'paid' && class_exists( 'Insights' ) ) Insights::log( 'mp_grant', self::groupOf( $uid ), $uid, 0, $by );
+
+        return true;
+    }
+
+    /** Turns Member+ off (WP Admin). The look is kept, so giving it back restores it. Never refunds. */
+    public static function revoke( $uid, $by ) {
+        $uid = (int) $uid;
+        if ( ! self::has( $uid ) ) return false;
+        delete_post_meta( $uid, self::META );
+        delete_post_meta( $uid, self::NEW_EMAIL );
+        delete_post_meta( $uid, self::NEW_T );
+        if ( class_exists( 'Insights' ) ) Insights::log( 'mp_revoke', self::groupOf( $uid ), $uid, 0, $by );
 
         return true;
     }
