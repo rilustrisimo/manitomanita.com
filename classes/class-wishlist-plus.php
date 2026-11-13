@@ -121,15 +121,18 @@ class WishlistPlus {
         $p = (array) get_post_meta( $uid, self::PROFILE, true );
         $form = '';
         foreach ( self::fields() as $k => $f ) {
-            $form .= '<label>' . esc_html( $f[0] ) . '<input type="text" name="' . esc_attr( $k ) . '" maxlength="120" placeholder="' . esc_attr( $f[1] ) . '" value="' . esc_attr( (string) ( $p[ $k ] ?? '' ) ) . '"></label>';
+            $form .= '<label class="mp-field"><span>' . esc_html( $f[0] ) . '</span><input type="text" name="' . esc_attr( $k ) . '" maxlength="120" placeholder="' . esc_attr( $f[1] ) . '" value="' . esc_attr( (string) ( $p[ $k ] ?? '' ) ) . '"></label>';
         }
 
         $html = '<div class="mp-wplus" data-wplus>'
-            . '<h4 class="mp-h4">Your wishes</h4>'
-            . ( $items ? '<p class="mp-note">Add a photo so your Secret Santa knows exactly what you mean, and pin the one you want most. Photos: JPG, PNG or WebP, up to 3 MB.</p><ul class="mp-wishes">' . $items . '</ul>' : '<p class="mp-note">Add wishes first (tap <b>Edit Wishlist</b> on your card), then come back to add photos and pin your top wish.</p>' )
-            . '<h4 class="mp-h4">About you</h4><p class="mp-note">Shown at the top of your wishlist, for everyone in the group.</p>'
-            . '<form class="mp-form" data-wplus-profile>' . $form . '<button type="submit" class="mp-btn">Save</button><p class="mp-msg" data-mp-msg hidden></p></form>'
-            . '</div>';
+            . '<section class="mp-card-sec"><header class="mp-sec-head"><i class="fa-solid fa-images" aria-hidden="true"></i><div><h4>Your wishes</h4><p>Add a photo so your Secret Santa knows exactly what you mean, and pin the one you want most.</p></div></header>'
+            . ( $items
+                ? '<ul class="mp-wishes">' . $items . '</ul><p class="mp-fine-left">Photos: JPG, PNG or WebP, up to 3 MB each.</p>'
+                : '<div class="mp-empty"><i class="fa-solid fa-gift" aria-hidden="true"></i><p><strong>No wishes yet</strong><span>Add a few wishes first, then come back here to add photos and pin your top wish.</span></p><button type="button" class="mp-btn mp-btn--ghost mp-btn--sm" data-mp-editwish>Open my wishlist</button></div>' )
+            . '</section>'
+            . '<section class="mp-card-sec"><header class="mp-sec-head"><i class="fa-solid fa-user-tag" aria-hidden="true"></i><div><h4>About you</h4><p>Shown at the top of your wishlist, for everyone in the group.</p></div></header>'
+            . '<form class="mp-form" data-wplus-profile><div class="mp-grid2">' . $form . '</div><div class="mp-form__foot"><button type="submit" class="mp-btn">Save</button><p class="mp-msg" data-mp-msg hidden></p></div></form>'
+            . '</section></div>';
         $tabs['wishlist'] = array( 'Wishlist+', $html );
 
         return $tabs;

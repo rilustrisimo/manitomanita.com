@@ -75,15 +75,21 @@ jQuery(function ($) {
 
     // Member popup: the card's look in the head, a Member+ action on cards without it, "Get yours" on others'.
     $(document).on('mm:member-open', function (e, $card, $inner) {
-        var uid = String($card.attr('data-mm-member')), $head = $inner.find('.mm-pop-head');
+        var uid = String($card.attr('data-mm-member')), $head = $inner.find('.mm-pop-head'), plus = $card.hasClass('is-plus');
         $head.removeClass(function (i, c) { return (c.match(/(^|\s)(mm-ct\S*|mm-cf|is-plus)/g) || []).join(' '); });
-        if ($card.hasClass('is-plus')) {
-            $head.addClass(($card.attr('class').match(/(mm-ct\S*|mm-cf|is-plus)/g) || []).join(' '));
+        if (plus) $head.addClass(($card.attr('class').match(/(mm-ct\S*|is-plus)/g) || []).join(' '));
+        if (!$card.find('.mm-plus-chip').length) return;
+
+        if (plus) {
+            // The owner's way back to their perks (behind their password, like every card action).
+            $('<button type="button" class="mm-pop-action is-plus is-owned" data-kind="plus">\u2728 Member+ settings</button>')
+                .appendTo($inner.find('.mm-pop-actions'))
+                .on('click', function () { $.fancybox.close(); setTimeout(function () { card(uid).find('.mm-plus-chip').trigger('click'); }, 350); });
             if (mine().indexOf(uid) === -1) {
-                $('<button type="button" class="mp-getyours">✨ Member+ &middot; Get yours</button>').insertAfter($head);
+                $('<button type="button" class="mp-getyours">\u2728 Like this card? Get Member+ for yours</button>').insertAfter($head);
                 viewOnce('others_card');
             }
-        } else if ($card.find('.mm-plus-chip').length) {
+        } else {
             $('<button type="button" class="mm-pop-action is-plus" data-kind="plus">\u2728 Get Member+ <span class="mp-price">&#8369;' + (cfg.price || 99) + '</span></button>')
                 .appendTo($inner.find('.mm-pop-actions'))
                 .on('click', function () { $.fancybox.close(); setTimeout(function () { openFor(uid, 'member_popup'); }, 350); });
@@ -195,6 +201,9 @@ jQuery(function ($) {
                 return ppPost({ action: 'mm_paypal_capture', order: data.orderID }).then(function (resp) {
                     if (!resp.success) return fail(resp.data);
                     if (!resp.data || !resp.data.tracked) track('purchase', { transaction_id: data.orderID, currency: 'PHP', value: item.price, items: [item] });
+                    // Typing the card password counts as an ACF form change: skip ACF's 'Leave site?' prompt.
+                    if (window.acf && acf.unload) { acf.unload.reset(); acf.unload.disable(); }
+                    window.onbeforeunload = null;
                     var u = new URL(window.location.href);
                     u.searchParams.set('mplus', uid);
                     window.location.href = u.toString();
@@ -268,6 +277,12 @@ jQuery(function ($) {
         });
         $mp.on('click', '[data-mp-email-op]', function () {
             emailOp({ op: $(this).attr('data-mp-email-op') }, $(this).closest('[data-mp-emailbox]'));
+        });
+
+        // No wishes yet: open the card's own wishlist editor (already signed in, so no password).
+        $mp.on('click', '[data-mp-editwish]', function () {
+            $.fancybox.close();
+            setTimeout(function () { card(uid).find('.wish-btn').trigger('click'); }, 350);
         });
 
         // Wishlist+: a photo per wish, the pinned top wish, the about-you profile.

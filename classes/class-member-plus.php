@@ -93,10 +93,8 @@ class MemberPlus {
         return $l['badge'] ? '<span class="mm-badge" aria-hidden="true">' . self::badges()[ $l['badge'] ] . '</span>' : '';
     }
 
-    /** Hidden trigger on a card without Member+: the popup's Member+ button clicks it, so the card's password flow runs as usual. */
+    /** Hidden trigger on every card: the popup's Member+ button (get it, or its settings) clicks it, so the card's password flow runs as usual. */
     public static function chip( $uid ) {
-        if ( self::has( $uid ) ) return '';
-
         return '<a href="#" class="user-action mm-plus-chip" user-data="' . (int) $uid . '" data-action="member-plus" aria-hidden="true" tabindex="-1">Member+</a>';
     }
 
