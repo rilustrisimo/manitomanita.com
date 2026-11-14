@@ -197,7 +197,7 @@ class Insights {
             'groups'            => 'Groups created',
             'members_joined'    => 'Members joined',
             'members_confirmed' => 'Members confirmed',
-            'purchase'          => 'PRO sales',
+            'purchase'          => 'Paid sales (PRO, credits, Member+)',
             'revenue'           => 'Revenue (&#8369;)',
             'affiliate_click'   => 'Affiliate clicks',
             'shuffle'           => 'Shuffles',
@@ -521,7 +521,7 @@ class Insights {
         $md[] = $table( array( 'Metric', 'This period', 'Previous period', 'Change' ), $rows );
 
         // Daily site activity
-        $metrics = array( 'groups' => 'Groups', 'members_joined' => 'Members joined', 'members_confirmed' => 'Confirmed', 'shuffle' => 'Shuffles', 'repeat_group' => 'Repeat groups', 'affiliate_click' => 'Affiliate clicks', 'purchase' => 'PRO sales', 'revenue' => 'Revenue' );
+        $metrics = array( 'groups' => 'Groups', 'members_joined' => 'Members joined', 'members_confirmed' => 'Confirmed', 'shuffle' => 'Shuffles', 'repeat_group' => 'Repeat groups', 'affiliate_click' => 'Affiliate clicks', 'purchase' => 'Paid sales', 'revenue' => 'Revenue' );
         $d = self::daysOf( $from, $to, self::series( $from, $to ), array_keys( $metrics ) );
         $rows = array();
         foreach ( $d['labels'] as $i => $day ) {

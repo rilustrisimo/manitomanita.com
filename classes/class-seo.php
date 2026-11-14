@@ -32,6 +32,14 @@ class SEO {
     const FACEBOOK       = 'https://www.facebook.com/manitomanitaph';
 
     const HOME_TITLE = 'Manito Manita: Free Monito Monita & Online Bunutan Generator'; // 2026-11-09: "monito monita" had 675 impressions at 1.6% CTR
+    /** Search title / description overrides for other pages, by slug (beat what Yoast has stored). */
+    const PAGES = array(
+        // 2026-11-14: 528 impressions at 2.5% CTR, position 3 (Search Console Nov 8-11)
+        'monito-monita-generator' => array(
+            'Monito Monita Online: Free Name Draw in 2 Minutes (2026)',
+            'Draw Monito Monita names online for free. Share one link, everyone joins by phone, gets their match by email and adds a wishlist. No app needed.',
+        ),
+    );
     const HOME_DESC  = 'Free Monito Monita, Kris Kringle or online bunutan for your Christmas party. Draw names in 2 minutes, with wishlists and gift ideas. No sign-up.';
 
     protected static $hooked = false;
@@ -69,12 +77,23 @@ class SEO {
         return is_front_page() || is_page_template( 'template-homepage.php' );
     }
 
+    protected static function pageOverride( $i ) {
+        if ( ! is_page() ) return null;
+        $slug = (string) get_post_field( 'post_name', get_queried_object_id() );
+
+        return isset( self::PAGES[ $slug ] ) ? self::PAGES[ $slug ][ $i ] : null;
+    }
+
     public static function title( $title ) {
-        return self::isHome() ? self::HOME_TITLE : $title;
+        if ( self::isHome() ) return self::HOME_TITLE;
+
+        return self::pageOverride( 0 ) ?? $title;
     }
 
     public static function description( $desc ) {
-        return self::isHome() ? self::HOME_DESC : $desc;
+        if ( self::isHome() ) return self::HOME_DESC;
+
+        return self::pageOverride( 1 ) ?? $desc;
     }
 
     public static function imageUrl() {
