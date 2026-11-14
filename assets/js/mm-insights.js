@@ -160,6 +160,33 @@
                 h += '<div class="mmi-grid">' + bars('Devices', t.devices) + bars('Countries', t.countries) + '</div>';
                 h += table('Top pages', [{ label: 'Page', get: function (r) { return esc(r.path); } }, { label: 'Views', num: 1, get: function (r) { return num(r.views); } }, { label: 'People', num: 1, get: function (r) { return num(r.users); } }, { label: 'Time / person', num: 1, get: function (r) { return dur(r.time); } }], t.pages);
             }
+            var en = d.engagement;
+            if (en && en.areas) {
+                // Does a busier page make people leave sooner? Compare with the previous period and week by week.
+                var vs = function (now, prev, unit, lowerBetter) {
+                    var diff = Math.round((now - prev) * 10) / 10, good = lowerBetter ? diff < 0 : diff > 0;
+                    return (unit ? num(now) : num(now, 1)) + unit + (prev ? ' <small style="color:' + (diff === 0 ? '#8c8f94' : (good ? '#1f8a5b' : '#b32d2e')) + '">' + (diff > 0 ? '+' : '') + diff + '</small>' : '');
+                };
+                h += '<h2 class="mmi-h2">Do people stay?</h2>' + note('Engaged = visits of 10+ seconds, 2+ pages or a key action (GA4); bounce is the rest. Small numbers show the change from the previous period. Read the weekly table against the change log below (new features, ads, offers).');
+                h += table('By where the visit started', [
+                    { label: 'Area', get: function (r) { return esc(r.area); } },
+                    { label: 'Visits', num: 1, get: function (r) { return num(r.now.sessions); } },
+                    { label: 'Engaged %', num: 1, get: function (r) { return vs(r.now.engaged, r.prev.engaged, '%'); } },
+                    { label: 'Bounce %', num: 1, get: function (r) { return vs(r.now.bounce, r.prev.bounce, '%', true); } },
+                    { label: 'Seconds / visit', num: 1, get: function (r) { return vs(r.now.seconds, r.prev.seconds, 's'); } },
+                    { label: 'Pages / visit', num: 1, get: function (r) { return vs(r.now.pages, r.prev.pages, ''); } }
+                ], en.areas);
+                h += table('Week by week: whole site vs visits starting on a group page', [
+                    { label: 'Week', get: function (r) { return esc(r.week); } },
+                    { label: 'Site visits', num: 1, get: function (r) { return num(r.site.sessions); } },
+                    { label: 'Site engaged', num: 1, get: function (r) { return r.site.engaged + '%'; } },
+                    { label: 'Site s/visit', num: 1, get: function (r) { return r.site.seconds + 's'; } },
+                    { label: 'Group visits', num: 1, get: function (r) { return num(r.group.sessions); } },
+                    { label: 'Group engaged', num: 1, get: function (r) { return r.group.engaged + '%'; } },
+                    { label: 'Group s/visit', num: 1, get: function (r) { return r.group.seconds + 's'; } },
+                    { label: 'Group pages/visit', num: 1, get: function (r) { return r.group.pages; } }
+                ], en.weeks);
+            } else if (en && en.error) { h += gError(en); }
             h += '<h2 class="mmi-h2">Google Search</h2>' + gError(s);
             if (s.kpis) {
                 h += note('Search Console data for ' + esc(s.range[0]) + ' to ' + esc(s.range[1]) + ' (Google publishes it 2\u20133 days late).');

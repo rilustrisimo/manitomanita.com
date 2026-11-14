@@ -166,6 +166,70 @@ class InsightsGoogle {
         );
     }
 
+    /** Which part of the site a landing page belongs to. */
+    public static function area( $path ) {
+        $path = strtolower( (string) $path );
+        if ( $path === '/' || $path === '' || $path === '(not set)' ) return $path === '/' ? 'Homepage' : 'Other';
+        if ( strpos( $path, '/group-dashboard' ) === 0 ) return 'Group page (members, match screen)';
+        if ( strpos( $path, '/my-wishlist' ) === 0 || strpos( $path, '/wishlist/' ) === 0 ) return 'My Wishlist & registries';
+        if ( preg_match( '~^/(advertise|advertiser|ad-guidelines)(/|$)~', $path ) ) return 'Advertisers';
+
+        return 'Guides & landing pages';
+    }
+
+    /** sessions, engaged sessions, engagement seconds, views -> the rates people read. */
+    protected static function engagedStats( array $m ) {
+        $s = (float) ( $m[0] ?? 0 );
+
+        return array(
+            'sessions' => (int) $s,
+            'engaged'  => $s ? round( ( $m[1] ?? 0 ) / $s * 100, 1 ) : 0,        // % of visits that engaged (GA4's opposite of bounce)
+            'bounce'   => $s ? round( 100 - ( $m[1] ?? 0 ) / $s * 100, 1 ) : 0,
+            'seconds'  => $s ? (int) round( ( $m[2] ?? 0 ) / $s ) : 0,           // engaged seconds per visit
+            'pages'    => $s ? round( ( $m[3] ?? 0 ) / $s, 2 ) : 0,              // pages per visit
+        );
+    }
+
+    /**
+     * Do people stay or leave? By landing area (this period vs the previous one) and week by week for 6 weeks,
+     * site-wide and for visits that start on a group page (where the members list, match screen and offers are).
+     */
+    public static function engagement( $p ) {
+        if ( ! self::configured() ) return null;
+        $metrics = array( array( 'name' => 'sessions' ), array( 'name' => 'engagedSessions' ), array( 'name' => 'userEngagementDuration' ), array( 'name' => 'screenPageViews' ) );
+
+        $res = self::ga( array( 'dateRanges' => array( array( 'startDate' => $p[0], 'endDate' => $p[1] ), array( 'startDate' => $p[2], 'endDate' => $p[3] ) ), 'dimensions' => array( array( 'name' => 'landingPage' ) ), 'metrics' => $metrics, 'limit' => 2000 ) );
+        if ( ! empty( $res['error'] ) ) return array( 'error' => $res['error'] );
+        $sum = array();
+        foreach ( self::rows( $res ) as $r ) {
+            $which = end( $r['d'] ) === 'date_range_1' ? 'prev' : 'now';
+            $a = self::area( $r['d'][0] );
+            foreach ( $r['m'] as $i => $v ) $sum[ $a ][ $which ][ $i ] = ( $sum[ $a ][ $which ][ $i ] ?? 0 ) + $v;
+        }
+        $areas = array();
+        foreach ( $sum as $a => $x ) $areas[] = array( 'area' => $a, 'now' => self::engagedStats( $x['now'] ?? array() ), 'prev' => self::engagedStats( $x['prev'] ?? array() ) );
+        usort( $areas, function ( $a, $b ) { return $b['now']['sessions'] <=> $a['now']['sessions']; } );
+
+        $weekly = function ( $filter ) use ( $metrics ) {
+            $body = array( 'dateRanges' => array( array( 'startDate' => '41daysAgo', 'endDate' => 'today' ) ), 'dimensions' => array( array( 'name' => 'isoYearIsoWeek' ) ), 'metrics' => $metrics, 'orderBys' => array( array( 'dimension' => array( 'dimensionName' => 'isoYearIsoWeek' ) ) ), 'limit' => 20 );
+            if ( $filter ) $body['dimensionFilter'] = array( 'filter' => array( 'fieldName' => 'landingPage', 'stringFilter' => array( 'matchType' => 'BEGINS_WITH', 'value' => $filter ) ) );
+            $out = array();
+            foreach ( self::rows( self::ga( $body ) ) as $r ) $out[ $r['d'][0] ] = self::engagedStats( $r['m'] );
+
+            return $out;
+        };
+        $site = $weekly( '' );
+        $group = $weekly( '/group-dashboard' );
+        $weeks = array();
+        foreach ( $site as $w => $st ) {
+            $d = new DateTime( 'now', wp_timezone() );
+            $d->setISODate( (int) substr( $w, 0, 4 ), (int) substr( $w, 4 ) );
+            $weeks[] = array( 'week' => $d->format( 'M j' ) . ' - ' . ( clone $d )->modify( '+6 days' )->format( 'M j' ), 'site' => $st, 'group' => $group[ $w ] ?? self::engagedStats( array() ) );
+        }
+
+        return array( 'areas' => $areas, 'weeks' => $weeks );
+    }
+
     /** Event counts (for features / funnel), optionally broken down by a custom dimension. */
     public static function events( $p, $names = null ) {
         if ( ! self::configured() ) return null;

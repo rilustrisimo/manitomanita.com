@@ -444,7 +444,7 @@ class Insights {
                 $out = array( 'kpis' => self::kpis( $p ), 'chart' => self::daysOf( $from, $to, $s, array( 'revenue', 'purchase' ) ), 'features' => self::features(), 'funnel' => $g ? $g::funnel( $p ) : null, 'site_funnel' => class_exists( 'InsightsReport' ) ? InsightsReport::proFunnel( $from, $to ) : null, 'plus_funnel' => class_exists( 'InsightsReport' ) && method_exists( 'InsightsReport', 'plusFunnel' ) ? InsightsReport::plusFunnel( $from, $to ) : null );
                 break;
             case 'traffic':
-                $out = array( 'google' => $g ? $g::traffic( $p ) : null, 'seo' => $g ? $g::seo( $p ) : null, 'configured' => $g ? $g::configured() : false );
+                $out = array( 'google' => $g ? $g::traffic( $p ) : null, 'engagement' => $g && method_exists( $g, 'engagement' ) ? $g::engagement( $p ) : null, 'seo' => $g ? $g::seo( $p ) : null, 'configured' => $g ? $g::configured() : false );
                 break;
             case 'affiliate':
                 $s = self::series( $from, $to );
@@ -612,6 +612,18 @@ class Insights {
                 $md[] = $named( $t['countries'] );
                 $md[] = '### Top pages';
                 $md[] = $table( array( 'Page', 'Views', 'People', 'Avg. engaged seconds per person' ), array_map( function ( $r ) use ( $n ) { return array( preg_replace( '/([?&]pw=)[^&]*/', '$1***', $r['path'] ), $n( $r['views'] ), $n( $r['users'] ), $r['time'] ); }, $t['pages'] ) );
+            }
+            $en = method_exists( $g, 'engagement' ) ? $g::engagement( $p ) : null;
+            if ( $en && empty( $en['error'] ) ) {
+                $md[] = '### Do people stay? Engagement by where the visit started';
+                $md[] = '- Engaged % = visits that lasted 10+ seconds, saw 2+ pages or did a key action (GA4); Bounce % is the rest. Seconds = engaged seconds per visit. Compare this period with the previous one, and read the weekly table against the change log (new features, ads, offers).';
+                $md[] = $table( array( 'Area', 'Visits', 'Engaged % (prev)', 'Bounce % (prev)', 'Seconds/visit (prev)', 'Pages/visit (prev)' ), array_map( function ( $a ) use ( $n ) {
+                    return array( $a['area'], $n( $a['now']['sessions'] ) . ' (' . $n( $a['prev']['sessions'] ) . ')', $a['now']['engaged'] . ' (' . $a['prev']['engaged'] . ')', $a['now']['bounce'] . ' (' . $a['prev']['bounce'] . ')', $a['now']['seconds'] . ' (' . $a['prev']['seconds'] . ')', $a['now']['pages'] . ' (' . $a['prev']['pages'] . ')' );
+                }, $en['areas'] ) );
+                $md[] = '### Week by week (last 6 weeks): whole site vs visits starting on a group page';
+                $md[] = $table( array( 'Week', 'Site visits', 'Site engaged %', 'Site seconds/visit', 'Group-page visits', 'Group engaged %', 'Group seconds/visit', 'Group pages/visit' ), array_map( function ( $w ) use ( $n ) {
+                    return array( $w['week'], $n( $w['site']['sessions'] ), $w['site']['engaged'], $w['site']['seconds'], $n( $w['group']['sessions'] ), $w['group']['engaged'], $w['group']['seconds'], $w['group']['pages'] );
+                }, $en['weeks'] ) );
             }
             $ev = $g::events( $p );
             $md[] = '### All GA4 events';
