@@ -756,7 +756,17 @@ class AdsPortal {
             array( 'key' => '_mm_ad_end', 'value' => time() - 7 * DAY_IN_SECONDS, 'compare' => '>=', 'type' => 'NUMERIC' ),
         ) ) );
         foreach ( $ids as $id ) {
-            if ( Ads::meta( $id, 'sub' ) !== '' && ! Ads::meta( $id, 'cancelled' ) ) self::syncPayments( $id );
+            if ( Ads::meta( $id, 'sub' ) === '' || Ads::meta( $id, 'cancelled' ) || get_post_meta( $id, '_mm_ad_refund_due', true ) ) continue;
+            self::syncPayments( $id ); // a renewal not recorded yet: extends and revives it
+            if ( Ads::meta( $id, 'status' ) !== 'ended' ) continue;
+
+            // Renewal already recorded (e.g. by the webhook while the ad was ending, before this fix): revive it too,
+            // but only while PayPal says the subscription is still active.
+            $paid = self::openPayments( $id );
+            $last = $paid ? end( $paid ) : null;
+            if ( ! $last || (int) $last['t'] < (int) Ads::meta( $id, 'end', 0 ) - DAY_IN_SECONDS ) continue;
+            $s = AdsPayPal::subscription( Ads::meta( $id, 'mode', 'live' ), Ads::meta( $id, 'sub' ) );
+            if ( strtoupper( (string) ( $s['status'] ?? '' ) ) === 'ACTIVE' ) self::extendPaid( $id );
         }
     }
 

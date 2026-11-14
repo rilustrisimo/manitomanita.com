@@ -146,6 +146,17 @@
         nav();
     }
 
+    /** The first paid period for the chosen billing (from approval, about today), then how it renews. */
+    function runs($r) {
+        var cad = $bld.find('[name=cadence]:checked').val() || 'weekly', xmas = ($r.attr('data-season') || '') !== 'All year';
+        var start = new Date(), end = new Date();
+        if (cad === 'monthly') end.setMonth(end.getMonth() + 1); else end.setDate(end.getDate() + 7);
+        var f = function (d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
+        var then = 'Then renews every ' + (cad === 'monthly' ? 'month' : 'week') + ' until you cancel' + (xmas ? ', up to Dec 20 (end of the Christmas season)' : '') + '.';
+        return 'First ' + (cad === 'monthly' ? 'month' : 'week') + ': ' + esc(f(start)) + ' \u2013 ' + esc(f(end)) + '<br><small class="mma-runs-note">Starts when we approve your ad (usually within a day). ' + esc(then) + '</small>';
+    }
+    $(document).on('change', '[data-mma-builder] [name=cadence]', function () { if (step === 3) summary(); });
+
     function summary() {
         var $r = placement();
         if (!$r.length) return;
@@ -154,7 +165,7 @@
         var rows = [
             ['Placement', esc($r.attr('data-label'))],
             ['Where', esc($r.attr('data-where')) + (tgt.val() ? ' &middot; ' + esc(tgt.text()) : '')],
-            ['Runs', esc($r.attr('data-season'))],
+            ['Your ad runs', runs($r)],
             ['Seats', esc($r.attr('data-seats'))]
         ];
         $bld.find('[data-mma-summary]').html(rows.map(function (x) { return '<div><dt>' + x[0] + '</dt><dd>' + x[1] + '</dd></div>'; }).join(''));

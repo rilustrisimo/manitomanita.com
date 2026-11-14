@@ -2268,3 +2268,6 @@
     align-self: flex-start;
     margin-top: 10px;
 }
+
+/* "Your ad runs" in the booking summary: the first period, then how it renews */
+.mma-runs-note { display: block; margin-top: 4px; color: #6d6d6d; font-size: 13px; font-weight: 400; line-height: 1.45; }
