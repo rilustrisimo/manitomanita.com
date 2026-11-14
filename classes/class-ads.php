@@ -377,7 +377,14 @@ class Ads {
         $h .= '<div style="margin-top:2px;font-size:16px;font-weight:bold;color:#1b1b1b;">' . esc_html( $c['headline'] ) . '</div>';
         if ( $c['text'] ) $h .= '<div style="margin-top:4px;font-size:14px;color:#3a3a3a;">' . esc_html( $c['text'] ) . '</div>';
         if ( $c['promo'] ) $h .= '<div style="margin-top:6px;font-size:13px;color:#1f8580;">Use code <b>' . esc_html( $c['promo'] ) . '</b></div>';
-        $h .= '<div style="margin-top:12px;"><a href="' . esc_url( self::clickUrl( $id, $placement, $ad['v'], 0, $gid, $t ) ) . '" target="_blank" rel="sponsored noopener" style="' . $btn . '">' . esc_html( $c['button'] ?: 'Learn more' ) . '</a></div>';
+        // Main button, then the ad's other links (up to 2) as outlined buttons, like the web card; each click tracked.
+        $alt = 'display:inline-block;margin:8px 6px 0 0;padding:9px 16px;border-radius:999px;border:1px solid #1b1b1b;background:#ffffff;color:#1b1b1b;text-decoration:none;font-size:14px;font-weight:bold;';
+        $h .= '<div style="margin-top:4px;"><a href="' . esc_url( self::clickUrl( $id, $placement, $ad['v'], 0, $gid, $t ) ) . '" target="_blank" rel="sponsored noopener" style="margin:8px 6px 0 0;' . $btn . '">' . esc_html( $c['button'] ?: 'Learn more' ) . '</a>';
+        foreach ( array_slice( (array) $c['links'], 1, 2 ) as $i => $l ) {
+            if ( empty( $l[1] ) ) continue;
+            $h .= '<a href="' . esc_url( self::clickUrl( $id, $placement, $ad['v'], $i + 1, $gid, $t ) ) . '" target="_blank" rel="sponsored noopener" style="' . $alt . '">' . esc_html( $l[0] ?: 'More' ) . '</a>';
+        }
+        $h .= '</div>';
         $h .= '</td></tr></table></td></tr></table>';
         $h .= '<img src="' . esc_url( $pixel ) . '" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;">';
 
