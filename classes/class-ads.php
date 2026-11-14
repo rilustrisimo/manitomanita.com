@@ -941,11 +941,16 @@ JS;
         $t = self::totals( $post->ID );
         $paid = (float) self::meta( $post->ID, 'paid', 0 );
         $ctrBase = $t['view'] + $t['open'];
-        $rows = array(
+        $email = ( self::placements()[ self::meta( $post->ID, 'slot' ) ]['kind'] ?? 'web' ) === 'email';
+        $rows = $email ? array(
+            'Emails sent'          => number_format( $t['sent'] ),
+            'Opens (estimated)'    => number_format( $t['open'] ),
+            'Clicks per 100 emails' => $t['sent'] ? round( $t['click'] / $t['sent'] * 100, 1 ) : '&ndash;',
+        ) : array(
             'Views (on site)'   => number_format( $t['view'] ),
             'Unique viewers'    => number_format( $t['uview'] ),
-            'Emails sent'       => number_format( $t['sent'] ),
-            'Opens (estimated)' => number_format( $t['open'] ),
+        );
+        $rows += array(
             'Clicks'            => number_format( $t['click'] ),
             'Unique clicks'     => number_format( $t['uclick'] ),
             'CTR'               => $ctrBase ? round( $t['click'] / $ctrBase * 100, 2 ) . '%' : '&ndash;',
@@ -1013,7 +1018,7 @@ JS;
     }
 
     public static function columns( $cols ) {
-        return array( 'cb' => $cols['cb'], 'title' => 'Ad', 'mm_adv' => 'Advertiser', 'mm_slot' => 'Placement', 'mm_status' => 'Status', 'mm_end' => 'Paid through', 'mm_views' => 'Views / emails', 'mm_clicks' => 'Clicks', 'mm_ctr' => 'CTR', 'mm_paid' => 'Paid' );
+        return array( 'cb' => $cols['cb'], 'title' => 'Ad', 'mm_adv' => 'Advertiser', 'mm_slot' => 'Placement', 'mm_status' => 'Status', 'mm_end' => 'Paid through', 'mm_views' => 'Reach', 'mm_clicks' => 'Clicks', 'mm_ctr' => 'CTR', 'mm_paid' => 'Paid' );
     }
 
     public static function column( $col, $id ) {
@@ -1047,7 +1052,7 @@ JS;
                 echo $e ? esc_html( wp_date( 'M j, g:i A', $e ) ) : '&ndash;';
                 break;
             case 'mm_views':
-                echo number_format( $t['view'] ) . ' / ' . number_format( $t['sent'] );
+                echo ( self::placements()[ self::meta( $id, 'slot' ) ]['kind'] ?? 'web' ) === 'email' ? number_format( $t['sent'] ) . ' emails' : number_format( $t['view'] ) . ' views';
                 break;
             case 'mm_clicks':
                 echo number_format( $t['click'] );

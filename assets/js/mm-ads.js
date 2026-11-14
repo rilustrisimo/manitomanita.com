@@ -475,16 +475,22 @@
         rep.$el.find('[data-mma-period]').text(fmtDay(p.from) + ' \u2013 ' + fmtDay(p.to) + (p.live ? ' \u00b7 updates every minute' : ''));
         var bench = d.benchmark ? 'Placement average ' + d.benchmark.ctr + '%' : 'Benchmark shows once 3+ ads run here';
 
-        var h = '<div class="mma-rcards">' +
-            rcard('Views on the site', n(c.view.value), c.view.change) +
-            rcard('Unique viewers', n(c.uview.value), c.uview.change) +
-            rcard('Emails sent', n(c.sent.value), c.sent.change) +
-            rcard('Email opens (est.)', n(c.open.value), c.open.change) +
-            rcard('Clicks', n(c.click.value), c.click.change) +
-            rcard('Unique clicks', n(c.uclick.value), c.uclick.change) +
-            rcard('Click-through rate', c.ctr.value === null ? '\u2013' : c.ctr.value + '%', false, bench) +
+        // Email placements have no on-site views: show sends, opens and clicks per email instead.
+        var email = d.ad.kind === 'email', perMail = c.sent.value ? Math.round(c.click.value / c.sent.value * 1000) / 10 : null;
+        var h = '<div class="mma-rcards">' + (email
+            ? rcard('Emails sent', n(c.sent.value), c.sent.change, 'Emails that included your card') +
+              rcard('Opened (est.)', n(c.open.value), c.open.change) +
+              rcard('Clicks', n(c.click.value), c.click.change) +
+              rcard('Unique clicks', n(c.uclick.value), c.uclick.change) +
+              rcard('Clicks per 100 emails', perMail === null ? '\u2013' : perMail, false, 'Most reliable: clicks \u00f7 emails sent') +
+              rcard('Click rate of opens', c.ctr.value === null ? '\u2013' : c.ctr.value + '%', false, bench)
+            : rcard('Views on the site', n(c.view.value), c.view.change) +
+              rcard('Unique viewers', n(c.uview.value), c.uview.change) +
+              rcard('Clicks', n(c.click.value), c.click.change) +
+              rcard('Unique clicks', n(c.uclick.value), c.uclick.change) +
+              rcard('Click-through rate', c.ctr.value === null ? '\u2013' : c.ctr.value + '%', false, bench)) +
             rcard('Cost per click', c.cpc.value === null ? '\u2013' : peso(c.cpc.value), c.cpc.value === null ? false : c.cpc.change, c.cpc.value === null ? 'After the first click' : '', true) +
-            rcard('Cost per 1,000 reached', c.cpm.value === null ? '\u2013' : peso(c.cpm.value), c.cpm.value === null ? false : c.cpm.change, '', true) +
+            rcard(email ? 'Cost per 1,000 emails' : 'Cost per 1,000 views', c.cpm.value === null ? '\u2013' : peso(c.cpm.value), c.cpm.value === null ? false : c.cpm.change, '', true) +
             rcard('Paid in this period', peso(c.paid.value), false, 'Total since start ' + peso(d.paidAll)) +
             '</div>';
 
@@ -523,7 +529,7 @@
             '<dt>Emails sent</dt><dd>Emails that included your card, counted when sent.</dd>' +
             '<dt>Email opens (est.)</dt><dd>Counted when the email&rsquo;s images load. Some apps load images automatically and others block them, so this is an estimate.</dd>' +
             '<dt>Clicks</dt><dd>Taps on your card&rsquo;s links. Bots, email link scanners and repeat clicks within 30 seconds are filtered out. Unique clicks count each person once per day.</dd>' +
-            '<dt>Click-through rate</dt><dd>Clicks divided by views plus email opens.</dd>' +
+            '<dt>Click-through rate</dt><dd>Clicks divided by views plus email opens. For email placements, &ldquo;clicks per 100 emails&rdquo; is the steadier number, because some email apps hide or pre-load images.</dd>' +
             '<dt>Cost figures</dt><dd>What you paid in the period divided by clicks, or by views plus emails sent (per 1,000).</dd>' +
             '<dt>Your own analytics</dt><dd>Every link carries <code>utm_source=manitomanita</code> and <code>utm_campaign=ad-' + d.ad.id + '</code>, so visits also appear in Google Analytics, Shopify or your shop&rsquo;s stats.</dd>' +
             '</dl></details>';

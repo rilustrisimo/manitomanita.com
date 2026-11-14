@@ -231,7 +231,7 @@ class AdsReport {
         }
 
         $out = array(
-            'ad'        => array( 'id' => (int) $id, 'brand' => $c['brand'], 'headline' => $c['headline'], 'placement' => $pl[ Ads::meta( $id, 'slot' ) ]['label'] ?? '', 'status' => Ads::meta( $id, 'status' ), 'hasB' => ! empty( $c['b']['headline'] ) ),
+            'ad'        => array( 'id' => (int) $id, 'brand' => $c['brand'], 'headline' => $c['headline'], 'placement' => $pl[ Ads::meta( $id, 'slot' ) ]['label'] ?? '', 'kind' => $pl[ Ads::meta( $id, 'slot' ) ]['kind'] ?? 'web', 'status' => Ads::meta( $id, 'status' ), 'hasB' => ! empty( $c['b']['headline'] ) ),
             'period'    => array( 'from' => $f, 'to' => $t, 'prevFrom' => $pf, 'prevTo' => $pt, 'days' => $days, 'live' => $live ),
             'cards'     => $cards,
             'daily'     => array( 'labels' => array_keys( $daily ), 'view' => array_column( array_values( $daily ), 'view' ), 'open' => array_column( array_values( $daily ), 'open' ), 'click' => array_column( array_values( $daily ), 'click' ), 'sent' => array_column( array_values( $daily ), 'sent' ), 'uview' => array_column( array_values( $daily ), 'uview' ), 'uclick' => array_column( array_values( $daily ), 'uclick' ) ),

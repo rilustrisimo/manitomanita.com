@@ -164,10 +164,17 @@ $targetNames = $guides + AdsPortal::targets( 'registry-major' ) + AdsPortal::tar
 					<div class="mma-ad__grid">
 						<div class="mma-ad__card"><?php echo Ads::cardHtml( array( 'id' => $id, 'v' => 'a', 'c' => $c ), Ads::meta( $id, 'slot' ), 0, true ); ?></div>
 						<dl class="mma-kpis">
+							<?php if ( ( Ads::placements()[ Ads::meta( $id, 'slot' ) ]['kind'] ?? 'web' ) === 'email' ) : // emails have no on-site views ?>
+							<div><dt>Emails sent</dt><dd><?php echo esc_html( number_format( $t['sent'] ) ); ?></dd></div>
+							<div><dt>Opened (est.)</dt><dd><?php echo esc_html( number_format( $t['open'] ) ); ?></dd></div>
+							<div><dt>Clicks</dt><dd><?php echo esc_html( number_format( $t['click'] ) ); ?></dd></div>
+							<div><dt>Clicks per 100 emails</dt><dd><?php echo $t['sent'] ? esc_html( round( $t['click'] / $t['sent'] * 100, 1 ) ) : '&ndash;'; ?></dd></div>
+							<?php else : ?>
 							<div><dt>Views</dt><dd><?php echo esc_html( number_format( $t['view'] ) ); ?></dd></div>
-							<div><dt>Emails</dt><dd><?php echo esc_html( number_format( $t['sent'] ) ); ?></dd></div>
+							<div><dt>Unique viewers</dt><dd><?php echo esc_html( number_format( $t['uview'] ) ); ?></dd></div>
 							<div><dt>Clicks</dt><dd><?php echo esc_html( number_format( $t['click'] ) ); ?></dd></div>
 							<div><dt>CTR</dt><dd><?php echo $base ? esc_html( round( $t['click'] / $base * 100, 2 ) ) . '%' : '&ndash;'; ?></dd></div>
+							<?php endif; ?>
 							<div><dt>&#8369; per click</dt><dd><?php echo ( $paid && $t['click'] ) ? '&#8369;' . esc_html( number_format( $paid / $t['click'], 2 ) ) : '&ndash;'; ?></dd></div>
 						</dl>
 					</div>
