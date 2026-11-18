@@ -65,7 +65,37 @@ class Groups extends Theme {
             add_action('mm_exchange_reminders', array($this, 'sendShuffleReminders'));
             add_action('init', array($this, 'scheduleAutoDraws'));
             add_action('mm_auto_draw', array($this, 'runAutoDraws'));
+            add_action('template_redirect', array($this, 'fixMangledGroupLink'), 0);
         }
+    }
+
+    /**
+     * Repairs group links that an app or email client mangled, then redirects to the clean link:
+     * "?gid=182176%26pw=abc" (the & encoded, so gid = "182176&pw=abc") and "?gid=182176&amp;pw=abc".
+     * Without this the group page crashed (gid ended up in a cookie name) or showed "not found".
+     */
+    public function fixMangledGroupLink(){
+        if(is_admin() || !isset($_GET['gid']) || !is_string($_GET['gid'])) return;
+
+        $args = array();
+        foreach($_GET as $k => $v){
+            if(!is_string($v)) continue;
+            $args[strpos($k, 'amp;') === 0 ? substr($k, 4) : $k] = wp_unslash($v);
+        }
+
+        $gid = $args['gid'];
+        $changed = count($args) !== count($_GET) || array_keys($args) !== array_keys($_GET);
+        if(!ctype_digit($gid)){
+            if(!preg_match('/^(\d+)(?:&|&amp;|%26)(.*)$/', str_replace('&amp;', '&', $gid), $m)) return; // not repairable: page shows "not found"
+            parse_str(str_replace('+', '%2B', $m[2]), $rest); // already decoded once: keep a literal "+"
+            $args = array_merge($args, array_filter($rest, 'is_string'), array('gid' => $m[1]));
+            $changed = true;
+        }
+        if(!$changed) return;
+
+        $path = strtok((string) ($_SERVER['REQUEST_URI'] ?? '/'), '?');
+        wp_safe_redirect($path . '?' . http_build_query($args, '', '&', PHP_QUERY_RFC3986), 302);
+        exit;
     }
 
     protected function initFilters() {
@@ -1132,7 +1162,8 @@ class Groups extends Theme {
 
     public function getGroupId(){
         if(isset($_GET['gid'])){
-            return $_GET['gid'];
+            // Only a numeric id; anything else (a mangled link) is "no group" instead of a crash.
+            return is_string($_GET['gid']) && ctype_digit($_GET['gid']) ? $_GET['gid'] : false;
         }else{
 
             if(isset($_SESSION['groupid'])){
