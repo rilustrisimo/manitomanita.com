@@ -230,10 +230,10 @@ if ( $wlId ) {
 							<?php foreach ( $rows as $w ) {
 								$links = array();
 								foreach ( (array) ( $w['reference_links'] ?? array() ) as $l ) if ( ! empty( $l['link_url'] ) ) $links[] = $l['link_url'];
-								echo Users::wishlistItemHtml( $w['wishlist_description'] ?? '', $links, array( 'qty' => MyWishlist::qty( $w ), 'top' => ! empty( $w['top'] ) ) );
+								echo Users::wishlistItemHtml( $w['wishlist_description'] ?? '', $links, array( 'qty' => MyWishlist::qty( $w ), 'top' => ! empty( $w['top'] ), 'photo' => RegistryPhotos::editorHtml( $wlId, $w ) ) );
 							} ?>
 						</ol>
-						<template data-mm-item-tpl><?php echo Users::wishlistItemHtml( '', array(), array( 'qty' => 1, 'top' => 0 ) ); ?></template>
+						<template data-mm-item-tpl><?php echo Users::wishlistItemHtml( '', array(), array( 'qty' => 1, 'top' => 0, 'photo' => RegistryPhotos::editorHtml( 0 ) ) ); ?></template>
 						<template data-mm-link-tpl><?php echo Users::wishlistLinkHtml( '' ); ?></template>
 						<button type="button" class="mm-btn mm-btn--ghost mm-btn--block" data-mm-add-item><i class="fas fa-plus"></i> Add another item</button>
 					</section>
@@ -322,7 +322,7 @@ if ( $wlId ) {
 							$n = count( $list );
 							$taken = $n >= $qty; ?>
 						<li class="mm-wish__item<?php echo $taken ? ' is-taken' : ''; ?><?php echo ! empty( $w['top'] ) ? ' is-top' : ''; ?>" data-key="<?php echo esc_attr( $key ); ?>" data-qty="<?php echo (int) $qty; ?>" data-n="<?php echo (int) $n; ?>">
-							<span class="mm-wish__num"><?php echo $i + 1; ?></span>
+							<?php echo RegistryPhotos::guestHtml( $wlId, $w, $i + 1 ); // number badge + owner photo / shop picture / occasion tile ?>
 							<div class="mm-wish__body">
 								<?php if ( ! empty( $w['top'] ) || $qty > 1 ) : ?>
 								<div class="mm-wl-tags">

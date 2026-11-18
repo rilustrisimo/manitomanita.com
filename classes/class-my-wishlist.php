@@ -256,6 +256,7 @@ class MyWishlist {
             $qty = self::qty( $item );
             if ( $qty > 1 ) $row['qty'] = $qty;
             if ( ! empty( $item['top'] ) && $item['top'] !== 'false' ) $row['top'] = 1;
+            if ( class_exists( 'RegistryPhotos' ) && RegistryPhotos::valid( $item['img'] ?? '' ) ) $row['img'] = $item['img']; // checked against the files in ajaxSave
             $rows[] = $row;
             if ( count( $rows ) >= self::MAX_ITEMS ) break;
         }
@@ -404,6 +405,7 @@ class MyWishlist {
         self::ownerOrFail( $id );
 
         $rows = self::cleanItems( wp_unslash( $_POST['items'] ?? array() ) );
+        if ( class_exists( 'RegistryPhotos' ) ) $rows = array_values( RegistryPhotos::sync( $id, $rows ) ); // owner photos + shop pictures
         update_post_meta( $id, '_mm_wl_items', $rows );
         update_post_meta( $id, '_mm_wl_note', mb_substr( sanitize_text_field( wp_unslash( (string) ( $_POST['note'] ?? '' ) ) ), 0, self::MAX_NOTE ) );
 

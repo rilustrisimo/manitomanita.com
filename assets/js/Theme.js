@@ -3412,6 +3412,7 @@ var Theme = {
             } else {
                 $it.find('[data-mm-text]').val('');
                 $it.find('[data-mm-link]').remove();
+                $it.find('[data-mm-photo-rm]:not([hidden])').trigger('click'); // registry: drop its photo too
             }
             refresh();
         });
@@ -3490,6 +3491,8 @@ var Theme = {
                 if (text !== '' || links.length > 0) {
                     var row = { text: text, links: links }, $q = $it.find('[data-mm-qty]');
                     if ($q.length) { row.qty = $q.val(); row.top = $it.find('[data-mm-top]').is(':checked') ? 1 : 0; }
+                    var $img = $it.find('[data-mm-img]');
+                    if ($img.length) row.img = $img.val() || ''; // registry owner photo (mm-registry-photos.js)
                     data.items.push(row);
                 }
             });

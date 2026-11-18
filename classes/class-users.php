@@ -326,6 +326,7 @@ class Users extends Theme {
         $html .= '<textarea class="mm-item__text" rows="2" aria-label="Describe the item" maxlength="'.self::WISH_MAX_TEXT.'" placeholder="e.g. Red insulated tumbler, 500ml" data-mm-text>'.esc_textarea(wp_strip_all_tags((string) $text)).'</textarea>';
         $html .= '<div class="mm-item__meta" data-mm-meta><span data-mm-chars>0</span>/'.self::WISH_MAX_TEXT.'</div>';
         $html .= '<div class="mm-item__error" data-mm-error></div>';
+        if(is_array($reg) && !empty($reg['photo'])) $html .= $reg['photo']; // registry lists: RegistryPhotos::editorHtml()
         $html .= '<div class="mm-links" data-mm-links>';
         foreach($links as $l) $html .= self::wishlistLinkHtml($l);
         $html .= '</div>';
