@@ -232,10 +232,17 @@ class RegistryPhotos {
         $found = preg_replace( '~^http://~i', 'https://', $found );
         if ( ! filter_var( $found, FILTER_VALIDATE_URL ) ) return '';
 
-        // Shopee's CDN has a ready thumbnail (~30 KB instead of ~150 KB).
-        if ( preg_match( '~^https://[^/]+\.susercontent\.com/file/[A-Za-z0-9-]+$~', $found ) ) $found .= '_tn';
-
         return esc_url_raw( $found );
+    }
+
+    /** A smaller version where the shop's image CDN offers one (applied at redirect, so cached URLs get it too). */
+    public static function sized( $url ) {
+        // Shopee: ready thumbnail (~30 KB instead of ~150 KB).
+        if ( preg_match( '~^https://[^/]+\.susercontent\.com/file/[A-Za-z0-9-]+$~', $url ) ) return $url . '_tn';
+        // IKEA: ?f=s (~28 KB instead of ~350 KB).
+        if ( preg_match( '~^https://www\.ikea\.com/[^?]+/images/products/[^?]+\.(jpe?g|png|webp)$~i', $url ) ) return $url . '?f=s';
+
+        return $url;
     }
 
     /** AJAX (anyone, GET, used as <img src>): redirect to the shop's picture, or 404 so the tile stays. */
@@ -262,7 +269,7 @@ class RegistryPhotos {
             exit;
         }
         header( 'Cache-Control: public, max-age=86400' );
-        header( 'Location: ' . $pic, true, 302 );
+        header( 'Location: ' . self::sized( $pic ), true, 302 );
         exit;
     }
 
