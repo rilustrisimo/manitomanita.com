@@ -413,6 +413,11 @@ class EmailCenter {
             $today = EmailDeliver::totals( 1 );
             if ( ( $today['sent'] ?? 0 ) >= $ceiling ) break;
 
+            // A run cut off mid-send (host time limit, crash) leaves claimed rows in 'sending' forever and the
+            // campaign never finishes. After 15 minutes they're failed, not resent: the email may have gone out.
+            $wpdb->query( $wpdb->prepare( 'UPDATE ' . self::queueTable() . " SET status = 'failed', reason = 'interrupted' WHERE campaign_id = %d AND status = 'sending' AND ( sent_at IS NULL OR sent_at < %s )",
+                $id, wp_date( 'Y-m-d H:i:s', time() - 15 * MINUTE_IN_SECONDS ) ) );
+
             list( , $where, $wait ) = self::stage( $id );
             if ( $wait !== '' ) continue; // test batch results not in yet
             if ( $where === '' ) {
@@ -427,7 +432,7 @@ class EmailCenter {
             $cap = (int) $d['audience']['cap_days'];
             foreach ( $rows as $r ) {
                 // Claim the row first: overlapping runs never send twice.
-                if ( ! $wpdb->update( self::queueTable(), array( 'status' => 'sending' ), array( 'id' => $r->id, 'status' => 'queued' ) ) ) continue;
+                if ( ! $wpdb->update( self::queueTable(), array( 'status' => 'sending', 'sent_at' => current_time( 'mysql' ) ), array( 'id' => $r->id, 'status' => 'queued' ) ) ) continue; // sent_at = claim time until sent
                 $why = '';
                 if ( EmailDeliver::blocked( $r->email, true ) ) $why = 'unsubscribed or bounced';
                 elseif ( $cap > 0 && $wpdb->get_var( $wpdb->prepare( 'SELECT 1 FROM ' . self::queueTable() . " WHERE inbox = %s AND status = 'sent' AND campaign_id <> %d AND sent_at > %s LIMIT 1", $r->inbox, $id, wp_date( 'Y-m-d H:i:s', time() - $cap * DAY_IN_SECONDS ) ) ) ) $why = 'got another promo recently';
