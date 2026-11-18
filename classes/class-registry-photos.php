@@ -257,6 +257,10 @@ class RegistryPhotos {
                 break;
             }
         }
+        // JSON mode (mm-registry-photos.js): { u: picture URL or '' } or { wait: seconds } when the lookup limit is reached.
+        if ( ! empty( $_GET['json'] ) ) {
+            wp_send_json( $pic === null ? array( 'wait' => max( 3, 61 - ( time() % 60 ) ) ) : array( 'u' => $pic === '' ? '' : self::sized( $pic ) ) );
+        }
         if ( $pic === null ) { // busy: let the browser ask again next time (admin-ajax already sent no-cache)
             status_header( 404 );
             exit;
@@ -271,6 +275,21 @@ class RegistryPhotos {
         header( 'Cache-Control: public, max-age=86400' );
         header( 'Location: ' . self::sized( $pic ), true, 302 );
         exit;
+    }
+
+    /**
+     * <img> of a gift's shop picture: the picture itself when already looked up (no request to us), nothing when
+     * the shop has none, or a placeholder that mm-registry-photos.js fills in (retrying while the lookup limit
+     * is reached). '' when there's no picture to show.
+     */
+    protected static function shopImg( $id, array $item, $attrs ) {
+        if ( empty( $item['reference_links'] ) ) return '';
+        $pic = self::pictureFor( $item, false );
+        if ( $pic === '' ) return '';
+        $base = ' alt="" decoding="async" width="' . self::SMALL . '" height="' . self::SMALL . '" ' . $attrs . ' onerror="this.remove()"';
+        if ( $pic !== null ) return '<img src="' . esc_url( self::sized( $pic ) ) . '" loading="lazy"' . $base . '>';
+
+        return '<img data-mm-wl-pic="' . esc_url( add_query_arg( 'json', 1, self::linkSrc( $id, $item ) ) ) . '"' . $base . '>';
     }
 
     /** Cron, a few seconds after a save: look up pictures for the list's links so guests get them instantly. */
@@ -308,14 +327,13 @@ class RegistryPhotos {
                 . '<a href="' . esc_url( $large ) . '" data-mm-wl-zoom aria-label="Enlarge photo"><img src="' . esc_url( $small ) . '" alt="' . $alt . '" loading="lazy" decoding="async" width="' . self::SMALL . '" height="' . self::SMALL . '"></a></figure>';
         }
 
-        $src = self::linkSrc( $id, $item );
-        if ( $src !== '' ) {
+        $img = self::shopImg( $id, $item, '' );
+        if ( $img !== '' ) {
             $first = (string) ( $item['reference_links'][0]['link_url'] ?? '' );
             $href = class_exists( 'Affiliate' ) ? Affiliate::link( $first, 'my-wishlist-thumb' ) : $first;
 
             return '<figure class="mm-wl-thumb is-shop">' . $badge . $tile
-                . '<a href="' . esc_url( $href ) . '" target="_blank" rel="nofollow sponsored noopener" tabindex="-1" aria-hidden="true">'
-                . '<img src="' . esc_url( $src ) . '" alt="" loading="lazy" decoding="async" width="' . self::SMALL . '" height="' . self::SMALL . '" onerror="this.parentNode.remove()"></a></figure>';
+                . '<a href="' . esc_url( $href ) . '" target="_blank" rel="nofollow sponsored noopener" tabindex="-1" aria-hidden="true">' . $img . '</a></figure>';
         }
 
         return '<figure class="mm-wl-thumb">' . $badge . $tile . '</figure>';
@@ -327,10 +345,10 @@ class RegistryPhotos {
         $img = ! empty( $item['img'] ) && $id ? (string) $item['img'] : '';
         $small = $img !== '' ? self::url( $id, $img, 'small' ) : '';
         if ( $small === '' ) $img = '';
-        $shop = $id && $img === '' ? self::linkSrc( $id, $item ) : '';
+        $shop = $id && $img === '' ? self::shopImg( $id, $item, 'data-mm-photo-shop' ) : '';
 
         $pic = $small !== '' ? '<img src="' . esc_url( $small ) . '" alt="" data-mm-photo-img>'
-            : ( $shop !== '' ? '<img src="' . esc_url( $shop ) . '" alt="" loading="lazy" data-mm-photo-shop onerror="this.remove()">' : '' );
+            : $shop; // shop picture <img> (or one the loader fills in), '' if none
 
         return '<div class="mm-item__photo' . ( $img !== '' ? ' has-photo' : '' ) . '" data-mm-photo>'
             . '<div class="mm-item__photo-pic" data-mm-photo-pic><i class="' . esc_attr( $id ? self::icon( $id ) : 'fa-solid fa-gift' ) . '" aria-hidden="true"></i>' . $pic . '</div>'

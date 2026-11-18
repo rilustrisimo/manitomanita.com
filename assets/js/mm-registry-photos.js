@@ -95,9 +95,52 @@
         });
     }
 
+    /* ---------- Shop pictures not looked up yet: fetch as they scroll near, a few at a time ---------- */
+    function initShopPics() {
+        var imgs = $('img[data-mm-wl-pic]');
+        if (!imgs.length) return;
+        var queue = [], running = 0, MAX = 3;
+
+        function next() {
+            while (running < MAX && queue.length) load(queue.shift());
+        }
+        function load(img) {
+            running++;
+            img._tries = (img._tries || 0) + 1;
+            $.getJSON(img.getAttribute('data-mm-wl-pic')).done(function (r) {
+                if (r && r.wait && img._tries < 8) {
+                    // Server is at its lookup limit: try again when it frees up (the tile shows meanwhile).
+                    setTimeout(function () { queue.push(img); next(); }, r.wait * 1000);
+                } else if (r && r.u) {
+                    img.removeAttribute('data-mm-wl-pic');
+                    img.src = r.u;
+                } else {
+                    $(img).remove();
+                }
+            }).fail(function () {
+                if (img._tries < 3) setTimeout(function () { queue.push(img); next(); }, 5000);
+            }).always(function () { running--; next(); });
+        }
+        function want(img) { queue.push(img); next(); }
+
+        if ('IntersectionObserver' in window) {
+            var io = new IntersectionObserver(function (entries) {
+                entries.forEach(function (e) {
+                    if (!e.isIntersecting) return;
+                    io.unobserve(e.target);
+                    want(e.target);
+                });
+            }, { rootMargin: '400px 0px' });
+            imgs.each(function () { io.observe(this); });
+        } else {
+            imgs.each(function () { want(this); });
+        }
+    }
+
     $(function () {
         if (!$('.mm-wl').length) return;
         initEditor();
         initZoom();
+        initShopPics();
     });
 })(jQuery);

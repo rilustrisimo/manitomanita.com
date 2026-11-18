@@ -1536,3 +1536,8 @@
 body.mm-wl-zoom-open {
     overflow: hidden;
 }
+
+/* Shop picture still being looked up (mm-registry-photos.js fills in the src): the tile shows meanwhile */
+.mm-wl img[data-mm-wl-pic] {
+    visibility: hidden;
+}
