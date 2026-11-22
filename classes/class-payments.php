@@ -40,6 +40,13 @@ class Payments {
 
     protected static $hooked  = false;
     protected static $tracked = false; // GA4 purchase sent from the server for this request
+    protected static $lastError = array(); // PayPal's error for the last failed request (name, issue, debug_id)
+
+    /**
+     * PayPal issues where the buyer's card or account said no (not a problem on our side). The buyer can
+     * pay another way; these are logged, not emailed. INSTRUMENT_DECLINED can reopen the same checkout.
+     */
+    protected static $declines = array( 'INSTRUMENT_DECLINED', 'TRANSACTION_REFUSED', 'PAYER_CANNOT_PAY', 'PAYER_ACCOUNT_RESTRICTED', 'PAYER_ACCOUNT_LOCKED_OR_CLOSED', 'CARD_EXPIRED', 'CARD_CLOSED', 'INSTRUMENT_BLOCKED', 'REDIRECT_PAYER_FOR_ALTERNATE_FUNDING', 'MAX_NUMBER_OF_PAYMENT_ATTEMPTS_EXCEEDED' );
 
     public static function init() {
         if ( self::$hooked ) return;
@@ -163,15 +170,21 @@ class Payments {
                     return resp.data.id;
                 });
             },
-            onApprove: function(data){
+            onApprove: function(data, actions){
                 document.getElementById('loader-overlay-paypal').style.display = 'flex';
-                jQuery('.pop-container').hide();
+                var sheets = jQuery('.pop-container:visible').hide();
 
-                return post({ action: 'mm_paypal_capture', order: data.orderID }).then(function(resp){
+                return post({ action: 'mm_paypal_capture', order: data.orderID, gid: gid }).then(function(resp){
                     if(resp.success){
                         // Sent from the browser only when the server couldn't (no GA4 API secret configured).
                         if(!resp.data || !resp.data.tracked) track('purchase', { transaction_id: data.orderID, currency: 'PHP', value: item.price, items: [item] });
                         jQuery('#reload').submit(); // reload the dashboard with PRO / the new credits
+                    }else if(resp.data && resp.data.code === 'declined'){
+                        // Card declined: nothing was charged. Bring the sheet back and let them pay another way.
+                        document.getElementById('loader-overlay-paypal').style.display = 'none';
+                        sheets.show();
+                        alert(resp.data.message);
+                        if (resp.data.retry && actions && actions.restart) return actions.restart();
                     }else{
                         fail(resp.data);
                     }
@@ -272,7 +285,9 @@ class Payments {
 
         if ( ! self::enabled() || $orderId === '' ) wp_send_json_error( 'Missing payment details.' );
 
+        self::$lastError = array();
         $order = self::request( 'POST', 'v2/checkout/orders/' . $orderId . '/capture', new stdClass() );
+        $error = self::$lastError; // why the capture failed, if it did
 
         // Already captured (e.g. a retried request): read the order instead.
         if ( empty( $order['status'] ) || $order['status'] !== 'COMPLETED' ) {
@@ -282,8 +297,39 @@ class Payments {
         $result = self::apply( $orderId, $order );
 
         if ( $result !== true ) {
-            error_log( 'Payments: order ' . $orderId . ' not applied (' . $result . ')' );
-            do_action( 'mm_alert', 'payment', 'PRO payment not applied: ' . $result, array( 'order' => $orderId, 'group' => (int) ( $_POST['gid'] ?? 0 ) ) );
+            $unit    = $order['purchase_units'][0] ?? array();
+            $capture = $unit['payments']['captures'][0] ?? array();
+            $issue   = (string) ( $error['issue'] ?? '' );
+            if ( $issue === '' && in_array( $capture['status'] ?? '', array( 'DECLINED', 'FAILED' ), true ) ) $issue = 'CAPTURE_' . $capture['status'];
+
+            // Group: sent by the page, else from the order ("gid:product[:uid]"), so the alert names it.
+            $custom = (string) ( $capture['custom_id'] ?? ( $unit['custom_id'] ?? '' ) );
+            $gid    = absint( $_POST['gid'] ?? 0 ) ?: absint( strtok( $custom, ':' ) );
+            $parts  = explode( ':', $custom );
+            $product = sanitize_key( $parts[1] ?? '' );
+
+            $reason = $result;
+            if ( $issue !== '' ) $reason .= ' (' . $issue . ( ! empty( $error['detail'] ) ? ': ' . $error['detail'] : '' ) . ')';
+            elseif ( ! empty( $error['name'] ) ) $reason .= ' (' . $error['name'] . ( ! empty( $error['detail'] ) ? ': ' . $error['detail'] : '' ) . ')';
+            elseif ( empty( $order ) ) $reason .= ' (no answer from PayPal)';
+            $context = array( 'order' => $orderId, 'group' => $gid ?: '(unknown)', 'product' => $product ?: '(unknown)' );
+            if ( ! empty( $error['debug_id'] ) ) $context['paypal debug id'] = $error['debug_id'];
+
+            error_log( 'Payments: order ' . $orderId . ' not applied (' . $reason . ')' );
+
+            $declined = in_array( $issue, self::$declines, true ) || strpos( $issue, 'CAPTURE_' ) === 0;
+            if ( $declined ) {
+                // The bank / PayPal said no to this card or account: nothing was charged. Log it (no email).
+                if ( class_exists( 'ErrorAlerts' ) ) ErrorAlerts::note( 'payment-declined', 'Payment declined: ' . $reason, $context );
+                if ( class_exists( 'Insights' ) && $gid && get_post_type( $gid ) === 'groups' ) Insights::log( 'pro_declined', $gid, 0, 0, ( $product ?: 'pro' ) . '|' . strtolower( substr( $issue, 0, 40 ) ) );
+                wp_send_json_error( array(
+                    'code'    => 'declined',
+                    'retry'   => $issue === 'INSTRUMENT_DECLINED', // the same checkout can be reopened to pick another card / PayPal
+                    'message' => 'Your bank declined this payment, so nothing was charged. Please try another card, or pay with PayPal.',
+                ) );
+            }
+
+            do_action( 'mm_alert', 'payment', 'PRO payment not applied: ' . $reason, $context );
             wp_send_json_error( 'We could not confirm your payment. If you were charged, please contact us with your PayPal receipt.' );
         }
 
@@ -442,9 +488,22 @@ class Payments {
             return array();
         }
 
-        if ( (int) wp_remote_retrieve_response_code( $r ) === 401 ) delete_transient( 'mm_paypal_token' );
+        $code = (int) wp_remote_retrieve_response_code( $r );
+        if ( $code === 401 ) delete_transient( 'mm_paypal_token' );
 
-        return (array) json_decode( wp_remote_retrieve_body( $r ), true );
+        $data = (array) json_decode( wp_remote_retrieve_body( $r ), true );
+        if ( $code >= 400 ) {
+            // PayPal's reason, e.g. UNPROCESSABLE_ENTITY / INSTRUMENT_DECLINED, plus its debug_id for PayPal support.
+            self::$lastError = array(
+                'http'     => $code,
+                'name'     => sanitize_text_field( (string) ( $data['name'] ?? '' ) ),
+                'issue'    => sanitize_text_field( (string) ( $data['details'][0]['issue'] ?? '' ) ),
+                'detail'   => sanitize_text_field( (string) ( $data['details'][0]['description'] ?? ( $data['message'] ?? '' ) ) ),
+                'debug_id' => sanitize_text_field( (string) ( $data['debug_id'] ?? '' ) ),
+            );
+        }
+
+        return $data;
     }
 }
 

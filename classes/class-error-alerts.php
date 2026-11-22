@@ -38,10 +38,7 @@ class ErrorAlerts {
             $key = 'mm_alert_' . md5( $kind . '|' . $message );
             $url = ( isset( $_SERVER['HTTP_HOST'] ) ? 'https://' . $_SERVER['HTTP_HOST'] : '' ) . preg_replace( '/([?&](pw|password|token|t|key|code)=)[^&]*/i', '$1***', (string) ( $_SERVER['REQUEST_URI'] ?? '' ) );
 
-            $log = get_option( self::LOG, array() );
-            $log = is_array( $log ) ? $log : array();
-            array_unshift( $log, array( 't' => time(), 'kind' => $kind, 'msg' => $message, 'url' => $url ) );
-            update_option( self::LOG, array_slice( $log, 0, 30 ), false );
+            self::record( $kind, $message, $url, $context );
 
             $seen = get_transient( $key );
             if ( $seen ) { set_transient( $key, (int) $seen + 1, self::THROTTLE ); return; } // already emailed this hour
@@ -62,6 +59,26 @@ class ErrorAlerts {
         } catch ( \Throwable $t ) {
             // never let an alert break the page
         }
+    }
+
+    /**
+     * Logged only (mm_alerts_log), no email: expected things worth a record, like a buyer's card being declined.
+     */
+    public static function note( $kind, $message, $context = array() ) {
+        try {
+            self::record( sanitize_key( (string) $kind ), mb_substr( wp_strip_all_tags( (string) $message ), 0, 500 ), '', $context );
+        } catch ( \Throwable $t ) {
+            // never let logging break the page
+        }
+    }
+
+    protected static function record( $kind, $message, $url, $context ) {
+        $entry = array( 't' => time(), 'kind' => $kind, 'msg' => $message, 'url' => $url );
+        if ( $context ) $entry['ctx'] = array_map( function ( $v ) { return mb_substr( is_scalar( $v ) ? (string) $v : wp_json_encode( $v ), 0, 200 ); }, (array) $context );
+        $log = get_option( self::LOG, array() );
+        $log = is_array( $log ) ? $log : array();
+        array_unshift( $log, $entry );
+        update_option( self::LOG, array_slice( $log, 0, 30 ), false );
     }
 }
 
