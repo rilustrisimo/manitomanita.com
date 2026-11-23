@@ -169,15 +169,23 @@ class EmailCenterAdmin {
                 if ( $st === 'sending' ) EmailCenter::setStatus( $id, 'paused', 'paused by you' );
                 $back( array( 'tab' => 'campaigns' ) );
             case 'resume':
+            case 'resume_careful':
                 if ( $st === 'paused' ) {
                     // Count only new bounces from here on, so an auto-pause doesn't fire again on the old ones.
                     list( $s, $b, $c ) = EmailCenter::rates( $id, array( 'raw' => 1 ) );
                     $d['ack'] = array( 's' => $s, 'b' => $b, 'c' => $c );
                     unset( $d['auto_paused'] );
+                    // Careful: pauses at EmailCenter::CAREFUL_STOP % instead of BOUNCE_STOP, in small batches.
+                    $d['careful'] = $op === 'resume_careful' ? 1 : 0;
+                    global $wpdb;
+                    $d['careful_from'] = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT MAX(id) FROM ' . EmailCenter::queueTable() . " WHERE campaign_id = %d AND status IN ('sent','bounced','failed')", $id ) );
                     EmailCenter::save( $id, $d );
-                    EmailCenter::setStatus( $id, 'sending', 'resumed' );
+                    EmailCenter::setStatus( $id, 'sending', $op === 'resume_careful' ? 'resumed carefully' : 'resumed' );
                 }
                 $back( array( 'tab' => 'campaigns' ) );
+            case 'check':
+                if ( in_array( $st, array( 'sending', 'paused' ), true ) && class_exists( 'EmailListCheck' ) && ! EmailListCheck::running( $id ) ) EmailListCheck::start( $id );
+                $back( array( 'tab' => 'campaigns', 'msg' => 'checking' ) );
             case 'cancel':
                 if ( in_array( $st, array( 'scheduled', 'sending', 'paused' ), true ) ) {
                     global $wpdb;
@@ -282,6 +290,7 @@ class EmailCenterAdmin {
         $label = array( 'draft' => 'Draft', 'scheduled' => 'Scheduled', 'sending' => 'Sending', 'paused' => 'Paused', 'done' => 'Done', 'cancelled' => 'Cancelled' )[ $st ] ?? $st;
         if ( $st === 'sending' && ( (int) wp_date( 'G' ) < (int) $d['window'][0] || (int) wp_date( 'G' ) >= (int) $d['window'][1] ) ) $label = 'Waiting for send window';
         if ( $st === 'paused' && ! empty( $d['auto_paused'] ) ) $label = 'Paused: ' . $d['auto_paused'];
+        if ( $st === 'sending' && ! empty( $d['careful'] ) && $label === 'Sending' ) $label = 'Sending carefully';
 
         return '<span class="mmec-chip is-' . esc_attr( $st ) . '">' . esc_html( $label ) . '</span>';
     }
@@ -299,11 +308,11 @@ class EmailCenterAdmin {
 
         return array(
             'chip'  => self::chip( $id ),
-            'stage' => trim( $stage[0] . ( $stage[2] ? ' · ' . $stage[2] : '' ) ),
+            'stage' => trim( $stage[0] . ( $stage[2] ? ' · ' . $stage[2] : '' ) . ( class_exists( 'EmailListCheck' ) && ( $chk = EmailListCheck::summary( $d ) ) !== '' ? ( $stage[0] ? ' · ' : '' ) . $chk : '' ) ),
             'pct'   => $total ? round( $done / $total * 100 ) : 0,
             'line'  => $total ? number_format( $c['sent'] ) . ' sent of ' . number_format( $total ) . ( $c['failed'] ? ' · ' . number_format( $c['failed'] ) . ' failed' : '' ) . ( $c['skipped'] ? ' · ' . number_format( $c['skipped'] ) . ' skipped' : '' ) . ( $c['bounced'] - $c['ses_listed'] ? ' · ' . number_format( $c['bounced'] - $c['ses_listed'] ) . ' bounced' : '' ) . ( $c['ses_listed'] ? ' · ' . number_format( $c['ses_listed'] ) . ' already on SES list' : '' ) . ( $left ? ' · about ' . ( $runsLeft * 2 ) . ' min left' : '' ) : '',
             'stats' => $c['sent'] ? number_format( $c['opened'] ) . ' opens (' . round( $c['opened'] / $c['sent'] * 100 ) . '%) · ' . number_format( $c['clicked'] ) . ' clicks (' . round( $c['clicked'] / $c['sent'] * 100, 1 ) . '%)' : '',
-            'live'  => in_array( EmailCenter::status( $id ), array( 'scheduled', 'sending' ), true ),
+            'live'  => in_array( EmailCenter::status( $id ), array( 'scheduled', 'sending' ), true ) || ( class_exists( 'EmailListCheck' ) && EmailListCheck::running( $id, $d ) ),
         );
     }
 
@@ -325,7 +334,7 @@ class EmailCenterAdmin {
             }
             echo '</nav>';
         }
-        $msgs = array( 'scheduled' => array( 'success', 'Scheduled. It starts at its time and sends inside its send window.' ), 'saved' => array( 'success', 'Saved.' ), 'tested' => array( 'success', 'Test sent. Check it on your phone; you can schedule now.' ), 'test-fail' => array( 'error', 'The test could not be sent.' ), 'needs-test' => array( 'warning', 'Send a test of the latest version first.' ), 'no-subject' => array( 'warning', 'Add a subject first.' ), 'locked' => array( 'warning', 'This campaign has started, so it can&rsquo;t be edited. Duplicate it instead.' ), 'unsuppressed' => array( 'success', 'Removed from the suppression list.' ), 'imported' => array( 'success', sprintf( 'Imported %s addresses from the SES list (%s complaints); %s were already blocked.', number_format( absint( $_GET['na'] ?? 0 ) ), number_format( absint( $_GET['nc'] ?? 0 ) ), number_format( absint( $_GET['nb'] ?? 0 ) ) ) ) );
+        $msgs = array( 'scheduled' => array( 'success', 'Scheduled. It starts at its time and sends inside its send window.' ), 'saved' => array( 'success', 'Saved.' ), 'tested' => array( 'success', 'Test sent. Check it on your phone; you can schedule now.' ), 'test-fail' => array( 'error', 'The test could not be sent.' ), 'needs-test' => array( 'warning', 'Send a test of the latest version first.' ), 'no-subject' => array( 'warning', 'Add a subject first.' ), 'locked' => array( 'warning', 'This campaign has started, so it can&rsquo;t be edited. Duplicate it instead.' ), 'unsuppressed' => array( 'success', 'Removed from the suppression list.' ), 'checking' => array( 'success', 'Checking addresses in the background (no emails are sent). Dead addresses are skipped; the progress shows under the campaign.' ), 'imported' => array( 'success', sprintf( 'Imported %s addresses from the SES list (%s complaints); %s were already blocked.', number_format( absint( $_GET['na'] ?? 0 ) ), number_format( absint( $_GET['nc'] ?? 0 ) ), number_format( absint( $_GET['nb'] ?? 0 ) ) ) ) );
         $m = sanitize_key( (string) ( $_GET['msg'] ?? '' ) );
         if ( isset( $msgs[ $m ] ) ) echo '<div class="notice notice-' . $msgs[ $m ][0] . ' is-dismissible"><p>' . $msgs[ $m ][1] . '</p></div>';
 
@@ -393,6 +402,9 @@ class EmailCenterAdmin {
             echo '<td class="mmec-prog"><div class="mmec-bar"><i style="width:' . (int) $p['pct'] . '%" data-mmec-bar></i></div><small data-mmec-line>' . esc_html( $p['line'] ) . '</small><br><small class="mmi-muted" data-mmec-stage>' . esc_html( $p['stage'] ) . '</small></td><td><small data-mmec-stats>' . esc_html( $p['stats'] ) . '</small></td><td class="mmec-acts">';
             if ( $st === 'sending' ) echo self::form( 'pause', 'Pause', 'button', array( 'id' => $id ) );
             if ( $st === 'paused' ) echo self::form( 'resume', 'Resume', 'button button-primary', array( 'id' => $id ) );
+            if ( $st === 'paused' ) echo self::form( 'resume_careful', 'Resume carefully', 'button', array( 'id' => $id ),
+                'Resume carefully: keeps sending until bounces pass ' . EmailCenter::CAREFUL_STOP . '% (instead of ' . EmailCenter::BOUNCE_STOP . '%), ' . EmailCenter::CAREFUL_RATE . ' emails every 2 minutes. The site-wide stop (' . EmailCenter::SITE_STOP . '% of all email today) stays on to protect match emails. Tip: run "Check addresses" first. Continue?' );
+            if ( in_array( $st, array( 'sending', 'paused' ), true ) && class_exists( 'EmailListCheck' ) && ! EmailListCheck::running( $id, $d ) ) echo self::form( 'check', 'Check addresses', 'button-link', array( 'id' => $id ) );
             if ( in_array( $st, array( 'scheduled', 'sending', 'paused' ), true ) ) echo self::form( 'cancel', 'Cancel', 'button-link mmec-danger', array( 'id' => $id ), 'Cancel the rest of this campaign? Emails already sent stay sent.' );
             echo self::form( 'duplicate', 'Duplicate', 'button-link', array( 'id' => $id ) );
             if ( in_array( $st, array( 'draft', 'done', 'cancelled' ), true ) ) echo self::form( 'delete', 'Delete', 'button-link mmec-danger', array( 'id' => $id ), 'Delete this campaign?' );
@@ -491,7 +503,7 @@ class EmailCenterAdmin {
         echo '<label>until<select name="sched[to]">'; for ( $h = 1; $h <= 24; $h++ ) echo '<option value="' . $h . '"' . selected( (int) $d['window'][1], $h, false ) . '>' . ( $h === 24 ? 'midnight' : esc_html( gmdate( 'g A', $h * 3600 ) ) ) . '</option>'; echo '</select></label>';
         echo '<label>Emails per 2 minutes<input type="number" min="10" max="500" name="sched[rate]" value="' . (int) $d['rate'] . '"></label></div>';
         echo '<p class="mmi-muted">Outside the window, sending waits and resumes automatically. About ' . number_format( (int) $d['rate'] * 30 ) . ' emails an hour. Each person gets it once; unsubscribes, bounces and the frequency cap are checked again right before each email.</p>';
-        echo '<p class="mmi-muted"><strong>Bounce protection:</strong> Gmail, Yahoo, Outlook and iCloud addresses go first, company and school emails last. Each group starts with a small test batch and waits 30 minutes for bounce reports. The campaign pauses itself if hard bounces pass ' . EmailCenter::BOUNCE_STOP . '% or spam complaints pass ' . EmailCenter::SPAM_STOP . '%, and all campaigns pause if the site&rsquo;s bounce rate today passes ' . EmailCenter::SITE_STOP . '%. A company domain with ' . EmailCenter::DOMAIN_STOP . ' bounces is skipped for the rest of the campaign. You get an email when it pauses.</p>';
+        echo '<p class="mmi-muted"><strong>Bounce protection:</strong> Gmail, Yahoo, Outlook and iCloud addresses go first, company and school emails last. Each group starts with a small test batch and waits 30 minutes for bounce reports. The campaign pauses itself if hard bounces pass ' . EmailCenter::BOUNCE_STOP . '% or spam complaints pass ' . EmailCenter::SPAM_STOP . '%, and all campaigns pause if the site&rsquo;s bounce rate today passes ' . EmailCenter::SITE_STOP . '%. A company domain with ' . EmailCenter::DOMAIN_STOP . ' bounces is skipped for the rest of the campaign. Before company emails go out, every domain is checked (no email sent) and addresses whose domain can&rsquo;t receive email, misspelled domains (gmial.com) and throwaway inboxes are skipped. You get an email when it pauses.</p>';
         echo '<p class="mmec-sched-acts">';
         if ( ! $locked ) {
             echo '<button type="submit" name="op" value="schedule" class="button button-primary" data-mmec-schedule onclick="return confirm(\'Schedule this campaign? It sends to everyone in the audience at the chosen time.\');">Schedule</button> ';

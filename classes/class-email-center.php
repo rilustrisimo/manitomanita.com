@@ -24,6 +24,8 @@ class EmailCenter {
     const BOUNCE_STOP = 3.0;   // % hard bounces that pauses a campaign
     const SPAM_STOP   = 0.1;   // % complaints that pauses a campaign
     const SITE_STOP   = 4.0;   // % site-wide bounces (24h) that pauses all campaigns
+    const CAREFUL_STOP = 5.0;  // "Resume carefully": % hard bounces since resuming that pauses it again
+    const CAREFUL_RATE = 50;   // "Resume carefully": emails per run (every 2 min), so bounce reports keep up
     const DOMAIN_STOP = 2;     // bounces from one company domain that skip the rest of it
     const CEILING    = 30000; // emails per day across campaigns (SES quota is 50k); option mm_email_ceiling overrides
 
@@ -337,7 +339,18 @@ class EmailCenter {
     /** '' when the campaign may keep sending, else why it must pause. */
     public static function breaker( $id, array $d ) {
         list( $s, $b, $c ) = self::rates( $id, $d );
-        if ( $s >= 20 && $b >= 3 && $b / $s * 100 > self::BOUNCE_STOP ) return 'bounce rate ' . round( $b / $s * 100, 1 ) . '% (' . $b . ' of ' . $s . ')';
+        $stop = empty( $d['careful'] ) ? self::BOUNCE_STOP : self::CAREFUL_STOP;
+        if ( $s >= 20 && $b >= 3 && $b / $s * 100 > $stop ) return 'bounce rate ' . round( $b / $s * 100, 1 ) . '% (' . $b . ' of ' . $s . ')';
+        if ( ! empty( $d['careful'] ) ) {
+            // Over a long run the total since resuming hides a bad stretch: also check the latest 500 sends
+            // (since resuming, sent 10+ minutes ago so their bounce reports are in).
+            global $wpdb;
+            $w = $wpdb->get_row( $wpdb->prepare( 'SELECT COUNT(*) s, SUM(status = \'bounced\' AND reason = \'bounced\') b FROM ( SELECT status, reason FROM ' . self::queueTable() . " WHERE campaign_id = %d AND id > %d AND status IN ('sent','bounced') AND sent_at < %s ORDER BY id DESC LIMIT 500 ) x",
+                $id, (int) ( $d['careful_from'] ?? 0 ), wp_date( 'Y-m-d H:i:s', time() - 10 * MINUTE_IN_SECONDS ) ) );
+            $ws = (int) ( $w->s ?? 0 );
+            $wb = (int) ( $w->b ?? 0 );
+            if ( $ws >= 200 && $wb / $ws * 100 > self::CAREFUL_STOP ) return 'bounce rate ' . round( $wb / $ws * 100, 1 ) . '% in the latest ' . $ws . ' (careful mode)';
+        }
         if ( $s >= 20 && $c >= 2 && $c / $s * 100 > self::SPAM_STOP ) return 'spam complaints ' . round( $c / $s * 100, 2 ) . '% (' . $c . ' of ' . $s . ')';
 
         return '';
@@ -369,6 +382,10 @@ class EmailCenter {
         $q = self::queueTable();
         foreach ( array( 1, 2 ) as $t ) {
             $name = $t === 1 ? 'Webmail' : 'Company & school emails';
+            if ( $t === 2 && class_exists( 'EmailListCheck' ) && EmailListCheck::running( $id )
+                && $wpdb->get_var( $wpdb->prepare( "SELECT 1 FROM $q WHERE campaign_id = %d AND tier = 2 AND status = 'queued' LIMIT 1", $id ) ) ) {
+                return array( $name, '', 'checking addresses first' );
+            }
             if ( $wpdb->get_var( $wpdb->prepare( "SELECT 1 FROM $q WHERE campaign_id = %d AND tier = %d AND canary = 1 AND status = 'queued' LIMIT 1", $id, $t ) ) ) {
                 return array( $name . ' · test batch', $wpdb->prepare( 'tier = %d AND canary = 1', $t ), '' );
             }
@@ -405,6 +422,7 @@ class EmailCenter {
             if ( self::status( $id ) === 'scheduled' ) {
                 $n = self::snapshot( $id );
                 self::setStatus( $id, 'sending', $n . ' recipients' );
+                if ( class_exists( 'EmailListCheck' ) ) EmailListCheck::start( $id ); // dead domains are skipped before company emails go
                 $d = self::get( $id );
             }
             if ( ! self::inWindow( $d ) ) continue; // waits for its send window
@@ -428,7 +446,7 @@ class EmailCenter {
                 }
                 continue;
             }
-            $rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . self::queueTable() . " WHERE campaign_id = %d AND status = 'queued' AND $where ORDER BY id LIMIT %d", $id, max( 1, min( 500, (int) $d['rate'] ) ) ) );
+            $rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . self::queueTable() . " WHERE campaign_id = %d AND status = 'queued' AND $where ORDER BY id LIMIT %d", $id, max( 1, min( empty( $d['careful'] ) ? 500 : self::CAREFUL_RATE, (int) $d['rate'] ) ) ) );
             $cap = (int) $d['audience']['cap_days'];
             foreach ( $rows as $r ) {
                 // Claim the row first: overlapping runs never send twice.
