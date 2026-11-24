@@ -247,8 +247,8 @@ if ( $wlId ) {
 								<span class="mm-gift__icon"><i class="<?php echo esc_attr( ! empty( $idea['icon'] ) ? $idea['icon'] : 'fas fa-gift' ); ?>"></i></span>
 								<div class="mm-suggest__text"><div class="mm-gift__label"><?php echo esc_html( $idea['label'] ); ?></div>
 									<div class="mm-suggest__stores">
-										<?php echo Affiliate::anchor( Affiliate::searchUrl( 'lazada', $idea['keyword'] ), 'Lazada', 'my-wishlist-ideas', '', 'mm-suggest__store' ); ?>
 										<?php echo Affiliate::anchor( Affiliate::searchUrl( 'shopee', $idea['keyword'] ), 'Shopee', 'my-wishlist-ideas', '', 'mm-suggest__store' ); ?>
+										<?php echo Affiliate::anchor( Affiliate::searchUrl( 'lazada', $idea['keyword'] ), 'Lazada', 'my-wishlist-ideas', '', 'mm-suggest__store' ); ?>
 									</div>
 								</div>
 								<button type="button" class="mm-btn mm-btn--add" data-mm-suggest="<?php echo esc_attr( $idea['label'] ); ?>"><i class="fas fa-plus"></i> Add</button>

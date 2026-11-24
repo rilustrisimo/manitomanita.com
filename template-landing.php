@@ -150,8 +150,8 @@ endif;
 						<strong><?php echo esc_html( $idea[0] ); ?></strong>
 						<div class="mml-idea__shops">
 							<?php
-							echo Affiliate::anchor( Affiliate::searchUrl( 'lazada', $idea[1], $p['budget'] ), 'Lazada', 'guide-' . $p['slug'], '', 'mml-shop mml-shop--lazada' );
 							echo Affiliate::anchor( Affiliate::searchUrl( 'shopee', $idea[1], $p['budget'] ), 'Shopee', 'guide-' . $p['slug'], '', 'mml-shop mml-shop--shopee' );
+							echo Affiliate::anchor( Affiliate::searchUrl( 'lazada', $idea[1], $p['budget'] ), 'Lazada', 'guide-' . $p['slug'], '', 'mml-shop mml-shop--lazada' );
 							?>
 						</div>
 					</div>
@@ -178,8 +178,8 @@ endif;
 						<strong><?php echo esc_html( $idea[0] ); ?></strong>
 						<div class="mml-idea__shops">
 							<?php
-							echo Affiliate::anchor( Affiliate::searchUrl( 'lazada', $idea[1], $idea[2] ), 'Lazada', 'registry-guide-' . $p['occasion'], '', 'mml-shop mml-shop--lazada' );
 							echo Affiliate::anchor( Affiliate::searchUrl( 'shopee', $idea[1], $idea[2] ), 'Shopee', 'registry-guide-' . $p['occasion'], '', 'mml-shop mml-shop--shopee' );
+							echo Affiliate::anchor( Affiliate::searchUrl( 'lazada', $idea[1], $idea[2] ), 'Lazada', 'registry-guide-' . $p['occasion'], '', 'mml-shop mml-shop--lazada' );
 							?>
 						</div>
 					</div>

@@ -154,6 +154,7 @@ class Payments {
             setTimeout(function(){ box.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
         }
 
+        var serverError = ''; // why our server refused to start the order, shown as is
         var cfg = {
             // Funnel order: begin_checkout when card/PayPal is tapped, add_payment_info when the details are
             // submitted (PayPal asks for the order only then), purchase when captured.
@@ -166,7 +167,8 @@ class Payments {
             createOrder: function(data){
                 track('add_payment_info', { currency: 'PHP', value: item.price, payment_type: data && data.paymentSource ? data.paymentSource : '', items: [item] });
                 return post({ action: 'mm_paypal_create', gid: gid, product: product }).then(function(resp){
-                    if(!resp.success) throw new Error(resp.data || 'Could not start the payment.');
+                    if(!resp.success){ serverError = resp.data || 'Could not start the payment.'; throw new Error(serverError); }
+                    serverError = '';
                     return resp.data.id;
                 });
             },
@@ -193,7 +195,9 @@ class Payments {
                 });
             },
             onError: function(err){
-                fail(err && err.message ? err.message : '');
+                if (window.console) console.warn('PayPal', err);
+                if (serverError) { fail(serverError); serverError = ''; return; } // our own message (e.g. already PRO)
+                fail('The payment didn’t go through, so nothing was charged.\n\nIf you used a debit card, your bank may block online payments until you turn them on in your bank app. You can also try a credit card, or pay with PayPal.');
             }
         };
 
@@ -325,7 +329,7 @@ class Payments {
                 wp_send_json_error( array(
                     'code'    => 'declined',
                     'retry'   => $issue === 'INSTRUMENT_DECLINED', // the same checkout can be reopened to pick another card / PayPal
-                    'message' => 'Your bank declined this payment, so nothing was charged. Please try another card, or pay with PayPal.',
+                    'message' => "Your bank declined this payment, so nothing was charged.\n\nMany Philippine debit cards are blocked for online payments until you turn them on in your bank app (look for \"online\" or \"international\" transactions). You can also try a credit card, or pay with PayPal.",
                 ) );
             }
 

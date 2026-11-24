@@ -41,7 +41,8 @@ class Involve {
     const SYNC_HOOK    = 'mm_involve_sync_offers';
     const WORK_HOOK    = 'mm_involve_deeplinks';
     const MONTH_LIMIT  = 900;   // stay under Involve Asia's ~1,000 unique links per rolling 30 days
-    const PER_RUN      = 20;    // deeplinks generated per background run (API allows 60 / minute)
+    const PRODUCT_RESERVE = 300; // of MONTH_LIMIT, kept for product pages (searches stop generating before it)
+    const PER_RUN      = 20;   // deeplinks generated per background run (API allows 60 / minute)
     const RETRY_FAILED = 2592000; // a product the store refused is retried after 30 days
 
     protected static $hooked = false;
@@ -166,8 +167,11 @@ class Involve {
      * Click time (Affiliate::go): the stored deeplink, or one generated right now. '' when the store
      * refused the URL, the monthly budget is used up or the API did not answer in time.
      */
+    public static $why = ''; // why deeplinkNow() returned '' (refused, budget, search-reserve, no-api, timeout), for click stats
+
     public static function deeplinkNow( $url, $apiOfferId ) {
-        if ( ! $apiOfferId ) return '';
+        self::$why = '';
+        if ( ! $apiOfferId ) { self::$why = 'no-api'; return ''; }
 
         $stored = self::deeplink( $url, $apiOfferId, false );
         if ( $stored ) return $stored;
@@ -176,18 +180,38 @@ class Involve {
         $key = self::key( $url );
         $links = (array) get_option( self::LINKS_OPT, array() );
 
-        if ( isset( $links[ $key ] ) && empty( $links[ $key ]['a'] ) && ( $links[ $key ]['t'] ?? 0 ) > time() - self::RETRY_FAILED ) return ''; // refused recently
+        if ( isset( $links[ $key ] ) && empty( $links[ $key ]['a'] ) && ( $links[ $key ]['t'] ?? 0 ) > time() - self::RETRY_FAILED ) { self::$why = 'refused'; return ''; } // refused recently
 
         $token = self::token();
-        if ( ! $token ) return '';
+        if ( ! $token ) { self::$why = 'no-api'; return ''; }
 
         $made = self::recentCount( $links );
+        // Store searches (gift-idea buttons: endless keyword/budget combos) may not eat the links kept for
+        // wishlist products, which people actually chose and buy more often.
+        if ( class_exists( 'Affiliate' ) && Affiliate::isSearchUrl( $url ) && $made >= self::MONTH_LIMIT - self::PRODUCT_RESERVE ) { self::$why = 'search-reserve'; return ''; }
         $link = self::generate( $key, array( 'url' => $url, 'offer' => (int) $apiOfferId ), $token, $links, $made, 8 );
 
         update_option( self::LINKS_OPT, $links, false );
         self::$links = $links;
+        if ( ! $link ) self::$why = $link === null ? 'budget' : ( isset( $links[ $key ]['e'] ) || isset( $links[ $key ]['a'] ) ? 'refused' : 'timeout' );
 
         return (string) $link;
+    }
+
+    /** True while gift-idea searches may still generate deeplinks (the rest is kept for products). */
+    public static function searchBudgetLeft() {
+        static $left = null;
+        if ( $left === null ) $left = self::recentCount( (array) get_option( self::LINKS_OPT, array() ) ) < self::MONTH_LIMIT - self::PRODUCT_RESERVE;
+
+        return $left;
+    }
+
+    /** True when Involve refused this URL within the retry window (so a click can't be tracked). */
+    public static function refused( $url ) {
+        if ( self::$links === null ) self::$links = (array) get_option( self::LINKS_OPT, array() );
+        $e = self::$links[ self::key( self::cleanUrl( $url ) ) ] ?? null;
+
+        return $e && empty( $e['l'] ) && empty( $e['a'] ) && ( $e['t'] ?? 0 ) > time() - self::RETRY_FAILED;
     }
 
     /* ------------------------------------------------------- Product fingerprints */

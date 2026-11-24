@@ -197,18 +197,23 @@ class Affiliate {
         $groupId   = absint( $_GET['g'] ?? 0 );
         $target    = $merchant['source'] === 'shoplink' ? self::classicLink( $url, $merchant, $placement, $groupId ? $groupId : '' ) : '';
 
+        $why = ''; // why this click isn't tracked by the store (Insights)
         if ( ! $target && self::apiEnabled() ) {
             $target = Involve::deeplink( $url, $merchant['api_id'], false );
 
-            if ( ! $target && self::mayGenerate() ) $target = Involve::deeplinkNow( $url, $merchant['api_id'] );
+            if ( ! $target ) {
+                if ( self::mayGenerate() ) { $target = Involve::deeplinkNow( $url, $merchant['api_id'] ); $why = Involve::$why; }
+                else $why = 'rate-limit';
+            }
         }
 
         // Without a deeplink, Lazada / Shopee open the page itself (the plain link would lose it) while the API is on.
         if ( ! $target ) $target = ( $merchant['api_only'] && self::apiEnabled() ) ? $url : self::classicLink( $url, $merchant, $placement, $groupId ? $groupId : '' );
+        $untracked = $target === $url; // the store page itself: no commission for this click
 
         // Insights: one small row per real click (crawlers and link previews are skipped).
         if ( class_exists( 'Insights' ) && ! preg_match( '~bot|crawl|spider|slurp|preview|facebookexternalhit|mediapartners|curl|wget|python|scan~i', (string) ( $_SERVER['HTTP_USER_AGENT'] ?? '' ) ) ) {
-            Insights::log( 'affiliate_click', $groupId, 0, 0, $merchant['name'] . '|' . $placement );
+            Insights::log( 'affiliate_click', $groupId, 0, 0, $merchant['name'] . '|' . $placement . ( $untracked ? '|untracked:' . ( $why ?: 'other' ) . ( self::isSearchUrl( $url ) ? ':search' : ':product' ) : '' ) );
         }
 
         wp_redirect( $target, 302 );
@@ -243,7 +248,21 @@ class Affiliate {
     /**
      * Anchor tag for an affiliate link.
      */
+    /**
+     * False for a Lazada store search we couldn't track: no saved deeplink and the search share of the monthly
+     * deeplink budget is used up (or Involve refused it). Gift-idea buttons then show Shopee only, instead of
+     * sending people to Lazada with no commission. Product links (someone's wishlist) always show.
+     */
+    public static function trackable( $url ) {
+        $merchant = self::merchantFor( $url );
+        if ( ! $merchant || ! $merchant['api_only'] || ! self::apiEnabled() || ! self::isSearchUrl( $url ) ) return true;
+        if ( Involve::deeplink( self::normalize( $url ), $merchant['api_id'], false ) !== '' ) return true;
+
+        return Involve::searchBudgetLeft() && ! Involve::refused( self::normalize( $url ) );
+    }
+
     public static function anchor( $url, $text, $placement = '', $groupId = '', $class = '', $attrs = array() ) {
+        if ( ! self::trackable( $url ) ) return '';
         $isAff = self::merchantFor( $url ) !== false;
         $href  = $isAff ? self::link( $url, $placement, $groupId ) : self::normalize( $url );
         $cls   = trim( ( $isAff ? 'mm-aff ' : '' ) . $class );
@@ -337,7 +356,7 @@ class Affiliate {
     }
 
     /**
-     * "Gift ideas" section: a card per idea with Lazada / Shopee buttons.
+     * "Gift ideas" section: a card per idea with Shopee / Lazada buttons (Shopee first: ~5x the earnings per click).
      *
      * @param int    $groupId   Group post ID.
      * @param string $placement aff_sub value.
@@ -361,8 +380,8 @@ class Affiliate {
                 $html .= '<tr>';
                 $html .= '<td style="padding:10px 0;border-top:1px solid #eeeeee;font-size:15px;color:#1b1b1b;">' . esc_html( $idea['label'] ) . '</td>';
                 $html .= '<td style="padding:10px 0;border-top:1px solid #eeeeee;text-align:right;white-space:nowrap;">';
-                $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'lazada', $idea['keyword'], $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#0f146d;">Lazada</a>';
                 $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'shopee', $idea['keyword'], $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#ee4d2d;">Shopee</a>';
+                if ( self::trackable( self::searchUrl( 'lazada', $idea['keyword'], $max ) ) ) $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'lazada', $idea['keyword'], $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#0f146d;">Lazada</a>';
                 $html .= '</td></tr>';
             }
 
@@ -387,8 +406,8 @@ class Affiliate {
             $html .= '</div>';
             $html .= '</div>';
             $html .= '<div class="mm-gift__btns">';
-            $html .= self::anchor( self::searchUrl( 'lazada', $idea['keyword'], $max ), '<i class="fas fa-cart-shopping"></i> Lazada', $placement, $groupId, 'mm-store mm-store--lazada' );
             $html .= self::anchor( self::searchUrl( 'shopee', $idea['keyword'], $max ), '<i class="fas fa-bag-shopping"></i> Shopee', $placement, $groupId, 'mm-store mm-store--shopee' );
+            $html .= self::anchor( self::searchUrl( 'lazada', $idea['keyword'], $max ), '<i class="fas fa-cart-shopping"></i> Lazada', $placement, $groupId, 'mm-store mm-store--lazada' );
             $html .= '</div>';
             $html .= '</div>';
         }
@@ -400,7 +419,7 @@ class Affiliate {
     }
 
     /**
-     * Compact call-to-action strip with Lazada / Shopee search buttons.
+     * Compact call-to-action strip with Shopee / Lazada search buttons.
      *
      * @param string $title   e.g. "Shop for Ana".
      * @param string $keyword Search query; when empty the strip offers general gifts.
@@ -421,8 +440,8 @@ class Affiliate {
         $html .= '<span><strong>' . esc_html( $title ) . '</strong><small>' . $hint . '</small></span>';
         $html .= '</div>';
         $html .= '<div class="mm-shop__btns">';
-        $html .= self::anchor( self::searchUrl( 'lazada', $query, $max ), '<i class="fas fa-cart-shopping"></i> Lazada', $placement, $groupId, 'mm-store mm-store--lazada' );
         $html .= self::anchor( self::searchUrl( 'shopee', $query, $max ), '<i class="fas fa-bag-shopping"></i> Shopee', $placement, $groupId, 'mm-store mm-store--shopee' );
+        $html .= self::anchor( self::searchUrl( 'lazada', $query, $max ), '<i class="fas fa-cart-shopping"></i> Lazada', $placement, $groupId, 'mm-store mm-store--lazada' );
         $html .= '</div>';
         $html .= '</div>';
 
@@ -443,8 +462,8 @@ class Affiliate {
         $html .= '<tr><td style="padding:16px 18px;">';
         $html .= '<div style="font-size:16px;font-weight:bold;color:#1b1b1b;">' . esc_html( $title ) . '</div>';
         $html .= '<div style="margin-top:2px;font-size:13px;color:#6d6d6d;">From their wishlist: &ldquo;' . esc_html( $keyword ) . '&rdquo;' . ( $max > 0 ? ' &middot; budget &#8369;' . number_format( $max ) : '' ) . '</div>';
-        $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'lazada', $keyword, $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#0f146d;">Search Lazada</a>';
         $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'shopee', $keyword, $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#ee4d2d;">Search Shopee</a>';
+        if ( self::trackable( self::searchUrl( 'lazada', $keyword, $max ) ) ) $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'lazada', $keyword, $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#0f146d;">Search Lazada</a>';
         $html .= '</td></tr></table>';
 
         return $html;

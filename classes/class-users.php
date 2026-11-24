@@ -283,8 +283,8 @@ class Users extends Theme {
             echo '    <div class="mm-suggest__text"><div class="mm-gift__label">'.esc_html($idea['label']).'</div>';
             if(!empty($idea['why'])) echo '<div class="mm-gift__why">'.esc_html($idea['why']).'</div>';
             echo '        <div class="mm-suggest__stores">';
-            echo              Affiliate::anchor(Affiliate::searchUrl('lazada', $idea['keyword'], $budget), 'Lazada', 'wishlist-editor-ideas', $gid, 'mm-suggest__store');
             echo              Affiliate::anchor(Affiliate::searchUrl('shopee', $idea['keyword'], $budget), 'Shopee', 'wishlist-editor-ideas', $gid, 'mm-suggest__store');
+            echo              Affiliate::anchor(Affiliate::searchUrl('lazada', $idea['keyword'], $budget), 'Lazada', 'wishlist-editor-ideas', $gid, 'mm-suggest__store');
             echo '        </div>';
             echo '    </div>';
             echo '    <button type="button" class="mm-btn mm-btn--add" data-mm-suggest="'.esc_attr($idea['label']).'"><i class="fas fa-plus"></i> Add</button>';
@@ -338,7 +338,7 @@ class Users extends Theme {
         }
         $html .= '<div class="mm-item__actions">';
         $html .= '    <button type="button" class="mm-btn-text" data-mm-add-link><i class="fas fa-link"></i> Add a shop link</button>';
-        $html .= '    <span class="mm-item__find" data-mm-find hidden>Find it on <a class="mm-aff mm-find mm-find--lazada" target="_blank" rel="nofollow sponsored noopener" data-store="lazada" href="#">Lazada</a> <a class="mm-aff mm-find mm-find--shopee" target="_blank" rel="nofollow sponsored noopener" data-store="shopee" href="#">Shopee</a></span>';
+        $html .= '    <span class="mm-item__find" data-mm-find hidden>Find it on <a class="mm-aff mm-find mm-find--shopee" target="_blank" rel="nofollow sponsored noopener" data-store="shopee" href="#">Shopee</a> <a class="mm-aff mm-find mm-find--lazada" target="_blank" rel="nofollow sponsored noopener" data-store="lazada" href="#">Lazada</a></span>';
         $html .= '</div>';
         $html .= '</li>';
 
