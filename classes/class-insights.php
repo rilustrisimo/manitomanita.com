@@ -586,7 +586,7 @@ class Insights {
         $md[] = '### By placement';
         $md[] = $table( array( 'Placement', 'Clicks' ), array_map( null, array_keys( $af['placement'] ), array_values( $af['placement'] ) ) );
         $md[] = '### Clicks the store did not track (no commission; logged since 2026-11-24)';
-        $md[] = '- Lazada only tracks through Involve Asia deeplinks (about 900 new links per 30 days). Reasons: budget = monthly links used up; search-reserve = gift-idea searches stopped to keep links for wishlist products; refused = Involve/Lazada refused that URL; timeout / rate-limit / no-api = the API did not answer, a visitor clicked too fast, or the API is off.';
+        $md[] = '- Lazada only tracks through Involve Asia deeplinks (about 900 new links per 30 days). Lazada store searches (gift-idea buttons) use the generic tracked link since 2026-11-25 (opens the Lazada homepage, counted, no budget used), so they are not listed here. Reasons: budget = monthly links used up; refused = Involve/Lazada refused that URL; busy = the same link was being made by another click that second; timeout / rate-limit / no-api = the API did not answer, a visitor clicked too fast, or the API is off.';
         $rows = array();
         foreach ( $af['untracked'] as $st => $whys ) foreach ( $whys as $w => $c ) $rows[] = array( $st, str_replace( ':', ', ', $w ), $c );
         $md[] = $rows ? $table( array( 'Store', 'Why, page type', 'Clicks' ), $rows ) : '_None._';

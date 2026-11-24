@@ -41,7 +41,6 @@ class Involve {
     const SYNC_HOOK    = 'mm_involve_sync_offers';
     const WORK_HOOK    = 'mm_involve_deeplinks';
     const MONTH_LIMIT  = 900;   // stay under Involve Asia's ~1,000 unique links per rolling 30 days
-    const PRODUCT_RESERVE = 300; // of MONTH_LIMIT, kept for product pages (searches stop generating before it)
     const PER_RUN      = 20;   // deeplinks generated per background run (API allows 60 / minute)
     const RETRY_FAILED = 2592000; // a product the store refused is retried after 30 days
 
@@ -167,7 +166,7 @@ class Involve {
      * Click time (Affiliate::go): the stored deeplink, or one generated right now. '' when the store
      * refused the URL, the monthly budget is used up or the API did not answer in time.
      */
-    public static $why = ''; // why deeplinkNow() returned '' (refused, budget, search-reserve, no-api, timeout), for click stats
+    public static $why = ''; // why deeplinkNow() returned '' (refused, budget, busy, no-api, timeout), for click stats
 
     public static function deeplinkNow( $url, $apiOfferId ) {
         self::$why = '';
@@ -182,36 +181,30 @@ class Involve {
 
         if ( isset( $links[ $key ] ) && empty( $links[ $key ]['a'] ) && ( $links[ $key ]['t'] ?? 0 ) > time() - self::RETRY_FAILED ) { self::$why = 'refused'; return ''; } // refused recently
 
+        // Two clicks on the same new link at once must not both spend a link from the budget.
+        $lock = 'mm_dl_lock_' . $key;
+        if ( get_transient( $lock ) ) { self::$why = 'busy'; return ''; }
+        set_transient( $lock, 1, 30 );
+
         $token = self::token();
-        if ( ! $token ) { self::$why = 'no-api'; return ''; }
+        if ( ! $token ) { self::$why = 'no-api'; delete_transient( $lock ); return ''; }
 
         $made = self::recentCount( $links );
-        // Store searches (gift-idea buttons: endless keyword/budget combos) may not eat the links kept for
-        // wishlist products, which people actually chose and buy more often.
-        if ( class_exists( 'Affiliate' ) && Affiliate::isSearchUrl( $url ) && $made >= self::MONTH_LIMIT - self::PRODUCT_RESERVE ) { self::$why = 'search-reserve'; return ''; }
+        $start = time();
         $link = self::generate( $key, array( 'url' => $url, 'offer' => (int) $apiOfferId ), $token, $links, $made, 8 );
 
+        // Save only what this click added, onto the latest list: another click may have saved meanwhile
+        // (writing back our older copy would drop its new link, and it would be generated again later).
+        wp_cache_delete( self::LINKS_OPT, 'options' );
+        $fresh = (array) get_option( self::LINKS_OPT, array() );
+        foreach ( $links as $k => $e ) if ( ( $e['t'] ?? 0 ) >= $start ) $fresh[ $k ] = $e;
+        $links = $fresh;
         update_option( self::LINKS_OPT, $links, false );
         self::$links = $links;
         if ( ! $link ) self::$why = $link === null ? 'budget' : ( isset( $links[ $key ]['e'] ) || isset( $links[ $key ]['a'] ) ? 'refused' : 'timeout' );
+        delete_transient( $lock );
 
         return (string) $link;
-    }
-
-    /** True while gift-idea searches may still generate deeplinks (the rest is kept for products). */
-    public static function searchBudgetLeft() {
-        static $left = null;
-        if ( $left === null ) $left = self::recentCount( (array) get_option( self::LINKS_OPT, array() ) ) < self::MONTH_LIMIT - self::PRODUCT_RESERVE;
-
-        return $left;
-    }
-
-    /** True when Involve refused this URL within the retry window (so a click can't be tracked). */
-    public static function refused( $url ) {
-        if ( self::$links === null ) self::$links = (array) get_option( self::LINKS_OPT, array() );
-        $e = self::$links[ self::key( self::cleanUrl( $url ) ) ] ?? null;
-
-        return $e && empty( $e['l'] ) && empty( $e['a'] ) && ( $e['t'] ?? 0 ) > time() - self::RETRY_FAILED;
     }
 
     /* ------------------------------------------------------- Product fingerprints */
@@ -330,6 +323,7 @@ class Involve {
         if ( ! $token ) return;
 
         $done = 0;
+        $start = time();
 
         foreach ( $queue as $key => $job ) {
             if ( $done >= self::PER_RUN ) break;
@@ -350,6 +344,11 @@ class Involve {
             }
         }
 
+        // Merge onto the latest list (clicks may have saved new links during this run).
+        wp_cache_delete( self::LINKS_OPT, 'options' );
+        $fresh = (array) get_option( self::LINKS_OPT, array() );
+        foreach ( $links as $k => $e ) if ( ( $e['t'] ?? 0 ) >= $start ) $fresh[ $k ] = $e;
+        $links = $fresh;
         update_option( self::LINKS_OPT, $links, false );
         update_option( self::QUEUE_OPT, $queue, false );
         self::$links = $links;

@@ -201,7 +201,11 @@ class Affiliate {
         if ( ! $target && self::apiEnabled() ) {
             $target = Involve::deeplink( $url, $merchant['api_id'], false );
 
-            if ( ! $target ) {
+            if ( ! $target && $merchant['api_only'] && self::isSearchUrl( $url ) ) {
+                // Store searches (gift-idea buttons) never spend the ~900/month deeplink budget: the generic
+                // tracked link (opens the store's homepage) keeps the click and its sales; the budget is for products.
+                $target = self::classicLink( $url, $merchant, $placement, $groupId ? $groupId : '' );
+            } elseif ( ! $target ) {
                 if ( self::mayGenerate() ) { $target = Involve::deeplinkNow( $url, $merchant['api_id'] ); $why = Involve::$why; }
                 else $why = 'rate-limit';
             }
@@ -248,21 +252,7 @@ class Affiliate {
     /**
      * Anchor tag for an affiliate link.
      */
-    /**
-     * False for a Lazada store search we couldn't track: no saved deeplink and the search share of the monthly
-     * deeplink budget is used up (or Involve refused it). Gift-idea buttons then show Shopee only, instead of
-     * sending people to Lazada with no commission. Product links (someone's wishlist) always show.
-     */
-    public static function trackable( $url ) {
-        $merchant = self::merchantFor( $url );
-        if ( ! $merchant || ! $merchant['api_only'] || ! self::apiEnabled() || ! self::isSearchUrl( $url ) ) return true;
-        if ( Involve::deeplink( self::normalize( $url ), $merchant['api_id'], false ) !== '' ) return true;
-
-        return Involve::searchBudgetLeft() && ! Involve::refused( self::normalize( $url ) );
-    }
-
     public static function anchor( $url, $text, $placement = '', $groupId = '', $class = '', $attrs = array() ) {
-        if ( ! self::trackable( $url ) ) return '';
         $isAff = self::merchantFor( $url ) !== false;
         $href  = $isAff ? self::link( $url, $placement, $groupId ) : self::normalize( $url );
         $cls   = trim( ( $isAff ? 'mm-aff ' : '' ) . $class );
@@ -381,7 +371,7 @@ class Affiliate {
                 $html .= '<td style="padding:10px 0;border-top:1px solid #eeeeee;font-size:15px;color:#1b1b1b;">' . esc_html( $idea['label'] ) . '</td>';
                 $html .= '<td style="padding:10px 0;border-top:1px solid #eeeeee;text-align:right;white-space:nowrap;">';
                 $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'shopee', $idea['keyword'], $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#ee4d2d;">Shopee</a>';
-                if ( self::trackable( self::searchUrl( 'lazada', $idea['keyword'], $max ) ) ) $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'lazada', $idea['keyword'], $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#0f146d;">Lazada</a>';
+                $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'lazada', $idea['keyword'], $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#0f146d;">Lazada</a>';
                 $html .= '</td></tr>';
             }
 
@@ -463,7 +453,7 @@ class Affiliate {
         $html .= '<div style="font-size:16px;font-weight:bold;color:#1b1b1b;">' . esc_html( $title ) . '</div>';
         $html .= '<div style="margin-top:2px;font-size:13px;color:#6d6d6d;">From their wishlist: &ldquo;' . esc_html( $keyword ) . '&rdquo;' . ( $max > 0 ? ' &middot; budget &#8369;' . number_format( $max ) : '' ) . '</div>';
         $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'shopee', $keyword, $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#ee4d2d;">Search Shopee</a>';
-        if ( self::trackable( self::searchUrl( 'lazada', $keyword, $max ) ) ) $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'lazada', $keyword, $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#0f146d;">Search Lazada</a>';
+        $html .= '<a href="' . esc_url( self::link( self::searchUrl( 'lazada', $keyword, $max ), $placement, $groupId ) ) . '" target="_blank" rel="nofollow sponsored noopener" style="' . $btn . 'background:#0f146d;">Search Lazada</a>';
         $html .= '</td></tr></table>';
 
         return $html;
