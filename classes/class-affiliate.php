@@ -252,8 +252,23 @@ class Affiliate {
     /**
      * Anchor tag for an affiliate link.
      */
+    /**
+     * Words to copy when a store search opens on the store's homepage (Lazada searches without a saved deeplink
+     * go through the generic tracked link, see go()); '' otherwise. Theme.initStoreSearchCopy copies them on tap
+     * and says "paste it in Lazada's search". Tracking is unchanged: the tap itself is the affiliate click.
+     */
+    public static function copyWords( $url ) {
+        $merchant = self::merchantFor( $url );
+        if ( ! $merchant || ! $merchant['api_only'] || ! self::isSearchUrl( $url ) ) return '';
+        if ( self::apiEnabled() && Involve::deeplink( self::normalize( $url ), $merchant['api_id'], false ) !== '' ) return ''; // opens the exact search
+        parse_str( (string) parse_url( $url, PHP_URL_QUERY ), $q );
+
+        return trim( (string) ( $q['q'] ?? '' ) );
+    }
+
     public static function anchor( $url, $text, $placement = '', $groupId = '', $class = '', $attrs = array() ) {
         $isAff = self::merchantFor( $url ) !== false;
+        if ( $isAff && ! isset( $attrs['data-mm-copy'] ) && ( $words = self::copyWords( $url ) ) !== '' ) $attrs['data-mm-copy'] = $words;
         $href  = $isAff ? self::link( $url, $placement, $groupId ) : self::normalize( $url );
         $cls   = trim( ( $isAff ? 'mm-aff ' : '' ) . $class );
         $rel   = $isAff ? 'nofollow sponsored noopener' : 'nofollow noopener';

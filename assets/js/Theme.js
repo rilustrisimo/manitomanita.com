@@ -25,6 +25,7 @@ var Theme = {
         this.initCardsUsers($);
         this.proScripts($);
         this.initAffiliateCap($);
+        this.initStoreSearchCopy($);
         this.initTracking($);
         this.initAdSense($);
         this.initSponsors($);
@@ -505,13 +506,49 @@ var Theme = {
         if (window.FontAwesome && FontAwesome.dom && FontAwesome.dom.i2svg) FontAwesome.dom.i2svg({ node: box[0] });
     },
 
-    toast: function(msg, type){
+    /**
+     * Lazada store searches open on Lazada's homepage (generic tracked link; Affiliate::copyWords), so tapping one
+     * copies the search words and says to paste them in Lazada's search. Phone keyboards also offer copied text.
+     * The tap still opens the link as usual: it's the one affiliate click. Wishlist-editor "Find it on Lazada"
+     * links are built here in JS, so their words come from the link itself.
+     */
+    initStoreSearchCopy:function($){
+        var wordsOf = function(a){
+            var w = a.getAttribute('data-mm-copy');
+            if (w) return w;
+            if (!$(a).hasClass('mm-find--lazada')) return '';
+            try {
+                var u = new URL(a.href, location.href).searchParams.get('u') || '';
+                return u ? (new URL(u).searchParams.get('q') || '') : '';
+            } catch (e) { return ''; }
+        };
+        var copy = function(text){
+            if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+            var t = document.createElement('textarea'); // older browsers
+            t.value = text; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+            document.body.appendChild(t); t.select();
+            var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(t);
+            return ok ? Promise.resolve() : Promise.reject();
+        };
+        $(document).on('click', 'a[data-mm-copy], a.mm-find--lazada', function(){
+            var words = $.trim(wordsOf(this));
+            if (!words) return; // the link opens as usual
+            copy(words).then(function(){
+                Theme.toast('Copied \u201c' + words + '\u201d. Paste it in Lazada\u2019s search box.', '', 9000);
+            }).catch(function(){
+                Theme.toast('On Lazada, search for \u201c' + words + '\u201d.', '', 9000);
+            });
+        });
+    },
+
+    toast: function(msg, type, ms){
         var $ = jQuery, wrap = $('#mm-toasts');
         if (!wrap.length) wrap = $('<div id="mm-toasts" aria-live="polite"></div>').appendTo('body');
 
         var t = $('<div class="mm-toast"></div>').addClass(type ? 'mm-toast--' + type : '').text(msg).appendTo(wrap);
         setTimeout(function(){ t.addClass('is-in'); }, 10);
-        setTimeout(function(){ t.removeClass('is-in'); setTimeout(function(){ t.remove(); }, 300); }, 4000);
+        setTimeout(function(){ t.removeClass('is-in'); setTimeout(function(){ t.remove(); }, 300); }, ms || 4000);
     },
 
     /**
