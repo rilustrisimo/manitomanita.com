@@ -538,6 +538,7 @@ class EmailCenterAdmin {
         }
         $list = array(
             'reminder'  => array( 'Exchange reminders (daily)', '3 days before the exchange: members of shuffled groups (match, wishlist, ideas). 2–6 days before: organizers of unshuffled groups ("Ready to shuffle?")', 'mm_exchange_reminders' ),
+            'shuffleearly' => array( 'Early shuffle nudge (daily, 10 am)', 'Organizers of unshuffled groups (3+ members) 10–16 days before the exchange: "Everyone in? Shuffle now"', 'mm_shuffle_early' ),
             'autodraw'  => array( 'Auto-shuffle (PRO)', 'Members when a scheduled shuffle runs', 'mm_auto_draw' ),
             'sale'      => array( 'Sale-eve gift email (11.11, 12.12)', 'Members of upcoming exchanges, 6 pm the day before; PRO organizers get a 9 am heads-up', 'mm_sale_batch' ),
             'drops'     => array( 'Weekly Drops theme (PRO)', 'Members of groups using Weekly Drops', 'mm_theme_emails' ),

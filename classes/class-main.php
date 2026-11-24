@@ -63,7 +63,7 @@ class Theme {
     
 
     function __autoload() {
-        $classes = array('error-alerts', 'affiliate', 'captcha', 'emails', 'email-deliver', 'email-check', 'seo', 'landing', 'themes', 'qa', 'gift-ai', 'involve', 'payments', 'groups', 'member-rules', 'comment-moderation', 'group-extras', 'repeat', 'registries', 'my-wishlist', 'my-wishlist-admin', 'registry-extras', 'registry-photos', 'season', 'sale-days', 'email-audience', 'email-center', 'email-list-check', 'email-center-admin', 'email-ai', 'support-bot', 'account', 'admin-lists', 'insights', 'insights-report', 'insights-google', 'ads', 'ads-paypal', 'ads-portal', 'ads-report', 'logs', 'users', 'member-list', 'member-plus', 'member-plus-admin', 'wishlist-plus', 'thank-you', 'wishlists');
+        $classes = array('error-alerts', 'affiliate', 'captcha', 'emails', 'email-deliver', 'email-check', 'seo', 'landing', 'themes', 'qa', 'gift-ai', 'involve', 'payments', 'groups', 'member-rules', 'comment-moderation', 'group-extras', 'repeat', 'registries', 'my-wishlist', 'my-wishlist-admin', 'registry-extras', 'registry-photos', 'season', 'sale-days', 'shuffle-early', 'email-audience', 'email-center', 'email-list-check', 'email-center-admin', 'email-ai', 'support-bot', 'account', 'admin-lists', 'insights', 'insights-report', 'insights-google', 'ads', 'ads-paypal', 'ads-portal', 'ads-report', 'logs', 'users', 'member-list', 'member-plus', 'member-plus-admin', 'wishlist-plus', 'thank-you', 'wishlists');
 
         foreach($classes as $value){
             require_once PARENT_DIR . '/classes/class-'. $value .'.php';

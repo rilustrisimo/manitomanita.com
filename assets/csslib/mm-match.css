@@ -1371,3 +1371,12 @@
     justify-content: center;
     margin-top: 10px;
 }
+
+/* Sale-day banner on See Match (SaleDays::matchBanner, 3 days before 11.11 / 12.12) */
+.mm-sale{display:flex;gap:14px;align-items:flex-start;margin:0 0 18px;padding:16px;border-radius:var(--mm-radius);background:linear-gradient(135deg,#fff3ef,#fff);border:1px solid #ffd6cb}
+.mm-sale__tag{flex:0 0 auto;padding:8px 10px;border-radius:10px;background:#ee4d2d;color:#fff;font-weight:800;font-size:15px;letter-spacing:.5px}
+.mm-sale__body{display:flex;flex-direction:column;gap:4px;min-width:0}
+.mm-sale__body strong{color:var(--mm-dark);font-size:16px}
+.mm-sale__body span{font-size:14px}
+.mm-sale__body .mm-store{align-self:flex-start;margin-top:8px}
+@media (max-width:480px){.mm-sale{flex-direction:column;gap:10px}}

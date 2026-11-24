@@ -1763,7 +1763,7 @@ class Groups extends Theme {
                 ),
                 'card'      => Emails::groupCard($gid),
                 'button'    => array('Open the group and shuffle', $link),
-                'note'      => get_field('pro', $gid) ? '' : '<strong>Couples or family in the group?</strong> With PRO (&#8369;199 one-time) you can keep them from getting each other, schedule an auto-shuffle and let late joiners in after the shuffle. <a href="'.esc_url($link.'&pop=pro-exclude').'" style="color:#1f8580;">See PRO</a>',
+                'note'      => get_field('pro', $gid) ? '' : '<strong>Couples or family in the group?</strong> With PRO (&#8369;199 one-time for the whole group'.($count >= 4 ? ', about &#8369;'.(int) ceil(199 / $count).' per person' : '').') you can keep them from getting each other, schedule an auto-shuffle and let late joiners in after the shuffle. <a href="'.esc_url($link.'&pop=pro-exclude').'" style="color:#1f8580;">See PRO</a>',
                 'footer'    => 'You&rsquo;re getting this because you organize '.esc_html($name).' on Manito Manita. Already planned the shuffle for later? You can ignore this email.',
             ));
 

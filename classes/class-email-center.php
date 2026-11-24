@@ -540,7 +540,7 @@ class EmailCenter {
 
     /** Cron hook => job key on the Automatic tab. */
     public static function jobHooks() {
-        return array( 'mm_exchange_reminders' => 'reminder', 'mm_auto_draw' => 'autodraw', 'mm_sale_batch' => 'sale', 'mm_theme_emails' => 'drops', 'mm_wl_daily' => 'registry', 'mm_ads_weekly' => 'adsweekly', 'mm_insights_weekly' => 'insights' );
+        return array( 'mm_exchange_reminders' => 'reminder', 'mm_auto_draw' => 'autodraw', 'mm_sale_batch' => 'sale', 'mm_shuffle_early' => 'shuffleearly', 'mm_theme_emails' => 'drops', 'mm_wl_daily' => 'registry', 'mm_ads_weekly' => 'adsweekly', 'mm_insights_weekly' => 'insights' );
     }
 
     /** Last run of an automatic email job and how many it sent (idle runs keep the last real batch). */

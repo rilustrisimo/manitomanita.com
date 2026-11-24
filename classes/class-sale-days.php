@@ -28,6 +28,36 @@ class SaleDays {
         add_action( 'init', array( __CLASS__, 'schedule' ) );
         add_action( self::HOOK, array( __CLASS__, 'run' ) );
         add_action( 'template_redirect', array( __CLASS__, 'routes' ), 5 );
+        add_action( 'mm_see_match_top', array( __CLASS__, 'matchBanner' ), 5, 3 );
+    }
+
+    /**
+     * See Match, from 3 days before a sale through the sale day: "12.12 sale in 2 days / tonight / today:
+     * add <match>'s gift to your cart" with a Shopee search for their top wish within budget (placement
+     * match-sale). Only when the exchange is on or after the sale day and the gift isn't bought yet.
+     */
+    public static function matchBanner( $uid, $pair, $gid ) {
+        if ( ! $pair || ! class_exists( 'Affiliate' ) ) return;
+        if ( in_array( get_post_meta( $uid, '_mm_gift_status', true ), array( 'bought', 'given' ), true ) ) return;
+        $today = new DateTime( 'today', wp_timezone() );
+        $ex = DateTime::createFromFormat( '!m/d/Y', (string) get_field( 'gift_exchange_date', $gid ), wp_timezone() );
+        foreach ( self::sales() as $s ) {
+            $day = new DateTime( wp_date( 'Y' ) . '-' . $s['md'], wp_timezone() );
+            $days = (int) $today->diff( $day )->format( '%r%a' );
+            if ( $days < 0 || $days > 3 ) continue;
+            if ( $ex && $ex->format( 'Ymd' ) < $day->format( 'Ymd' ) ) continue; // exchange is before the sale
+            $when = $days === 0 ? 'is on today' : ( $days === 1 ? 'starts tonight at midnight' : 'is in ' . $days . ' days' );
+            $name = trim( (string) get_field( 'screen_name', $pair ) );
+            $budget = Affiliate::budget( $gid );
+            $kw = class_exists( 'Groups' ) ? trim( (string) Groups::wishKeywords( $pair ) ) : '';
+            $btn = Affiliate::anchor( Affiliate::searchUrl( 'shopee', $kw !== '' ? $kw : 'gift', $budget ), '<i class="fas fa-bag-shopping"></i> ' . ( $kw !== '' ? 'Find &ldquo;' . esc_html( $kw ) . '&rdquo; on Shopee' : 'Browse gifts on Shopee' ), 'match-sale', $gid, 'mm-store mm-store--shopee' );
+            echo '<section class="mm-sale"><div class="mm-sale__tag">' . esc_html( $s['label'] ) . '</div><div class="mm-sale__body">'
+                . '<strong>The ' . esc_html( $s['label'] ) . ' sale ' . $when . '</strong>'
+                . '<span>' . ( $days === 0 ? 'Check out ' . esc_html( $name ) . '&rsquo;s gift while the deals last' : 'Add ' . esc_html( $name ) . '&rsquo;s gift to your cart now, then check out when the deals open' ) . ( $budget ? ' (budget &#8369;' . number_format( $budget ) . ')' : '' ) . '.</span>'
+                . $btn . '</div></section>';
+
+            return;
+        }
     }
 
     /** key => label and month-day. */
