@@ -2974,3 +2974,58 @@ label.mp-btn { display: inline-flex; align-items: center; cursor: pointer; }
     .mm-glints i { animation: none; opacity: .45; transform: scale(.6); }
     .mm-glints i:nth-child(2n) { opacity: 0; }
 }
+
+/* Popups that load from the server (See Match, Edit Wishlist, Edit details, Leave group): a loader, not a blank box */
+.mm-popup-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 28px 8px 12px;
+    text-align: center;
+}
+.mm-popup-loading p {
+    margin: 0 0 6px;
+    color: #6d6d6d;
+    font-size: 15px;
+    font-weight: 600;
+}
+.mm-popup-loading__spin {
+    width: 34px;
+    height: 34px;
+    border: 3px solid rgba(62, 199, 194, .25);
+    border-top-color: #3ec7c2;
+    border-radius: 50%;
+    animation: mm-popup-spin .8s linear infinite;
+}
+.mm-popup-loading__line {
+    display: block;
+    width: 100%;
+    height: 14px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #f1f1f1 25%, #e6e6e6 50%, #f1f1f1 75%);
+    background-size: 200% 100%;
+    animation: mm-popup-shimmer 1.2s ease-in-out infinite;
+}
+.mm-popup-loading__line.is-short { width: 60%; }
+.mm-popup-loading.is-error p { color: #1b1b1b; }
+.mm-popup-loading__retry {
+    padding: 10px 22px;
+    border: 0;
+    border-radius: 999px;
+    background: #1b1b1b;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+@keyframes mm-popup-spin { to { transform: rotate(360deg); } }
+@keyframes mm-popup-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) {
+    .mm-popup-loading__spin, .mm-popup-loading__line { animation: none; }
+}
+
+/* Password Submit while the check runs */
+#input-pw input[type="submit"].is-busy {
+    opacity: .75;
+    cursor: progress;
+}

@@ -202,12 +202,18 @@ var Theme = {
                 return false;
             }
 
+            if (submitbtn.prop('disabled')) return false;
             Theme.initShowOverlay($); // initiate overlay
+            // The overlay sits behind the popup, so the button itself shows the check is running.
+            var btnLabel = submitbtn.val();
+            var busy = function(on){ submitbtn.prop('disabled', on).toggleClass('is-busy', on).val(on ? 'Checking\u2026' : btnLabel); };
+            busy(true);
 
             $.ajax ({
                 url: $('#ajax-url').val(),
                 type: 'POST',
                 dataType: 'JSON',
+                complete: function(){ busy(false); },
                 data: {
                     // the value of data.action is the part AFTER 'wp_ajax_' in
                     // the add_action ('wp_ajax_xxx', 'yyy') in the PHP above
@@ -2379,12 +2385,18 @@ var Theme = {
                 return false;
             }
 
+            if (submitbtn.prop('disabled')) return false;
             Theme.initShowOverlay($); // initiate overlay
+            // The overlay sits behind the popup, so the button itself shows the check is running.
+            var btnLabel = submitbtn.val();
+            var busy = function(on){ submitbtn.prop('disabled', on).toggleClass('is-busy', on).val(on ? 'Checking\u2026' : btnLabel); };
+            busy(true);
 
             $.ajax ({
                 url: $('#ajax-url').val(),
                 type: 'POST',
                 dataType: 'JSON',
+                complete: function(){ busy(false); },
                 data: {
                     // the value of data.action is the part AFTER 'wp_ajax_' in
                     // the add_action ('wp_ajax_xxx', 'yyy') in the PHP above
@@ -3303,7 +3315,11 @@ var Theme = {
         };
 
         $('#custom-popup .popup__title').html(setting[Theme.action].title); //set popup title
-        $('#custom-popup .popup__inner').html('');
+        // A loader while the content comes from the server (it can take a few seconds at busy times).
+        var loadingText = { 'see-match': 'Getting your match\u2026', 'edit-wishlist': 'Opening your wishlist\u2026', 'leave-group': 'Loading\u2026' }[Theme.action] || 'Loading your details\u2026';
+        $('#custom-popup .popup__inner').html('<div class="mm-popup-loading" role="status" aria-live="polite"><span class="mm-popup-loading__spin" aria-hidden="true"></span><p>' + loadingText + '</p><span class="mm-popup-loading__line"></span><span class="mm-popup-loading__line is-short"></span><span class="mm-popup-loading__line"></span></div>');
+        Theme.removeOverlay($);
+        var action = Theme.action;
 
         $.fancybox.open({
             src: '#custom-popup',
@@ -3357,12 +3373,16 @@ var Theme = {
                         Theme.afflinkFunction($);
                         //Theme.removeOverlay($);
                     },
-                    error: function (xhr, ajaxOptions, thrownError) {
-                        // this error case means that the ajax call, itself, failed, e.g., a syntax error
-                        // in your_function()
-                        console.log('Request failed: ' + thrownError.message) ;
-                        //Theme.removeOverlay($);
-                        },
+                    error: function () {
+                        // Connection dropped or the server timed out: say so, with a retry (never a blank popup).
+                        var $in = $('#custom-popup .popup__inner');
+                        $in.html('<div class="mm-popup-loading is-error" role="alert"><p>This didn\u2019t load. Check your connection and try again.</p><button type="button" class="mm-popup-loading__retry">Try again</button></div>');
+                        $in.find('.mm-popup-loading__retry').on('click', function(){
+                            $.fancybox.close();
+                            Theme.action = action;
+                            setTimeout(function(){ Theme.initCustomPopup($); }, 350);
+                        });
+                    },
                 });
             }
         });
