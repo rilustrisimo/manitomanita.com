@@ -21,6 +21,13 @@ echo '<div style="display:none;" id="userids">'.json_encode($u).'</div>';
 echo '<div style="display:none;" id="groupid">'.$group->getGroupId().'</div>';
 echo '<input type="hidden" id="groupid-val" value="'.$group->getGroupId().'" />';
 echo '<input type="hidden" id="mm-cards-key" value="'.esc_attr(Users::cardsKey($group->getGroupId())).'" />';
+// Member cards are in the page itself (no second request to the server before they show). MemberList::build is a
+// few batched queries and the first 40 rows; wishlists and comments still load when a card is opened.
+// If it fails, the cards load by AJAX as before (Theme.ajaxCardUsers).
+$mmCards = null;
+if (class_exists('MemberList') && Users::cardsKey($group->getGroupId()) !== '') {
+    try { $mmCards = MemberList::build($group->getGroupId()); } catch (\Throwable $e) { $mmCards = null; }
+}
 ?>
 <div class="container-fluid dashboard">
     <div class="container dashboard__inner">
@@ -62,11 +69,11 @@ echo '<input type="hidden" id="mm-cards-key" value="'.esc_attr(Users::cardsKey($
                             </div>
                             <div class="col-md-3">
                                 <h2>MEMBER<span>S</span></h2>
-                                <div class="bigger memcount">0</div>
+                                <div class="bigger memcount"><?php echo $mmCards ? (int) $mmCards[1] : 0; ?></div>
                             </div>
                             <div class="col-md-3">
                                 <h2>WISH<span>LISTS</span></h2>
-                                <div class="bigger wishcount">0</div>
+                                <div class="bigger wishcount"><?php echo $mmCards ? (int) $mmCards[2] : 0; ?></div>
                             </div>
                         </div>
                     </div>
@@ -157,11 +164,15 @@ echo '<input type="hidden" id="mm-cards-key" value="'.esc_attr(Users::cardsKey($
                                 </div>
                                 <!-- SAMPLE CARD END-->
 
+                            <?php if ( $mmCards ) : ?>
+                            <div id="cards-container" data-mm-ready="1"><?php echo $mmCards[0]; ?></div>
+                            <?php else : ?>
                             <div id="cards-container">
                                 <?php // Placeholder rows until the members load (MemberList via Theme.ajaxCardUsers) ?>
                                 <?php for ( $i = 0; $i < 4; $i++ ) : ?><div class="mm-skel" aria-hidden="true"><span class="mm-skel__dot"></span><span class="mm-skel__lines"><i></i><i></i></span></div><?php endfor; ?>
                                 <p class="screen-reader-text">Loading members&hellip;</p>
                             </div>
+                            <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -248,7 +259,7 @@ echo '<input type="hidden" id="mm-cards-key" value="'.esc_attr(Users::cardsKey($
                 <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
                 <input type="search" placeholder="Search names" aria-label="Search names" autocomplete="off" data-mm-joined-search>
             </label>
-            <ul class="mm-joined__list joined card-columns"></ul>
+            <ul class="mm-joined__list joined card-columns"><?php echo $mmCards ? $mmCards[3] : ''; ?></ul>
             <p class="mm-joined__empty" data-mm-joined-empty hidden>No one matches that name.</p>
         </div>
         <?php endif;?>

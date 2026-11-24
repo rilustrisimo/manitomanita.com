@@ -71,6 +71,7 @@ class Users extends Theme {
     }
 
     public function user_card_generate() {
+        if(class_exists('MemberList')) MemberList::releaseSession(); // read-only: don't hold this visitor's other requests
         $groupid = absint($_POST['groupid'] ?? 0);
         $key = self::cardsKey($groupid);
         if(!$groupid || get_post_type($groupid) !== 'groups' || $key === '' || !hash_equals($key, (string) ($_POST['key'] ?? ''))){

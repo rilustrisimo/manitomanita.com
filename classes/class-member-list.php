@@ -186,7 +186,17 @@ class MemberList {
         return array( 'html' => $h, 'meta' => self::meta( $wishlist ? count( $wishlist ) : 0, count( $comments ) ) );
     }
 
+    /**
+     * Read-only requests (cards, a member's details): save and release the PHP session right away, so this
+     * visitor's other requests (opening another card, saving a wishlist) don't wait for this one to finish.
+     * $_SESSION stays readable; nothing here writes to it.
+     */
+    public static function releaseSession() {
+        if ( session_status() === PHP_SESSION_ACTIVE ) session_write_close();
+    }
+
     public static function ajaxDetail() {
+        self::releaseSession();
         $gid = absint( $_POST['gid'] ?? 0 );
         $uid = absint( $_POST['uid'] ?? 0 );
         if ( ! self::validKey( $gid ) ) wp_send_json_error( 'reload' );

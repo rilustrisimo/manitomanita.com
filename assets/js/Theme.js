@@ -2223,8 +2223,22 @@ var Theme = {
         }
     },
 
+    /** Wires up the member cards once they're in #cards-container (in the page, or from user_card_generate). */
+    cardsReady: function($){
+        Theme.initWhoJoined($);
+        Theme.initDashboardScripts($);
+        $('#cards-container').removeClass('populating');
+
+        Theme.afflinkFunction($);
+        Theme.initMemberSearch($);
+        Theme.initMemberCards($);
+    },
+
     ajaxCardUsers: function($){
         //var key = Theme.batchcount - 1;
+
+        // The page already has the cards (content-dashboard.php): no request needed.
+        if ($('#cards-container').attr('data-mm-ready') === '1') { Theme.cardsReady($); return; }
 
         $.ajax({
             url: $('#ajax-url').val(),
@@ -2246,13 +2260,7 @@ var Theme = {
                     $('.memcount').text(response.data[2]);
                     $('.wishcount').text(response.data[3]);
                     $('.joined.card-columns').html(response.data[4]);
-                    Theme.initWhoJoined($);
-                    Theme.initDashboardScripts($);
-                    $('#cards-container').removeClass('populating');
-
-                    Theme.afflinkFunction($);
-                    Theme.initMemberSearch($);
-                    Theme.initMemberCards($);
+                    Theme.cardsReady($);
                     /*
                     if(Theme.batchcount <= 0) {
                         Theme.initDashboardScripts($);
