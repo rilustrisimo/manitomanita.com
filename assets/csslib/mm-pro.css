@@ -1767,3 +1767,30 @@ html.mm-noscroll body {
 .mm-upsell .mm-try-share { margin: 12px 0 0; }
 .mm-upsell .mm-teams-btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; background: #4b53bc; color: #fff !important; font-weight: 700; font-size: 14px; text-decoration: none; }
 .mm-upsell .mm-teams-btn:hover { background: #3d449e; }
+
+/* PayPal loads after the page (Payments::loader): placeholder until the buttons render, retry if it fails */
+.mm-upsell .mm-pay__or[hidden] { display: none; }
+.mm-pay__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    margin: 0 0 8px;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgba(62, 199, 194, .1);
+    color: #2a9d99;
+    font-size: 14px;
+    font-weight: 600;
+}
+.mm-pay__retry {
+    margin-left: 6px;
+    padding: 4px 12px;
+    border: 0;
+    border-radius: 999px;
+    background: #2a9d99;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}

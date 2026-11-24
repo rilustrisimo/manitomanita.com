@@ -82,14 +82,20 @@ class Payments {
         $gid = (int) $group->getGroupId();
 
         // Card first (most Filipino buyers don't have PayPal), then PayPal. Both are PayPal checkouts.
-        echo '<div id="paypal-card-container" class="mm-pay__card"></div>';
-        echo '<div class="mm-pay__or"><span>or</span></div>';
-        echo '<div id="paypal-button-container" class="mm-pay__paypal"></div>';
-        // en_PH: Philippine defaults in the card form (country, mobile prefix); unused funding options off = less to load.
-        echo '<script src="https://www.paypal.com/sdk/js?client-id=' . esc_attr( PAYPAL_CLIENT_ID ) . '&currency=' . self::CURRENCY . '&locale=en_PH&disable-funding=paylater,venmo"></script>';
+        // Containers are per product: the PRO and credits sheets are both on the group page.
+        $p = sanitize_key( $product );
+        echo '<div class="mm-pay" data-mm-pay="' . esc_attr( $p ) . '">';
+        echo '<p class="mm-pay__loading" data-mm-pay-loading><i class="fa-solid fa-spinner fa-spin"></i> Loading secure checkout&hellip;</p>';
+        echo '<div id="mm-pay-card-' . esc_attr( $p ) . '" class="mm-pay__card"></div>';
+        echo '<div class="mm-pay__or" hidden><span>or</span></div>';
+        echo '<div id="mm-pay-pp-' . esc_attr( $p ) . '" class="mm-pay__paypal"></div>';
+        echo '</div>';
+        self::loader();
         ?>
 <script>
     (function(){
+        var wrap = document.querySelector('[data-mm-pay="<?php echo esc_js( $p ); ?>"]');
+        if (!wrap) return;
         var ajaxUrl = <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>;
         var gid = <?php echo wp_json_encode( (string) $gid ); ?>;
         var product = <?php echo wp_json_encode( $product ); ?>;
@@ -137,7 +143,7 @@ class Payments {
 
         // Instant feedback while PayPal loads its secure card form (it's PayPal's own page, embedded).
         function cardLoading(){
-            var box = document.getElementById('paypal-card-container');
+            var box = document.getElementById('mm-pay-card-<?php echo esc_js( $p ); ?>');
             if (!box || document.getElementById('mm-card-wait')) return;
             var start = box.offsetHeight;
             var note = document.createElement('p');
@@ -207,9 +213,98 @@ class Payments {
             return false;
         }
 
-        var card = buttons(paypal.FUNDING.CARD, { layout: 'vertical', shape: 'rect', height: 48 }, '#paypal-card-container');
-        buttons(paypal.FUNDING.PAYPAL, { layout: 'vertical', shape: 'rect', color: 'gold', label: 'paypal', height: 44 }, '#paypal-button-container');
-        if (!card) { var or = document.querySelector('.mm-pay__or'); if (or) or.style.display = 'none'; }
+        // PayPal loads after the page (MMPayPal.when): when this sheet opens or scrolls near, a PRO button is
+        // tapped, or a few seconds after the page has loaded, whichever comes first.
+        var rendered = false;
+        MMPayPal.when(wrap, function(){
+            if (rendered) return;
+            rendered = true;
+            var loading = wrap.querySelector('[data-mm-pay-loading]');
+            if (loading) loading.remove();
+            var card = buttons(paypal.FUNDING.CARD, { layout: 'vertical', shape: 'rect', height: 48 }, '#mm-pay-card-<?php echo esc_js( $p ); ?>');
+            var pp = buttons(paypal.FUNDING.PAYPAL, { layout: 'vertical', shape: 'rect', color: 'gold', label: 'paypal', height: 44 }, '#mm-pay-pp-<?php echo esc_js( $p ); ?>');
+            var or = wrap.querySelector('.mm-pay__or');
+            if (or) or.hidden = !(card && pp);
+        });
+    })();
+</script>
+        <?php
+    }
+
+    /**
+     * One PayPal SDK per page, loaded after the page itself (it's ~670 KB with the buttons, so loading it up front
+     * held back the member cards on phones). MMPayPal.when(el, cb) runs cb once the SDK is ready and one of these
+     * happened: el's sheet opened or el came near the screen, a PRO/upgrade button was tapped, or 4 s after the
+     * page finished loading. If the SDK fails, el shows "Try again". Member+ (mm-member-plus.js) reuses the same
+     * script tag (data-mp-sdk).
+     */
+    protected static function loader() {
+        static $done = false;
+        if ( $done ) return;
+        $done = true;
+        $src = 'https://www.paypal.com/sdk/js?client-id=' . rawurlencode( PAYPAL_CLIENT_ID ) . '&currency=' . self::CURRENCY . '&locale=en_PH&disable-funding=paylater,venmo';
+        ?>
+<script>
+    window.MMPayPal = window.MMPayPal || (function(){
+        var src = <?php echo wp_json_encode( $src ); ?>, state = 'idle', waiting = [], started = false;
+        function ready(){ return window.paypal && window.paypal.Buttons; }
+        function load(){
+            if (ready()) { state = 'ready'; return flush(); }
+            if (state === 'loading') return;
+            state = 'loading';
+            var s = document.querySelector('script[data-mp-sdk]');
+            if (s && s.getAttribute('data-mm-failed')) { s.remove(); s = null; }
+            if (!s) {
+                s = document.createElement('script');
+                s.src = src; s.async = true; s.setAttribute('data-mp-sdk', '1');
+                document.head.appendChild(s);
+            }
+            s.addEventListener('load', function(){ state = ready() ? 'ready' : 'failed'; flush(); });
+            s.addEventListener('error', function(){ s.setAttribute('data-mm-failed', '1'); state = 'failed'; flush(); });
+        }
+        function flush(){
+            var list = waiting; waiting = [];
+            list.forEach(function(w){
+                if (state === 'ready') { try { w.cb(); } catch (e) { if (window.console) console.warn('PayPal buttons', e); } }
+                else if (state === 'failed') failed(w);
+                else waiting.push(w);
+            });
+        }
+        function failed(w){
+            var box = w.el.querySelector('[data-mm-pay-loading]') || w.el;
+            box.innerHTML = 'Checkout didn\u2019t load. <button type="button" class="mm-pay__retry">Try again</button>';
+            box.querySelector('button').onclick = function(){
+                box.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading secure checkout\u2026';
+                state = 'idle'; waiting.push(w); load();
+            };
+        }
+        function start(){ if (!started) { started = true; load(); } }
+        // Triggers that start the download for every sheet on the page.
+        document.addEventListener('click', function(e){
+            var t = e.target && e.target.closest ? e.target.closest('#go-pro-btn, [data-mm-upsell], [data-mm-pro], .mm-pro-btn, [href*="pop=pro"], [data-mp-open], .mm-mp-chip') : null;
+            if (t) start();
+        }, true);
+        var later = function(){ setTimeout(start, 4000); };
+        if (document.readyState === 'complete') later(); else window.addEventListener('load', later);
+
+        return {
+            when: function(el, cb){
+                var w = { el: el, cb: cb };
+                // Visible sheet / near the screen: start now.
+                var sheet = el.closest('.pop-container');
+                var shown = function(){ return !sheet || (sheet.style.display && sheet.style.display !== 'none') || el.offsetParent !== null; };
+                if (sheet && window.MutationObserver) new MutationObserver(function(){ if (shown()) start(); }).observe(sheet, { attributes: true, attributeFilter: ['style', 'class'] });
+                if (window.IntersectionObserver) {
+                    var io = new IntersectionObserver(function(es){ es.forEach(function(x){ if (x.isIntersecting) { start(); io.disconnect(); } }); }, { rootMargin: '600px' });
+                    io.observe(el);
+                }
+                if (el.offsetParent !== null) start();
+                if (state === 'ready') { try { cb(); } catch (e) {} return; }
+                if (state === 'failed') { failed(w); return; }
+                waiting.push(w);
+            },
+            start: start
+        };
     })();
 </script>
         <?php
