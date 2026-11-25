@@ -59,7 +59,7 @@ class Landing {
                 ),
                 'related' => array( 'monito-monita-generator', 'kris-kringle-generator-philippines', 'exchange-gift-ideas-500-pesos' ),
             ),
-        ) + self::registryPages();
+        ) + self::registryPages() + ( class_exists( 'GiftGuides' ) ? GiftGuides::pages() : array() );
     }
 
     /** Slug of each occasion's registry guide (Registries::guideUrl links to them). */
@@ -310,6 +310,7 @@ class Landing {
     public static function seed() {
         if ( ! function_exists( 'update_field' ) ) return;
         $done = (array) get_option( 'mm_landing_seeded', array() );
+        $links = array(); // new page id => related slugs, set once every page in this run exists
 
         foreach ( self::newPages() as $slug => $p ) {
             if ( isset( $done[ $slug ] ) ) continue;
@@ -334,6 +335,7 @@ class Landing {
                 update_post_meta( $id, '_yoast_wpseo_focuskw', $p['kw'] ?? 'online bunutan' );
                 update_field( 'field_mm_land_type', $p['type'] ?? 'tool', $id );
                 if ( ! empty( $p['occasion'] ) ) update_field( 'field_mm_land_occasion', $p['occasion'], $id );
+                if ( ! empty( $p['budget'] ) ) update_field( 'field_mm_land_budget', (int) $p['budget'], $id );
                 if ( ! empty( $p['groups'] ) ) {
                     update_field( 'field_mm_land_groups', array_map( function ( $g ) {
                         return array( 'field_mm_land_group_title' => html_entity_decode( $g[0], ENT_QUOTES, 'UTF-8' ), 'field_mm_land_group_ideas' => $g[1] );
@@ -347,18 +349,22 @@ class Landing {
                 update_field( 'field_mm_land_faq', array_map( function ( $q ) {
                     return array( 'field_mm_land_faq_q' => $q[0], 'field_mm_land_faq_a' => $q[1] );
                 }, $p['faq'] ), $id );
-                $rel = array();
-                foreach ( $p['related'] as $r ) {
-                    $rp = get_page_by_path( $r );
-                    if ( $rp ) $rel[] = (int) $rp->ID;
-                }
-                if ( $rel ) update_field( 'field_mm_land_related', $rel, $id );
+                $links[ $id ] = $p['related'];
             }
 
             $done[ $slug ] = (int) $id;
             update_option( 'mm_landing_seeded', $done, true ); // autoloaded: no extra query per request
             delete_transient( 'mm_seed_' . $slug );
             $added = true;
+        }
+
+        foreach ( $links as $id => $slugs ) {
+            $rel = array();
+            foreach ( $slugs as $r ) {
+                $rp = get_page_by_path( $r );
+                if ( $rp ) $rel[] = (int) $rp->ID;
+            }
+            if ( $rel ) update_field( 'field_mm_land_related', $rel, $id );
         }
 
         if ( ! empty( $added ) ) do_action( 'litespeed_purge_all' ); // cached pages pick up the new footer links
@@ -414,6 +420,8 @@ class Landing {
         }
 
         $post = get_post( $id );
+        $slug = $post ? $post->post_name : '';
+        $show = class_exists( 'GiftGuides' ) ? GiftGuides::display( $slug ) : array();
 
         return array(
             'id'      => $id,
@@ -432,6 +440,8 @@ class Landing {
             'lists'   => $lists,
             'faq'     => $faq,
             'related' => array_map( 'intval', array_filter( (array) $f( 'mm_related' ) ) ),
+            'heading' => (string) ( $show['heading'] ?? '' ), // over the gift ideas (gift guides); default "Gift ideas under PHP budget"
+            'sub'     => (string) ( $show['sub'] ?? '' ),
             'updated' => (string) ( $f( 'mm_updated' ) ?: ( $post ? get_the_modified_date( 'Y-m-d', $id ) : '' ) ),
         );
     }

@@ -39,6 +39,19 @@ class SEO {
             'Monito Monita Online: Free Name Draw in 2 Minutes (2026)',
             'Draw Monito Monita names online for free. Share one link, everyone joins by phone, gets their match by email and adds a wishlist. No app needed.',
         ),
+        // 2026-11-25: budget guides also carry the "Monito Monita" spelling (monitomonita.com targets it); descriptions unchanged.
+        'exchange-gift-ideas-300-pesos' => array(
+            '24 Exchange Gift Ideas Under ₱300 (2026): Monito Monita & Kris Kringle',
+            'Budget-friendly exchange gift ideas under ₱300 for your Kris Kringle, Monito Monita or school Christmas party, with quick links to shop on Lazada and Shopee.',
+        ),
+        'exchange-gift-ideas-500-pesos' => array(
+            '30 Exchange Gift Ideas Under ₱500 (2026): Monito Monita & Kris Kringle',
+            'Exchange gift ideas worth ₱500 or less for your Kris Kringle, Monito Monita or office Christmas party, with quick links to shop each idea on Lazada and Shopee.',
+        ),
+        'exchange-gift-ideas-1000-pesos' => array(
+            '24 Exchange Gift Ideas Under ₱1,000 (2026): Monito Monita & Kris Kringle',
+            'Exchange gift ideas worth ₱1,000 or less for office Kris Kringle and family Monito Monita: gadgets, home, self-care and more, with links to shop on Lazada and Shopee.',
+        ),
     );
     const HOME_DESC  = 'Free Monito Monita, Kris Kringle or online bunutan for your Christmas party. Draw names in 2 minutes, with wishlists and gift ideas. No sign-up.';
 

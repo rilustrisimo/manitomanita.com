@@ -1182,6 +1182,24 @@
     font-weight: 600;
 }
 
+/* Themes with their own gift idea page */
+.mml-chips li.has-link {
+    padding: 0;
+    border-color: var(--mm-accent-dark);
+}
+
+.mml-chips li.has-link a {
+    display: block;
+    padding: 9px 14px;
+    color: var(--mm-accent-dark);
+    text-decoration: none;
+}
+
+.mml-chips li.has-link i {
+    font-size: 12px;
+    margin-left: 4px;
+}
+
 /* Legal pages (type "legal") */
 .mml-legal-hero {
     padding: 40px 0 44px;

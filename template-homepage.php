@@ -83,7 +83,7 @@ $faq = array(
 		<div class="mmh-wrap mmh-hero__grid">
 			<div class="mmh-hero__copy">
 				<p class="mmh-eyebrow">Online Manito Manita &amp; Secret Santa</p>
-				<h1 class="mmh-hero__title">Shuffle names for your gift exchange <span>in 2 minutes</span></h1>
+				<h1 class="mmh-hero__title">Shuffle Monito Monita names <span>in 2 minutes</span></h1>
 				<p class="mmh-hero__lead">Create a group, share one link, and everyone privately sees who they&rsquo;re buying for, with wishlists and gift ideas in one place.</p>
 				<div class="mmh-hero__actions">
 					<a href="#create-group" class="mmh-btn mmh-btn--primary" data-mm-track="create_group_click" data-mm-slot="hero">Create a free group</a>

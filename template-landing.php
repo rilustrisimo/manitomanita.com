@@ -140,8 +140,8 @@ endif;
 	<?php if ( $p['type'] === 'guide' ) : ?>
 	<section class="mmh-section" id="ideas">
 		<div class="mmh-wrap">
-			<h2 class="mmh-h2" data-reveal>Gift ideas under &#8369;<?php echo esc_html( number_format( $p['budget'] ) ); ?></h2>
-			<p class="mmh-sub" data-reveal>Each button opens the store already filtered to &#8369;<?php echo esc_html( number_format( $p['budget'] ) ); ?> and below.</p>
+			<h2 class="mmh-h2" data-reveal><?php echo $p['heading'] !== '' ? $p['heading'] : 'Gift ideas under &#8369;' . esc_html( number_format( $p['budget'] ) ); ?></h2>
+			<p class="mmh-sub" data-reveal><?php echo $p['sub'] !== '' ? $p['sub'] : 'Each button opens the store already filtered to &#8369;' . esc_html( number_format( $p['budget'] ) ) . ' and below.'; ?></p>
 			<?php foreach ( $p['groups'] as $g ) : ?>
 				<h3 class="mml-group" data-reveal><?php echo esc_html( $g[0] ); ?></h3>
 				<div class="mml-ideas">
@@ -150,8 +150,9 @@ endif;
 						<strong><?php echo esc_html( $idea[0] ); ?></strong>
 						<div class="mml-idea__shops">
 							<?php
-							echo Affiliate::anchor( Affiliate::searchUrl( 'shopee', $idea[1], $p['budget'] ), 'Shopee', 'guide-' . $p['slug'], '', 'mml-shop mml-shop--shopee' );
-							echo Affiliate::anchor( Affiliate::searchUrl( 'lazada', $idea[1], $p['budget'] ), 'Lazada', 'guide-' . $p['slug'], '', 'mml-shop mml-shop--lazada' );
+							$cap = $idea[2] ?: $p['budget']; // a section can have its own price (e.g. weekly theme gifts)
+							echo Affiliate::anchor( Affiliate::searchUrl( 'shopee', $idea[1], $cap ), 'Shopee', 'guide-' . $p['slug'], '', 'mml-shop mml-shop--shopee' );
+							echo Affiliate::anchor( Affiliate::searchUrl( 'lazada', $idea[1], $cap ), 'Lazada', 'guide-' . $p['slug'], '', 'mml-shop mml-shop--lazada' );
 							?>
 						</div>
 					</div>
@@ -199,7 +200,9 @@ endif;
 			<?php foreach ( $p['lists'] as $g ) : ?>
 				<h3 class="mml-group" data-reveal><?php echo esc_html( $g[0] ); ?></h3>
 				<ul class="mml-chips" data-reveal>
-					<?php foreach ( $g[1] as $item ) : ?><li><?php echo esc_html( $item ); ?></li><?php endforeach; ?>
+					<?php foreach ( $g[1] as $item ) : $tUrl = class_exists( 'GiftGuides' ) ? GiftGuides::themeUrl( $item ) : ''; // themes with their own gift idea page link to it ?>
+					<li<?php echo $tUrl ? ' class="has-link"' : ''; ?>><?php echo $tUrl ? '<a href="' . esc_url( $tUrl ) . '">' . esc_html( $item ) . ' <i class="fas fa-arrow-right" aria-hidden="true"></i></a>' : esc_html( $item ); ?></li>
+					<?php endforeach; ?>
 				</ul>
 			<?php endforeach; ?>
 			<div class="mml-tip" data-reveal>
@@ -268,7 +271,14 @@ endif;
 		<div class="mmh-wrap">
 			<h2 class="mmh-h2" data-reveal><?php echo $isReg ? 'More gift registry guides' : 'More free tools and guides'; ?></h2>
 			<div class="mml-related">
-				<?php foreach ( $p['related'] as $i => $r ) : if ( get_post_status( $r ) !== 'publish' ) continue; $rp = Landing::fromPage( $r ); ?>
+				<?php
+			// Gift guides and theme lists always link to the Monito Monita gift ideas hub (pages made before it existed too).
+			if ( class_exists( 'GiftGuides' ) && in_array( $p['type'], array( 'guide', 'list' ), true ) && $p['slug'] !== GiftGuides::HUB ) {
+				$hub = get_page_by_path( GiftGuides::HUB );
+				if ( $hub && $hub->post_status === 'publish' && ! in_array( (int) $hub->ID, $p['related'], true ) ) $p['related'] = array_merge( array( (int) $hub->ID ), array_slice( $p['related'], 0, 2 ) );
+			}
+			?>
+			<?php foreach ( $p['related'] as $i => $r ) : if ( get_post_status( $r ) !== 'publish' ) continue; $rp = Landing::fromPage( $r ); ?>
 				<a class="mml-related__card" href="<?php echo esc_url( get_permalink( $r ) ); ?>" data-reveal style="--d:<?php echo esc_attr( $i * 0.08 ); ?>s">
 					<span class="mmh-eyebrow"><?php echo $rp['eyebrow']; ?></span>
 					<strong><?php echo wp_strip_all_tags( $rp['h1'] ); ?></strong>

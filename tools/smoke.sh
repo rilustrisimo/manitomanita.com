@@ -35,7 +35,7 @@ if [ "$MODE" = "live" ] || [ "$MODE" = "all" ]; then
   echo "Live checks ($SITE)"
   N=$RANDOM
   TMP=$(mktemp)
-  for p in "" my-wishlist/ advertise/ advertiser/ ad-guidelines/ online-bunutan/ monito-monita-generator/ exchange-gift-ideas-500-pesos/ monito-monita-themes/ wedding-gift-registry-philippines/ debut-wishlist/ baptism-gift-registry/ privacy-policy/ terms/; do
+  for p in "" my-wishlist/ advertise/ advertiser/ ad-guidelines/ online-bunutan/ monito-monita-generator/ exchange-gift-ideas-500-pesos/ monito-monita-themes/ monito-monita-gift-ideas/ something-soft-gift-ideas/ wedding-gift-registry-philippines/ debut-wishlist/ baptism-gift-registry/ privacy-policy/ terms/; do
     code=$(curl -s -o "$TMP" -w '%{http_code}' --max-time 30 "$SITE/$p?smoke=$N")
     if [ "$code" != "200" ]; then bad "/$p returned $code"
     elif grep -qiE 'critical error|Fatal error|Parse error|Warning:</b>' "$TMP"; then bad "/$p shows a PHP error"
