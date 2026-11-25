@@ -187,6 +187,22 @@
                     { label: 'Group pages/visit', num: 1, get: function (r) { return r.group.pages; } }
                 ], en.weeks);
             } else if (en && en.error) { h += gError(en); }
+            var ai = d.ai || {}, ar = ai.referrals, ac = ai.crawlers;
+            if (ar || ac) {
+                // AI search: people who clicked us in an AI answer (GA4), and AI bots reading the site (own log).
+                h += '<h2 class="mmi-h2">AI search</h2>' + note('Visits = people who clicked a link to us in ChatGPT, Perplexity, Gemini, Copilot, Claude and others (GA4). Google AI Overviews count as Google search, not here. Crawlers = AI bots reading our pages; only requests that reach WordPress are counted (pages served from the 5-minute cache are not), so real numbers are higher.' + (ac && ac.since ? ' Crawlers counted since ' + esc(ac.since) + '.' : ''));
+                if (ar && ar.error) { h += gError(ar); }
+                else if (ar) {
+                    h += '<div class="mmi-cards">' + card('Visits from AI assistants', num(ar.visits.value), ar.visits.change) + card('Share of all visits', num(ar.share, 2) + '%', false, 'of GA4 visits in this period') + card('Engaged', num(ar.engaged, 1) + '%', false, 'of AI visits') + (ac ? card('AI crawler requests', num(ac.total), false, 'that reached WordPress') : '') + '</div>';
+                    h += chartBox('mmi-c7', 'Visits from AI assistants per day');
+                    h += '<div class="mmi-grid">' + bars('Visits by assistant', ar.by) + table('Where AI visitors landed', [{ label: 'Page', get: function (r) { return esc(r.path.replace(/([?&]pw=)[^&]*/, '$1***')); } }, { label: 'From', get: function (r) { return esc(r.assistant); } }, { label: 'Visits', num: 1, get: function (r) { return num(r.visits); } }], ar.pages, 'No AI visits in this period.') + '</div>';
+                }
+                if (ac) {
+                    h += chartBox('mmi-c8', 'AI crawler requests per day');
+                    h += '<div class="mmi-grid">' + bars('Crawlers by bot', ac.bots) + bars('Why they came', ac.kinds) + '</div>';
+                    h += table('Pages AI bots read most', [{ label: 'Page', get: function (r) { return esc(r.path); } }, { label: 'Requests', num: 1, get: function (r) { return num(r.hits); } }, { label: 'A person asked an AI', num: 1, get: function (r) { return num(r.asked); } }], ac.pages, 'No AI crawler requests in this period yet.');
+                }
+            }
             h += '<h2 class="mmi-h2">Google Search</h2>' + gError(s);
             if (s.kpis) {
                 h += note('Search Console data for ' + esc(s.range[0]) + ' to ' + esc(s.range[1]) + ' (Google publishes it 2\u20133 days late).');
@@ -198,6 +214,8 @@
             }
             return { html: h, after: function () {
                 if (t.trend) line('mmi-c4', t.trend.labels, [{ label: 'Visits', data: t.trend.sessions }, { label: 'People', data: t.trend.users }]);
+                if (ar && ar.trend) line('mmi-c7', ar.trend.labels, [{ label: 'AI visits', data: ar.trend.visits }], { type: 'bar' });
+                if (ac && ac.trend) line('mmi-c8', ac.trend.labels, [{ label: 'Crawler requests', data: ac.trend.hits }], { type: 'bar' });
                 if (s.trend) line('mmi-c5', s.trend.labels, [{ label: 'Clicks', data: s.trend.clicks }, { label: 'Impressions', data: s.trend.impressions, axis: 'y2' }], { y2: true });
             } };
         },

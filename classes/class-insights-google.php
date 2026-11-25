@@ -88,14 +88,14 @@ class InsightsGoogle {
 
     /* ------------------------------------------------------------------ GA4 */
 
-    protected static function ga( array $body, $realtime = false ) {
+    public static function ga( array $body, $realtime = false ) { // public: AISearch runs its own GA4 reports
         $u = 'https://analyticsdata.googleapis.com/v1beta/properties/' . rawurlencode( (string) GA4_PROPERTY_ID ) . ( $realtime ? ':runRealtimeReport' : ':runReport' );
 
         return self::call( $u, $body, $realtime ? 60 : HOUR_IN_SECONDS );
     }
 
     /** GA4 rows as arrays: dimension values + metric values. */
-    protected static function rows( $res ) {
+    public static function rows( $res ) {
         if ( ! empty( $res['error'] ) ) return array();
         $out = array();
         foreach ( (array) ( $res['rows'] ?? array() ) as $r ) {

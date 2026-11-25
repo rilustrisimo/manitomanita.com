@@ -446,7 +446,7 @@ class Insights {
                 $out = array( 'kpis' => self::kpis( $p ), 'chart' => self::daysOf( $from, $to, $s, array( 'revenue', 'purchase' ) ), 'features' => self::features(), 'funnel' => $g ? $g::funnel( $p ) : null, 'site_funnel' => class_exists( 'InsightsReport' ) ? InsightsReport::proFunnel( $from, $to ) : null, 'plus_funnel' => class_exists( 'InsightsReport' ) && method_exists( 'InsightsReport', 'plusFunnel' ) ? InsightsReport::plusFunnel( $from, $to ) : null );
                 break;
             case 'traffic':
-                $out = array( 'google' => $g ? $g::traffic( $p ) : null, 'engagement' => $g && method_exists( $g, 'engagement' ) ? $g::engagement( $p ) : null, 'seo' => $g ? $g::seo( $p ) : null, 'configured' => $g ? $g::configured() : false );
+                $out = array( 'google' => $g ? $g::traffic( $p ) : null, 'engagement' => $g && method_exists( $g, 'engagement' ) ? $g::engagement( $p ) : null, 'seo' => $g ? $g::seo( $p ) : null, 'ai' => class_exists( 'AISearch' ) ? AISearch::summary( $p ) : null, 'configured' => $g ? $g::configured() : false );
                 break;
             case 'affiliate':
                 $s = self::series( $from, $to );
@@ -645,6 +645,8 @@ class Insights {
         }
 
         // Search Console
+        if ( class_exists( 'AISearch' ) ) $md[] = AISearch::exportMd( $p, $table, $n );
+
         $md[] = '## 8. Google Search (Search Console)';
         if ( $g ) {
             $s = $g::seo( $p );
